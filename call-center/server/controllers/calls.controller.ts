@@ -9,16 +9,21 @@ let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 let router = express.Router();
 
 // Actions
-router.post('/actions/bridge', function (req, res) {
-  let { call_control_id } = req.body.data;
-  let currentTelnyxCall = new telnyx.Call({ call_control_id });
-  console.log(currentTelnyxCall);
+router.post('/actions/bridge', async function (req, res) {
+  let { call_control_id, to } = req.body.data;
+  let callToBridge = await telnyx.calls.create({
+    connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
+    from: process.env.TELNYX_SIP_OB_NUMBER,
+    to,
+  });
+
+  callToBridge.bridge({ call_control_id });
   res.json({});
 });
 
 async function handleCallInitiated(event: any) {
   let telnyxCall = new telnyx.Call({
-    connection_id: process.env.TELNYX_CONNECTION_ID,
+    connection_id: process.env.TELNYX_CC_APP_ID,
     call_control_id: event.data.payload.call_control_id,
   });
   let callRepository = getManager().getRepository(Call);
@@ -47,7 +52,7 @@ async function handleCallInitiated(event: any) {
 
 async function handleCallAnswered(event: any) {
   let telnyxCall = new telnyx.Call({
-    connection_id: process.env.TELNYX_CONNECTION_ID,
+    connection_id: process.env.TELNYX_CC_APP_ID,
     call_control_id: event.data.payload.call_control_id,
   });
   let callRepository = getManager().getRepository(Call);
