@@ -4,8 +4,9 @@
   "description": "Example Call Center application",
   "main": "index.js",
   "scripts": {
-    "tsc": "tsc",
-    "start": "nodemon server.ts"
+    "setup": "cp .env.sample .env",
+    "start": "nodemon server.ts",
+    "tsc": "tsc"
   },
   "author": "",
   "license": "MIT",

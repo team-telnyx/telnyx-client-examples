@@ -7,6 +7,8 @@
     "install:server": "cd server && npm install",
     "install:web-client": "cd web-client && npm install",
     "postinstall": "run-p install:*",
+    "setup:server": "cd server && npm run setup",
+    "start": "run-p setup:*",
     "start:server": "cd server && npm start",
     "start:web-client": "cd web-client && npm start",
     "start": "run-p start:*"
