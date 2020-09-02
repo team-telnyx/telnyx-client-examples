@@ -8,4 +8,4 @@ npm run setup
 npm start
 ```
 
-This will install and start both the backend and frontend apps.
+This will install and start both the server and web apps.
