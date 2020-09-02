@@ -11,7 +11,7 @@
     "setup": "run-p setup:*",
     "start:server": "cd server && npm start",
     "start:web-client": "cd web-client && npm start",
-    "start": "run-p start:*"
+    "start": "run-p -l -r start:*"
   },
   "author": "",
   "license": "MIT",
