@@ -1,2 +1,54 @@
 .App {
+  --primary-color: green;
+  --secondary-color: blue;
+  --tertiary-color: gray;
+  --danger-color: red;
+  --border-radius: 3px;
+}
+
+.App-section {
+  margin-bottom: 2rem;
+}
+
+.App-input {
+  background: white;
+  border: 0;
+  border-radius: var(--border-radius);
+}
+
+.App-button {
+  background: 0;
+  border: 0;
+  border-radius: var(--border-radius);
+  color: white;
+  min-width: 5rem;
+}
+
+.App-button--primary {
+  background: var(--primary-color);
+}
+
+.App-button--secondary {
+  background: var(--secondary-color);
+}
+
+.App-button--tertiary {
+  background: var(--tertiary-color);
+}
+
+.App-button--danger {
+  background: var(--danger-color);
+}
+
+.App-input,
+.App-button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: normal;
+  padding: 0.5rem;
+}
+
+.App-input + .App-button,
+.App-button + .App-button {
+  margin-left: 0.5rem;
 }
