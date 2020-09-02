@@ -6,13 +6,15 @@
   "scripts": {
     "install:server": "cd server && npm install",
     "install:web-client": "cd web-client && npm install",
-    "postinstall": "npm run install:server && npm run install:web-client",
+    "postinstall": "run-p install:*",
     "start:server": "cd server && npm start",
-    "start": "npm run start:server"
+    "start:web-client": "cd web-client && npm start",
+    "start": "run-p start:*"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "npm-run-all": "^4.1.5",
     "prettier": "2.1.0"
   }
 }
