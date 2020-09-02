@@ -3,8 +3,8 @@
 ## Quick start
 
 ```sh
-cp .env.sample ./server/.env
 npm install
+npm run setup
 npm start
 ```
 

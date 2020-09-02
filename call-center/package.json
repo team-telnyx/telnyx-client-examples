@@ -8,9 +8,10 @@
     "install:web-client": "cd web-client && npm install",
     "postinstall": "run-p install:*",
     "setup:server": "cd server && npm run setup",
-    "start": "run-p start:*",
+    "setup": "run-p setup:*",
     "start:server": "cd server && npm start",
-    "start:web-client": "cd web-client && npm start"
+    "start:web-client": "cd web-client && npm start",
+    "start": "run-p start:*"
   },
   "author": "",
   "license": "MIT",
