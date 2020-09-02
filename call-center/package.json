@@ -1,0 +1,16 @@
+{
+  "name": "call-center",
+  "version": "1.0.0",
+  "description": "Example Call Center application",
+  "main": "index.js",
+  "scripts": {
+    "install:server": "cd server && npm install",
+    "postinstall": "npm run install:server",
+    "start:server": "cd server && npm start"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "2.1.0"
+  }
+}
