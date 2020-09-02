@@ -1,5 +1,5 @@
 {
-  "name": "call-center-backend",
+  "name": "call-center-server",
   "version": "1.0.0",
   "description": "Example Call Center application",
   "main": "index.js",

@@ -1,4 +1,4 @@
-# Call Center Backend
+# Call Center Server
 
 ## Quick start
 
