@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "install:server": "cd server && npm install",
-    "postinstall": "npm run install:server",
+    "install:client": "cd client && npm install",
+    "postinstall": "npm run install:server && npm run install:client",
     "start:server": "cd server && npm start",
     "start": "npm run start:server"
   },
