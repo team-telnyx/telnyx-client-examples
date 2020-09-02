@@ -29,8 +29,8 @@ function App() {
         <section className="App-section">
           <h2>Other available agents</h2>
 
-          <ul>
-            <li>
+          <ul className="App-agentList">
+            <li className="App-agentList-item">
               <div>Agent Name</div>
               <div>
                 <button
@@ -47,7 +47,7 @@ function App() {
                 </button>
               </div>
             </li>
-            <li>
+            <li className="App-agentList-item">
               <div>Agent Name</div>
               <div>
                 <button
@@ -64,7 +64,7 @@ function App() {
                 </button>
               </div>
             </li>
-            <li>
+            <li className="App-agentList-item">
               <div>Agent Name</div>
               <div>
                 <button

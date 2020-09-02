@@ -4,6 +4,9 @@
   --tertiary-color: gray;
   --danger-color: red;
   --border-radius: 3px;
+
+  max-width: 40rem;
+  margin: 0 auto;
 }
 
 .App-section {
@@ -51,4 +54,16 @@
 .App-input + .App-button,
 .App-button + .App-button {
   margin-left: 0.5rem;
+}
+
+.App-agentList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.App-agentList-item {
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  margin-bottom: 1rem;
 }
