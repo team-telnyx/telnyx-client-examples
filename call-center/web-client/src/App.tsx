@@ -5,14 +5,16 @@ function App() {
   return (
     <div className="App">
       <header>
-        <h1>Call Center Login</h1>
+        <h1 className="App-heading App-title">Call Center Login</h1>
       </header>
 
       <main>
         <section className="App-section">
-          <form>
-            <label htmlFor="display_name_input">Name</label>
-            <div>
+          <form className="App-form">
+            <label className="App-input-label" htmlFor="display_name_input">
+              Name
+            </label>
+            <div className="App-form-row">
               <input
                 id="display_name_input"
                 className="App-input"
@@ -27,7 +29,7 @@ function App() {
         </section>
 
         <section className="App-section">
-          <h2>Other available agents</h2>
+          <h2 className="App-heading App-headline">Other available agents</h2>
 
           <ul className="App-agentList">
             <li className="App-agentList-item">
@@ -85,9 +87,11 @@ function App() {
         </section>
 
         <section className="App-section">
-          <form>
-            <label htmlFor="phone_number_input">Phone number</label>
-            <div>
+          <form className="App-form">
+            <label className="App-input-label" htmlFor="phone_number_input">
+              Phone number
+            </label>
+            <div className="App-form-row">
               <input
                 id="phone_number_input"
                 className="App-input"
@@ -104,8 +108,8 @@ function App() {
         <section>
           <div className="App-section">
             <div>Incoming call</div>
-            <div>+13125551111</div>
-            <div>
+            <div className="App-callState-phoneNumber">+13125551111</div>
+            <div className="App-callState-actions">
               <button type="button" className="App-button App-button--primary">
                 Answer
               </button>
@@ -117,8 +121,8 @@ function App() {
 
           <div className="App-section">
             <div>Call in progress</div>
-            <div>+13125551111</div>
-            <div>
+            <div className="App-callState-phoneNumber">+13125551111</div>
+            <div className="App-callState-actions">
               <button type="button" className="App-button App-button--danger">
                 Hangup
               </button>
@@ -130,10 +134,17 @@ function App() {
 
           <div className="App-section">
             <div>Conference call in progress</div>
-            <div>+13125551111</div>
-            <div>+ Agent Name</div>
-            <div>+ Agent Name</div>
+            <div className="App-callState-phoneNumber">+13125551111</div>
             <div>
+              <div className="App-heading App-callState-agentsList-heading">
+                Agents on call
+              </div>
+              <ul className="App-callState-agentList">
+                <li className="App-callState-agentList-item">Agent Name</li>
+                <li className="App-callState-agentList-item">Agent Name</li>
+              </ul>
+            </div>
+            <div className="App-callState-actions">
               <button type="button" className="App-button App-button--danger">
                 Hangup
               </button>
@@ -145,7 +156,7 @@ function App() {
         </section>
 
         <footer>
-          <button type="button" className="App-button">
+          <button type="button" className="App-button App-button--link">
             Logout
           </button>
         </footer>
