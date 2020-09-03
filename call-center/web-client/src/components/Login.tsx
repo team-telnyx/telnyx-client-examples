@@ -1,12 +1,19 @@
 import React, { Component, FormEvent } from 'react';
 import PropTypes from 'prop-types';
 import './Login.css';
+import { AxiosError, AxiosResponse } from 'axios';
 import { login } from '../services/loginService';
 
 class Login extends Component {
   handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    console.log(await login('Hugo Oliveira'));
+    const result = await login('Hugo Oliveira');
+    if ('data' in result) {
+      console.log('Success');
+    }
+    console.log(
+      `Failed ${(result as AxiosError).response?.data?.error?.message}`
+    );
   };
 
   render() {
