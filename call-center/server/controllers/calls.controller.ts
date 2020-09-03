@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import { getManager } from 'typeorm';
 import { Call } from '../entities/call.entity';
 
@@ -37,6 +37,9 @@ async function handleCallInitiated(event: any) {
     from,
   } = event.data.payload;
 
+  /*
+   * Only answering parked calls because we also get the call.initiated event for the second leg of the call
+   */
   if (state === 'parked') {
     let call = new Call();
     call.callSessionId = call_session_id;

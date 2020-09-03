@@ -1,7 +1,7 @@
 {
   "type": "sqlite",
   "database": ":memory:",
-  "entities": ["./server/entities/*.ts"],
+  "entities": ["./entities/*.ts"],
   "synchronize": true,
   "logging": true
 }
