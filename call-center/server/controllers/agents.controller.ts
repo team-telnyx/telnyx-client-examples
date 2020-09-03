@@ -12,7 +12,10 @@ router.get('/', async function (req, res) {
   try {
     let agentRepository = getManager().getRepository(Agent);
     res.json({
-      agents: await agentRepository.find({ loggedIn: true }),
+      agents: await agentRepository.find({
+        where: { loggedIn: true },
+        relations: ['activeCall'],
+      }),
     });
   } catch (e) {
     res.status(500).send({ error: e });
@@ -32,6 +35,7 @@ router.post('/login', async function (req, res) {
     let agentRepository = getManager().getRepository(Agent);
 
     console.log(req.body);
+
     let name = req.body.name || 'Unknown';
     let agent = new Agent();
     agent.name = name;
