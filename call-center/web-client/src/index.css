@@ -1,11 +1,15 @@
 @import-normalize;
 
+html,
 body {
   background: #1d2241;
   color: white;
   font-family: sans-serif;
+  height: 100%;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }

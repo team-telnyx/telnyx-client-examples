@@ -1,34 +1,15 @@
 import React from 'react';
+import Login from './components/Login';
+import 'normalize.css';
 import './App.css';
 
 function App() {
+  const isLoggedin = false;
   return (
-    <div className="App">
-      <header>
-        <h1 className="App-heading App-title">Call Center Login</h1>
-      </header>
+    <main className="App">
+      <Login></Login>
 
-      <main>
-        <section className="App-section">
-          <form className="App-form">
-            <label className="App-input-label" htmlFor="display_name_input">
-              Name
-            </label>
-            <div className="App-form-row">
-              <input
-                id="display_name_input"
-                className="App-input"
-                name="display_name"
-                type="text"
-              />
-              <button type="submit" className="App-button App-button--primary">
-                Login
-              </button>
-            </div>
-          </form>
-        </section>
-
-        <section className="App-section">
+      {/* <section className="App-section">
           <h2 className="App-heading App-headline">Other available agents</h2>
 
           <ul className="App-agentList">
@@ -103,9 +84,9 @@ function App() {
               </button>
             </div>
           </form>
-        </section>
+        </section> */}
 
-        <section>
+      {/* <section>
           <div className="App-section">
             <div>Incoming call</div>
             <div className="App-callState-phoneNumber">+13125551111</div>
@@ -153,15 +134,16 @@ function App() {
               </button>
             </div>
           </div>
-        </section>
+        </section> */}
 
+      {isLoggedin && (
         <footer>
           <button type="button" className="App-button App-button--link">
             Logout
           </button>
         </footer>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
 
