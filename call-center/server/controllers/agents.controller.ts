@@ -61,8 +61,6 @@ router.post('/logout', async function (req, res) {
       await agentRepository.save(loggedAgent);
     }
 
-    console.log('all agents state', agentRepository.find());
-
     res.status(200).json({});
   } catch (e) {
     res.status(500).json({ error: e });
