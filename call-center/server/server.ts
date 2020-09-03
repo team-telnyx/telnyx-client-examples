@@ -18,7 +18,7 @@ createConnection().then(function () {
   app.use('/calls', callsController);
   app.use('/agents', agentsController);
 
-  app.listen(process.env.TELNYX_APP_PORT, function () {
-    console.log(`App is listening on port ${process.env.TELNYX_APP_PORT}`);
+  app.listen(process.env.TELNYX_SERVER_APP_PORT, function () {
+    console.log(`App is listening on port ${process.env.TELNYX_SERVER_APP_PORT}`);
   });
 });

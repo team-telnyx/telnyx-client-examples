@@ -4,29 +4,19 @@
   "description": "Example Call Center application",
   "main": "index.js",
   "scripts": {
-    "tsc": "tsc",
-    "start:server": "nodemon server/server.ts"
+    "install:server": "cd server && npm install",
+    "install:web-client": "cd web-client && npm install",
+    "postinstall": "run-p install:*",
+    "setup:server": "cd server && npm run setup",
+    "setup": "run-p setup:*",
+    "start:server": "cd server && npm start",
+    "start:web-client": "cd web-client && npm start",
+    "start": "run-p -l -r start:*"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^14.6.0",
-    "nodemon": "^2.0.4",
-    "prettier": "2.1.0",
-    "ts-node": "^9.0.0",
-    "typescript": "^4.0.2"
-  },
-  "dependencies": {
-    "@types/express": "^4.17.7",
-    "axios": "^0.20.0",
-    "body-parser": "^1.19.0",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "node": "^14.8.0",
-    "reflect-metadata": "^0.1.13",
-    "sqlite3": "^5.0.0",
-    "telnyx": "^1.10.0",
-    "typeform": "^1.0.1",
-    "typeorm": "^0.2.25"
+    "npm-run-all": "^4.1.5",
+    "prettier": "2.1.0"
   }
 }

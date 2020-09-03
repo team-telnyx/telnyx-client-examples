@@ -1,0 +1,32 @@
+{
+  "name": "call-center-server",
+  "version": "1.0.0",
+  "description": "Example Call Center application",
+  "main": "index.js",
+  "scripts": {
+    "setup": "cp .env.sample .env",
+    "start": "nodemon server.ts",
+    "tsc": "tsc"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^14.6.0",
+    "nodemon": "^2.0.4",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.2"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.7",
+    "axios": "^0.20.0",
+    "body-parser": "^1.19.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "node": "^14.8.0",
+    "reflect-metadata": "^0.1.13",
+    "sqlite3": "^5.0.0",
+    "telnyx": "^1.10.0",
+    "typeform": "^1.0.1",
+    "typeorm": "^0.2.25"
+  }
+}
