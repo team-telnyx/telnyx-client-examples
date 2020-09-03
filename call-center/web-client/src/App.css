@@ -1,8 +1,8 @@
 .App {
-  --primary-color: green;
-  --secondary-color: blue;
-  --tertiary-color: gray;
-  --danger-color: red;
+  --primary-color: #00c08b;
+  --secondary-color: #1fb6ff;
+  --tertiary-color: #80868b;
+  --danger-color: #ff6666;
   --border-radius: 3px;
 
   max-width: 40rem;
