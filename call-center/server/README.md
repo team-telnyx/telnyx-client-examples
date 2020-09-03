@@ -8,7 +8,7 @@ npm run setup
 npm start
 ```
 
-This will start an Express app on port the configured TELNYX_SERVER_APP_PORT environment variable (default to 8000).
+This will start an Express app on port specified as the `TELNYX_SERVER_APP_PORT` environment variable (defaults to `8000`).
 
 ## App configuration
 
