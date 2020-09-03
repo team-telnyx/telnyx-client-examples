@@ -1,38 +1,144 @@
 .App {
+  --primary-color: #00c08b;
+  --secondary-color: #1fb6ff;
+  --tertiary-color: #80868b;
+  --danger-color: #ff6666;
+  --border-radius: 3px;
+
+  max-width: 35rem;
+  margin: 0 auto;
+  padding: 0.5rem;
+}
+
+.App-section {
+  margin-bottom: 2rem;
+}
+
+.App-heading {
+  font-weight: normal;
+  line-height: 1;
+  margin: 0;
+}
+
+.App-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.App-headline {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.App-form-row {
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  column-gap: 0.6rem;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+.App-input {
+  background: white;
+  border: 0;
+  border-radius: var(--border-radius);
+}
+
+.App-input-label {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.App-button {
+  background: 0;
+  border: 0;
+  cursor: pointer;
+  border-radius: var(--border-radius);
   color: white;
+  min-width: 5rem;
 }
 
-.App-link {
-  color: #61dafb;
+.App-button:hover {
+  opacity: 0.9;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.App-input,
+.App-button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: normal;
+  padding: 0.6rem;
+}
+
+.App-form .App-input,
+.App-form .App-button {
+  padding: 0.8rem;
+  min-width: 8rem;
+}
+
+.App-button + .App-button {
+  margin-left: 0.6rem;
+}
+
+.App-button--primary {
+  background: var(--primary-color);
+}
+
+.App-button--secondary {
+  background: var(--secondary-color);
+}
+
+.App-button--tertiary {
+  background: var(--tertiary-color);
+}
+
+.App-button--danger {
+  background: var(--danger-color);
+}
+
+.App-button--link {
+  text-decoration: underline;
+}
+
+.App-agentList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.App-agentList-item {
+  background-color: rgba(255, 255, 255, 0.05);
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+}
+
+.App-callState-phoneNumber {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin: 1rem 0;
+}
+
+.App-callState-actions {
+  margin-top: 1rem;
+}
+
+.App-callState-agentList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.App-callState-agentsList-heading {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.App-callState-agentList-item {
+  background-color: rgba(255, 255, 255, 0.05);
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
 }
