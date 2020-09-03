@@ -22,6 +22,9 @@ export class Agent {
   @Column()
   loggedIn!: boolean;
 
+  @Column()
+  available!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
 
