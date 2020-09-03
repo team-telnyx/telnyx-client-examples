@@ -21,4 +21,4 @@ This will start an Express app on port specified as the `TELNYX_SERVER_APP_PORT`
 1. (app) Start your app with `npm start`
 1. (shell) Login to your app with `curl -X POST https://your-ngrok-forwarding-id.ngrok.io/agents/login`
 1. (ngrok) Open the ngrok Web Interface (ex: <http://127.0.0.1:4040/inspect/http>). You should see `/login` request.
-1. (ngrok) Call your Call Center phone number from your personal device or a web dialer. You should see requests to `POST /calls/callbacks/call-control-app` come through.
+1. (ngrok) Call your Call Center phone number from your personal device or a web dialer. You should see requests to `POST /calls/callbacks/call-control-app` come through. (Note: Events may not show up in the expected order, e.g. `initiated` may be logged after `call`.)
