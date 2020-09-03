@@ -7,4 +7,4 @@ npm install
 npm start
 ```
 
-This will start React app on port 3000.
+This will start the React app on port 3000.
