@@ -18,6 +18,7 @@ This will start an Express app on port specified as the `TELNYX_SERVER_APP_PORT`
 1. (Mission Control) [Update your phone number](https://portal.telnyx.com/#/app/numbers/my-numbers) by selecting your Call Control App under "Connection or App".
 1. (Mission Control) [Create a SIP connection](https://portal.telnyx.com/#/app/connections), setting the "SIP Connection Type" to `Credentials`. Make note of your SIP Connection ID.
 1. (Mission Control) [Create an Outbound Voice Profile](https://portal.telnyx.com/#/app/outbound-profiles/new), associating it with your Call Control App. Make note of the Outbound Voice Profile ID.
+1. (app) Update your .env file with information noted from previous steps.
 1. (app) Start your app with `npm start`
 1. (shell) Login to your app with `curl -X POST https://your-ngrok-forwarding-id.ngrok.io/agents/login`
 1. (ngrok) Open the ngrok Web Interface (ex: <http://127.0.0.1:4040/inspect/http>). You should see `/login` request.
