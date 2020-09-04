@@ -91,8 +91,28 @@ class CallsController {
 
       await callRepository.save(call);
 
-      telnyxCall.answer();
+      try {
+        // Make sure there are available agents before answering
+        await CallsController.getAvailableAgent();
+
+        telnyxCall.answer();
+      } catch (e) {
+        await CallsController.speakNoAvailableAgents(event);
+
+        telnyxCall.reject();
+      }
     }
+  };
+
+  private static speakNoAvailableAgents = async function (event: any) {
+    let telnyxCall = new telnyx.Call({
+      connection_id: process.env.TELNYX_CC_APP_ID,
+      call_control_id: event.data.payload.call_control_id,
+    });
+
+    return telnyxCall.speak({
+      payload: 'Sorry, there are no agents available to take your call.',
+    });
   };
 
   private static handleCallAnswered = async function (event: any) {
@@ -117,7 +137,14 @@ class CallsController {
       console.log('call answered by agent');
     } else {
       try {
-        const availableAgent = await CallsController.getAvailableAgent();
+        const availableAgent = await CallsController.getAvailableAgent().catch(
+          async (err) => {
+            await CallsController.speakNoAvailableAgents(event);
+
+            // Rethrow for outer catch block
+            throw err;
+          }
+        );
 
         await telnyxCall.transfer({
           to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
