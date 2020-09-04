@@ -1,6 +1,8 @@
 import express from 'express';
-import { getManager } from 'typeorm';
+import { getManager, In } from 'typeorm';
 import { Call } from '../entities/call.entity';
+import { Agent } from '../entities/agent.entity';
+import { toNamespacedPath } from 'path';
 
 let telnyxPackage: any = require('telnyx');
 
@@ -21,6 +23,21 @@ router.post('/actions/bridge', async function (req, res) {
   res.json({});
 });
 
+async function getAvailableAgent() {
+  let agentRepository = getManager().getRepository(Agent);
+
+  async function findFirst() {
+    let firstAvailableAgent = await agentRepository.findOneOrFail({
+      available: true,
+    });
+
+    return firstAvailableAgent;
+  }
+
+  // TODO Recursive retry
+  return findFirst();
+}
+
 async function handleCallInitiated(event: any) {
   let telnyxCall = new telnyx.Call({
     connection_id: process.env.TELNYX_CC_APP_ID,
@@ -38,7 +55,10 @@ async function handleCallInitiated(event: any) {
   } = event.data.payload;
 
   /*
-   * Only answering parked calls because we also get the call.initiated event for the second leg of the call
+   * Only answering parked calls because we also get the call.initiated
+   * event for the second leg of the call
+   *
+   * Transfer to agent is handled in the `call.answered` event handler
    */
   if (state === 'parked') {
     let call = new Call();
@@ -47,6 +67,7 @@ async function handleCallInitiated(event: any) {
     call.callLegId = call_leg_id;
     call.to = to;
     call.from = from;
+
     await callRepository.save(call);
 
     telnyxCall.answer();
@@ -54,6 +75,60 @@ async function handleCallInitiated(event: any) {
 }
 
 async function handleCallAnswered(event: any) {
+  let {
+    call_control_id,
+    call_session_id,
+    call_leg_id,
+    to,
+    from,
+  } = event.data.payload;
+
+  let telnyxCall = new telnyx.Call({
+    connection_id: process.env.TELNYX_CC_APP_ID,
+    call_control_id: event.data.payload.call_control_id,
+  });
+
+  let callRepository = getManager().getRepository(Call);
+
+  // FIXME More robust way to handle whether call is being answered by
+  // this app (immediately after "parked" state) or by agent's SIP client?
+  if (to.startsWith('sip:')) {
+    console.log('call answered by agent');
+  } else {
+    try {
+      const availableAgent = await getAvailableAgent();
+
+      await telnyxCall.transfer({
+        to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+      });
+
+      console.log('transfer success:', availableAgent);
+
+      availableAgent.available = false;
+
+      // FIXME Does this need to be a new call?
+      let call = new Call();
+      call.callSessionId = call_session_id;
+      call.callControlId = call_control_id;
+      call.callLegId = call_leg_id;
+      call.to = to;
+      call.from = from;
+      call.agents = [availableAgent];
+
+      callRepository.save(call);
+    } catch (e) {
+      // TODO Catch no available agent error and pass as hangup reason
+      console.log('got error transferring call to available agent: ', e);
+
+      telnyxCall.hangup();
+    }
+  }
+}
+
+/*
+ * Cleanup agents and call relation on hangup
+ */
+async function handleCallHangup(event: any) {
   let telnyxCall = new telnyx.Call({
     connection_id: process.env.TELNYX_CC_APP_ID,
     call_control_id: event.data.payload.call_control_id,
@@ -61,15 +136,37 @@ async function handleCallAnswered(event: any) {
   let callRepository = getManager().getRepository(Call);
   let { call_session_id, call_leg_id } = event.data.payload;
 
-  let call = await callRepository.find({
-    callSessionId: call_session_id,
-    callLegId: call_leg_id,
+  let calls = await callRepository.find({
+    where: {
+      callSessionId: call_session_id,
+      callLegId: call_leg_id,
+    },
+    relations: ['agents'],
   });
 
-  if (call.length > 0) {
-    telnyxCall.transfer({
-      to: `sip:${process.env.TELNYX_SIP_USERNAME}@sip.telnyx.com`,
-    });
+  if (calls.length > 0) {
+    // FIXME Better way of handling saves using query builder?
+    await callRepository.save(
+      calls.map((call) => {
+        call.agents = call.agents.map((agent) => {
+          agent.available = true;
+
+          return agent;
+        });
+
+        return call;
+      })
+    );
+
+    // Remove active calls from agents
+    // Saves both ways because of cascade rules
+    await callRepository.save(
+      calls.map((call) => {
+        call.agents = [];
+
+        return call;
+      })
+    );
   }
 }
 
@@ -86,6 +183,9 @@ router.post('/callbacks/call-control-app', async function (req, res) {
         break;
       case 'call.answered':
         await handleCallAnswered(event);
+        break;
+      case 'call.hangup':
+        await handleCallHangup(event);
         break;
     }
   } catch (e) {
