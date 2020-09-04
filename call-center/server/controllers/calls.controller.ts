@@ -37,14 +37,15 @@ async function getAvailableAgent() {
   return findFirst();
 }
 
-/*
- * Answer parked calls, i.e. the first event of an incoming call.
- * Transfer to agent is handled in the `call.answered` event handler.
- */
-async function answerParkedCall(event: any) {
+async function handleCallInitiated(event: any) {
+  let telnyxCall = new telnyx.Call({
+    connection_id: process.env.TELNYX_CC_APP_ID,
+    call_control_id: event.data.payload.call_control_id,
+  });
   let callRepository = getManager().getRepository(Call);
 
   let {
+    state,
     call_control_id,
     call_session_id,
     call_leg_id,
@@ -52,50 +53,23 @@ async function answerParkedCall(event: any) {
     from,
   } = event.data.payload;
 
-  let call = new Call();
-  call.callSessionId = call_session_id;
-  call.callControlId = call_control_id;
-  call.callLegId = call_leg_id;
-  call.to = to;
-  call.from = from;
+  /*
+   * Only answering parked calls because we also get the call.initiated
+   * event for the second leg of the call
+   *
+   * Transfer to agent is handled in the `call.answered` event handler
+   */
+  if (state === 'parked') {
+    let call = new Call();
+    call.callSessionId = call_session_id;
+    call.callControlId = call_control_id;
+    call.callLegId = call_leg_id;
+    call.to = to;
+    call.from = from;
 
-  await callRepository.save(call);
+    await callRepository.save(call);
 
-  let telnyxCall = new telnyx.Call({
-    connection_id: process.env.TELNYX_CC_APP_ID,
-    call_control_id: event.data.payload.call_control_id,
-  });
-
-  telnyxCall.answer();
-}
-
-async function handleCallInitiated(event: any) {
-  let telnyxCall = new telnyx.Call({
-    connection_id: process.env.TELNYX_CC_APP_ID,
-    call_control_id: event.data.payload.call_control_id,
-  });
-
-  switch (event.data.payload.state) {
-    /*
-     * Only answering parked calls because we also get the call.initiated event for the second leg of the call
-     */
-    case 'parked': {
-      answerParkedCall(event);
-      break;
-    }
-
-    /*
-     * Fired on transfer initiation
-     */
-    case 'bridging': {
-      console.log('bridging call');
-
-      // TODO Save agent who answers
-      break;
-    }
-
-    default:
-      break;
+    telnyxCall.answer();
   }
 }
 
