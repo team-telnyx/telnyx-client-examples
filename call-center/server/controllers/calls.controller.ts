@@ -125,6 +125,9 @@ async function handleCallAnswered(event: any) {
   }
 }
 
+/*
+ * Cleanup agents and call relation on hangup
+ */
 async function handleCallHangup(event: any) {
   let telnyxCall = new telnyx.Call({
     connection_id: process.env.TELNYX_CC_APP_ID,
@@ -142,8 +145,7 @@ async function handleCallHangup(event: any) {
   });
 
   if (calls.length > 0) {
-    // FIXME Better way of handling this using query builder?
-    // TODO Remove active call from agents
+    // FIXME Better way of handling saves using query builder?
     await callRepository.save(
       calls.map((call) => {
         call.agents = call.agents.map((agent) => {
@@ -151,6 +153,16 @@ async function handleCallHangup(event: any) {
 
           return agent;
         });
+
+        return call;
+      })
+    );
+
+    // Remove active calls from agents
+    // Saves both ways because of cascade rules
+    await callRepository.save(
+      calls.map((call) => {
+        call.agents = [];
 
         return call;
       })
