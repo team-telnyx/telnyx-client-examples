@@ -3,7 +3,10 @@ import {
   Column,
   CreateDateColumn,
   PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Call } from './call.entity';
 
 @Entity()
 export class Agent {
@@ -19,6 +22,15 @@ export class Agent {
   @Column()
   loggedIn!: boolean;
 
+  @Column()
+  available!: boolean;
+
   @CreateDateColumn()
   createdAt!: Date;
+
+  @ManyToOne((type) => Call, (call) => call.agents, {
+    cascade: ['update'],
+  })
+  @JoinColumn()
+  activeCall!: Call;
 }

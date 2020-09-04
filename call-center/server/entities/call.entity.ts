@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Agent } from './agent.entity';
 
 @Entity()
 export class Call {
@@ -19,4 +20,9 @@ export class Call {
 
   @Column()
   to!: string;
+
+  @OneToMany((type) => Agent, (agent) => agent.activeCall, {
+    cascade: ['update'],
+  })
+  agents!: Agent[];
 }

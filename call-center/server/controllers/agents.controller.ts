@@ -12,7 +12,12 @@ router.get('/', async function (req, res) {
   try {
     let agentRepository = getManager().getRepository(Agent);
     res.json({
-      agents: await agentRepository.find({ loggedIn: true }),
+      agents: await agentRepository.find({
+        where: { loggedIn: true },
+        // IDEA This could be a separate route,
+        // as to not query relations on GET
+        relations: ['activeCall'],
+      }),
     });
   } catch (e) {
     res.status(500).send({ error: e });
@@ -32,11 +37,16 @@ router.post('/login', async function (req, res) {
     let agentRepository = getManager().getRepository(Agent);
 
     console.log(req.body);
+
     let name = req.body.name || 'Unknown';
     let agent = new Agent();
     agent.name = name;
     agent.sipUsername = credential.data.data.sip_username;
     agent.loggedIn = true;
+    // TODO We may want some sort of user interaction
+    // to happen before marking an agent as "available"
+    // to take calls
+    agent.available = true;
     let savedAgent = await agentRepository.save(agent);
 
     res.json({
