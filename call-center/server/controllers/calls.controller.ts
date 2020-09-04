@@ -2,6 +2,7 @@ import express from 'express';
 import { getManager, In } from 'typeorm';
 import { Call } from '../entities/call.entity';
 import { Agent } from '../entities/agent.entity';
+import { toNamespacedPath } from 'path';
 
 let telnyxPackage: any = require('telnyx');
 
@@ -89,32 +90,38 @@ async function handleCallAnswered(event: any) {
 
   let callRepository = getManager().getRepository(Call);
 
-  try {
-    const availableAgent = await getAvailableAgent();
+  // FIXME More robust way to handle whether call is being answered by
+  // this app (immediately after "parked" state) or by agent's SIP client?
+  if (to.startsWith('sip:')) {
+    console.log('call answered by agent');
+  } else {
+    try {
+      const availableAgent = await getAvailableAgent();
 
-    await telnyxCall.transfer({
-      to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
-    });
+      await telnyxCall.transfer({
+        to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+      });
 
-    console.log('transfer success:', availableAgent);
+      console.log('transfer success:', availableAgent);
 
-    availableAgent.available = false;
+      availableAgent.available = false;
 
-    // FIXME Does this need to be a new call?
-    let call = new Call();
-    call.callSessionId = call_session_id;
-    call.callControlId = call_control_id;
-    call.callLegId = call_leg_id;
-    call.to = to;
-    call.from = from;
-    call.agents = [availableAgent];
+      // FIXME Does this need to be a new call?
+      let call = new Call();
+      call.callSessionId = call_session_id;
+      call.callControlId = call_control_id;
+      call.callLegId = call_leg_id;
+      call.to = to;
+      call.from = from;
+      call.agents = [availableAgent];
 
-    callRepository.save(call);
-  } catch (e) {
-    // TODO Catch no available agent error and pass as hangup reason
-    console.log('got error transferring call to available agent: ', e);
+      callRepository.save(call);
+    } catch (e) {
+      // TODO Catch no available agent error and pass as hangup reason
+      console.log('got error transferring call to available agent: ', e);
 
-    telnyxCall.hangup();
+      telnyxCall.hangup();
+    }
   }
 }
 
