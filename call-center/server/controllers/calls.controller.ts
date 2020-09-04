@@ -48,7 +48,7 @@ class CallsController {
     let agentRepository = getManager().getRepository(Agent);
 
     async function findFirst() {
-      let firstAvailableAgent = await agentRepository.findOneOrFail({
+      let firstAvailableAgent = await agentRepository.findOne({
         available: true,
       });
 
@@ -91,16 +91,7 @@ class CallsController {
 
       await callRepository.save(call);
 
-      try {
-        // Make sure there are available agents before answering
-        await CallsController.getAvailableAgent();
-
-        telnyxCall.answer();
-      } catch (e) {
-        await CallsController.speakNoAvailableAgents(event);
-
-        telnyxCall.reject();
-      }
+      telnyxCall.answer();
     }
   };
 
@@ -111,7 +102,10 @@ class CallsController {
     });
 
     return telnyxCall.speak({
+      // All fields are required:
+      language: 'en-US',
       payload: 'Sorry, there are no agents available to take your call.',
+      voice: 'female',
     });
   };
 
@@ -136,16 +130,9 @@ class CallsController {
     if (to.startsWith('sip:')) {
       console.log('call answered by agent');
     } else {
-      try {
-        const availableAgent = await CallsController.getAvailableAgent().catch(
-          async (err) => {
-            await CallsController.speakNoAvailableAgents(event);
+      let availableAgent = await CallsController.getAvailableAgent();
 
-            // Rethrow for outer catch block
-            throw err;
-          }
-        );
-
+      if (availableAgent) {
         await telnyxCall.transfer({
           to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
         });
@@ -164,9 +151,8 @@ class CallsController {
         call.agents = [availableAgent];
 
         callRepository.save(call);
-      } catch (e) {
-        // TODO Catch no available agent error and pass as hangup reason
-        console.log('got error transferring call to available agent: ', e);
+      } else {
+        await CallsController.speakNoAvailableAgents(event);
 
         telnyxCall.hangup();
       }
