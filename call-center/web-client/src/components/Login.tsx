@@ -38,7 +38,8 @@ function Login({ user, onLogin }: ILogin) {
     }
     return onLogin({
       ...user,
-      error: 'Please, provide a username.',
+      error:
+        'Please provide your name. This will be visible to callers and other agents.',
     });
   };
 

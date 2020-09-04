@@ -1,7 +1,6 @@
 import React, { useState, Fragment } from 'react';
-import Login from './components/Login';
-import 'normalize.css';
 import './App.css';
+import Login from './components/Login';
 import Common from './components/Common';
 import { logout } from './services/loginService';
 
