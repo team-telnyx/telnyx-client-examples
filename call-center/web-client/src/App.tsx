@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import Login from './components/Login';
 import 'normalize.css';
 import './App.css';
@@ -9,14 +9,17 @@ function App() {
 
   return (
     <main className="App">
-      <Login user={user} onLogin={setUser}></Login>
-      <Common></Common>
-      {user.isLoggedin && (
-        <footer>
-          <button type="button" className="App-button App-button--link">
-            Logout
-          </button>
-        </footer>
+      {!user.isLoggedin ? (
+        <Login user={user} onLogin={setUser}></Login>
+      ) : (
+        <Fragment>
+          <Common></Common>
+          <footer>
+            <button type="button" className="App-button App-button--link">
+              Logout
+            </button>
+          </footer>
+        </Fragment>
       )}
     </main>
   );

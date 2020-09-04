@@ -1,24 +1,45 @@
-import React, { FormEvent } from 'react';
+import React, { FormEvent, useState } from 'react';
 import './Login.css';
 import { AxiosError } from 'axios';
 import { login } from '../services/loginService';
 import { User } from '../interfaces/User';
 
+interface ILogin {
+  user: User;
+  onLogin: Function;
+}
+
 function Login({ user, onLogin }: ILogin) {
+  const [userName, setUserName] = useState('');
+
+  const handleUserName = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUserName(event.target.value);
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    const result = await login('Hugo Oliveira');
+    if (userName) {
+      const result = await login(userName);
 
-    if ('data' in result) {
-      console.log('Success');
-      onLogin({ ...user, isLoggedin: true });
+      if ('data' in result) {
+        console.log('Success', result.data);
+        onLogin({ ...user, isLoggedin: true, auth: result.data, error: '' });
+        return;
+      }
+      onLogin({
+        ...user,
+        isLoggedin: false,
+        error: `Failed ${
+          (result as AxiosError).response?.data?.error?.message
+        }`,
+      });
+      return;
     }
-
     onLogin({
       ...user,
-      isLoggedin: true,
-      error: `Failed ${(result as AxiosError).response?.data?.error?.message}`,
+      isLoggedin: false,
+      error: 'Please, provide a username.',
     });
   };
 
@@ -38,7 +59,8 @@ function Login({ user, onLogin }: ILogin) {
             className="App-input"
             name="display_name"
             type="text"
-            value="Hugo Oliveira"
+            value={userName}
+            onChange={handleUserName}
           />
           <button type="submit" className="App-button App-button--primary">
             Login
@@ -50,11 +72,6 @@ function Login({ user, onLogin }: ILogin) {
       )}
     </section>
   );
-}
-
-interface ILogin {
-  user: User;
-  onLogin: Function;
 }
 
 export default Login;
