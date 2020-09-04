@@ -37,7 +37,11 @@ async function getAvailableAgent() {
   return findFirst();
 }
 
-async function transferParkedCall(event: any) {
+/*
+ * Answer parked calls, i.e. the first event of an incoming call.
+ * Transfer to agent is handled in the `call.answered` event handler.
+ */
+async function answerParkedCall(event: any) {
   let callRepository = getManager().getRepository(Call);
 
   let {
@@ -62,18 +66,7 @@ async function transferParkedCall(event: any) {
     call_control_id: event.data.payload.call_control_id,
   });
 
-  try {
-    const availableAgent = await getAvailableAgent();
-
-    telnyxCall.transfer({
-      to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
-    });
-  } catch (e) {
-    // TODO Catch no available agent error and pass as hangup reason
-    console.log('got error transferring call to available agent: ', e);
-
-    telnyxCall.hangup();
-  }
+  telnyxCall.answer();
 }
 
 async function handleCallInitiated(event: any) {
@@ -87,7 +80,7 @@ async function handleCallInitiated(event: any) {
      * Only answering parked calls because we also get the call.initiated event for the second leg of the call
      */
     case 'parked': {
-      transferParkedCall(event);
+      answerParkedCall(event);
       break;
     }
 
@@ -107,7 +100,48 @@ async function handleCallInitiated(event: any) {
 }
 
 async function handleCallAnswered(event: any) {
-  console.log('answered call: ', event);
+  let {
+    call_control_id,
+    call_session_id,
+    call_leg_id,
+    to,
+    from,
+  } = event.data.payload;
+
+  let telnyxCall = new telnyx.Call({
+    connection_id: process.env.TELNYX_CC_APP_ID,
+    call_control_id: event.data.payload.call_control_id,
+  });
+
+  let callRepository = getManager().getRepository(Call);
+
+  try {
+    const availableAgent = await getAvailableAgent();
+
+    await telnyxCall.transfer({
+      to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+    });
+
+    console.log('transfer success:', availableAgent);
+
+    availableAgent.available = false;
+
+    // FIXME Does this need to be a new call?
+    let call = new Call();
+    call.callSessionId = call_session_id;
+    call.callControlId = call_control_id;
+    call.callLegId = call_leg_id;
+    call.to = to;
+    call.from = from;
+    call.agents = [availableAgent];
+
+    callRepository.save(call);
+  } catch (e) {
+    // TODO Catch no available agent error and pass as hangup reason
+    console.log('got error transferring call to available agent: ', e);
+
+    telnyxCall.hangup();
+  }
 }
 
 async function handleCallHangup(event: any) {
@@ -127,11 +161,8 @@ async function handleCallHangup(event: any) {
   });
 
   if (calls.length > 0) {
-    // TODO Mark agents as available again
-
-    let agentRepository = getManager().getRepository(Agent);
-
     // FIXME Better way of handling this using query builder?
+    // TODO Remove active call from agents
     await callRepository.save(
       calls.map((call) => {
         call.agents = call.agents.map((agent) => {
