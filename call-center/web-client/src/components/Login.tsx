@@ -24,12 +24,15 @@ function Login({ user, onLogin }: ILogin) {
 
       if ('data' in result) {
         console.log('Success', result.data);
-        onLogin({ ...user, isLoggedin: true, auth: result.data, error: '' });
+        onLogin({
+          ...user,
+          agent: result.data.agent,
+          error: '',
+        });
         return;
       }
       onLogin({
         ...user,
-        isLoggedin: false,
         error: `Failed ${
           (result as AxiosError).response?.data?.error?.message
         }`,
@@ -38,7 +41,6 @@ function Login({ user, onLogin }: ILogin) {
     }
     onLogin({
       ...user,
-      isLoggedin: false,
       error: 'Please, provide a username.',
     });
   };

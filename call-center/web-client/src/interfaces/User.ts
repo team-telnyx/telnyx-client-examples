@@ -1,4 +1,10 @@
 export interface User {
-    isLoggedin: boolean;
+    agent: {
+        id: number,
+        createdAt: string,
+        loggedIn: boolean,
+        name: string,
+        sipUsername: string,
+    },
     error: string;
 }
