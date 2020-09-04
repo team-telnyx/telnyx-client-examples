@@ -23,23 +23,20 @@ function Login({ user, onLogin }: ILogin) {
       const result = await login(userName);
 
       if ('data' in result) {
-        console.log('Success', result.data);
-        onLogin({
+        return onLogin({
           ...user,
           agent: result.data.agent,
           error: '',
         });
-        return;
       }
-      onLogin({
+      return onLogin({
         ...user,
         error: `Failed ${
           (result as AxiosError).response?.data?.error?.message
         }`,
       });
-      return;
     }
-    onLogin({
+    return onLogin({
       ...user,
       error: 'Please, provide a username.',
     });
