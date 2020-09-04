@@ -2,10 +2,10 @@ import React, { FormEvent, useState } from 'react';
 import './Login.css';
 import { AxiosError } from 'axios';
 import { login } from '../services/loginService';
-import { User } from '../interfaces/User';
+import IUser from '../interfaces/IUser';
 
 interface ILogin {
-  user: User;
+  user: IUser;
   onLogin: Function;
 }
 

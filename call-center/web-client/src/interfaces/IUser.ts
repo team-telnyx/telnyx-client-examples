@@ -1,4 +1,4 @@
-export interface User {
+export default interface IUser {
     agent: {
         id: number,
         createdAt: string,
