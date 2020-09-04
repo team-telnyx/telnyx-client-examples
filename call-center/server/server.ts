@@ -8,7 +8,7 @@ import bodyParser from 'body-parser';
 import { createConnection } from 'typeorm';
 
 import calls from './routes/calls';
-import agentsController from './controllers/agents.controller';
+import agents from './routes/agents';
 
 createConnection().then(function () {
   let app = express();
@@ -18,7 +18,7 @@ createConnection().then(function () {
   app.use(bodyParser.urlencoded({ extended: true }));
 
   app.use('/calls', calls);
-  app.use('/agents', agentsController);
+  app.use('/agents', agents);
 
   app.listen(process.env.TELNYX_SERVER_APP_PORT, function () {
     console.log(

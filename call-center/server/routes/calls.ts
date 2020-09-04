@@ -1,13 +1,5 @@
-import express, { Request, Response } from 'express';
-import { getManager, In } from 'typeorm';
-import { Call } from '../entities/call.entity';
-import { Agent } from '../entities/agent.entity';
-import { toNamespacedPath } from 'path';
+import express from 'express';
 import CallsController from '../controllers/calls.controller';
-
-let telnyxPackage: any = require('telnyx');
-
-let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
 let router = express.Router();
 
