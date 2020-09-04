@@ -1,6 +1,7 @@
 import express from 'express';
-import { getManager } from 'typeorm';
+import { getManager, In } from 'typeorm';
 import { Call } from '../entities/call.entity';
+import { Agent } from '../entities/agent.entity';
 
 let telnyxPackage: any = require('telnyx');
 
@@ -21,15 +22,25 @@ router.post('/actions/bridge', async function (req, res) {
   res.json({});
 });
 
-async function handleCallInitiated(event: any) {
-  let telnyxCall = new telnyx.Call({
-    connection_id: process.env.TELNYX_CC_APP_ID,
-    call_control_id: event.data.payload.call_control_id,
-  });
+async function getAvailableAgent() {
+  let agentRepository = getManager().getRepository(Agent);
+
+  async function findFirst() {
+    let firstAvailableAgent = await agentRepository.findOneOrFail({
+      available: true,
+    });
+
+    return firstAvailableAgent;
+  }
+
+  // TODO Recursive retry
+  return findFirst();
+}
+
+async function transferParkedCall(event: any) {
   let callRepository = getManager().getRepository(Call);
 
   let {
-    state,
     call_control_id,
     call_session_id,
     call_leg_id,
@@ -37,23 +48,69 @@ async function handleCallInitiated(event: any) {
     from,
   } = event.data.payload;
 
-  /*
-   * Only answering parked calls because we also get the call.initiated event for the second leg of the call
-   */
-  if (state === 'parked') {
-    let call = new Call();
-    call.callSessionId = call_session_id;
-    call.callControlId = call_control_id;
-    call.callLegId = call_leg_id;
-    call.to = to;
-    call.from = from;
-    await callRepository.save(call);
+  let call = new Call();
+  call.callSessionId = call_session_id;
+  call.callControlId = call_control_id;
+  call.callLegId = call_leg_id;
+  call.to = to;
+  call.from = from;
 
-    telnyxCall.answer();
+  await callRepository.save(call);
+
+  let telnyxCall = new telnyx.Call({
+    connection_id: process.env.TELNYX_CC_APP_ID,
+    call_control_id: event.data.payload.call_control_id,
+  });
+
+  try {
+    const availableAgent = await getAvailableAgent();
+
+    telnyxCall.transfer({
+      to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+    });
+  } catch (e) {
+    // TODO Catch no available agent error and pass as hangup reason
+    console.log('got error transferring call to available agent: ', e);
+
+    telnyxCall.hangup();
+  }
+}
+
+async function handleCallInitiated(event: any) {
+  let telnyxCall = new telnyx.Call({
+    connection_id: process.env.TELNYX_CC_APP_ID,
+    call_control_id: event.data.payload.call_control_id,
+  });
+
+  switch (event.data.payload.state) {
+    /*
+     * Only answering parked calls because we also get the call.initiated event for the second leg of the call
+     */
+    case 'parked': {
+      transferParkedCall(event);
+      break;
+    }
+
+    /*
+     * Fired on transfer initiation
+     */
+    case 'bridging': {
+      console.log('bridging call');
+
+      // TODO Save agent who answers
+      break;
+    }
+
+    default:
+      break;
   }
 }
 
 async function handleCallAnswered(event: any) {
+  console.log('answered call: ', event);
+}
+
+async function handleCallHangup(event: any) {
   let telnyxCall = new telnyx.Call({
     connection_id: process.env.TELNYX_CC_APP_ID,
     call_control_id: event.data.payload.call_control_id,
@@ -61,15 +118,31 @@ async function handleCallAnswered(event: any) {
   let callRepository = getManager().getRepository(Call);
   let { call_session_id, call_leg_id } = event.data.payload;
 
-  let call = await callRepository.find({
-    callSessionId: call_session_id,
-    callLegId: call_leg_id,
+  let calls = await callRepository.find({
+    where: {
+      callSessionId: call_session_id,
+      callLegId: call_leg_id,
+    },
+    relations: ['agents'],
   });
 
-  if (call.length > 0) {
-    telnyxCall.transfer({
-      to: `sip:${process.env.TELNYX_SIP_USERNAME}@sip.telnyx.com`,
-    });
+  if (calls.length > 0) {
+    // TODO Mark agents as available again
+
+    let agentRepository = getManager().getRepository(Agent);
+
+    // FIXME Better way of handling this using query builder?
+    await callRepository.save(
+      calls.map((call) => {
+        call.agents = call.agents.map((agent) => {
+          agent.available = true;
+
+          return agent;
+        });
+
+        return call;
+      })
+    );
   }
 }
 
@@ -86,6 +159,9 @@ router.post('/callbacks/call-control-app', async function (req, res) {
         break;
       case 'call.answered':
         await handleCallAnswered(event);
+        break;
+      case 'call.hangup':
+        await handleCallHangup(event);
         break;
     }
   } catch (e) {

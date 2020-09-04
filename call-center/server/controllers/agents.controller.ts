@@ -45,7 +45,7 @@ router.post('/login', async function (req, res) {
     agent.loggedIn = true;
     // TODO We may want some sort of user interaction
     // to happen before marking an agent as "available"
-    // to take calls
+    // to take calls, and/or wait until WebRTC connection
     agent.available = true;
     let savedAgent = await agentRepository.save(agent);
 
