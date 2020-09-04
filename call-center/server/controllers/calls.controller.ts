@@ -20,7 +20,7 @@ class CallsController {
     res.json({});
   };
 
-  public static onCallback = async function (req: Request, res: Response) {
+  public static callControl = async function (req: Request, res: Response) {
     console.log('/callbacks/call-control-app | req body', req.body);
 
     let event = req.body;

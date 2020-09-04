@@ -7,6 +7,6 @@ let router = express.Router();
 router.post('/actions/bridge', CallsController.bridge);
 
 // Callbacks
-router.post('/callbacks/call-control-app', CallsController.onCallback);
+router.post('/callbacks/call-control-app', CallsController.callControl);
 
 export default router;
