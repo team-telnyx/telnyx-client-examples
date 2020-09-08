@@ -7,8 +7,8 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { createConnection } from 'typeorm';
 
-import callsController from './controllers/calls.controller';
-import agentsController from './controllers/agents.controller';
+import calls from './routes/calls';
+import agents from './routes/agents';
 
 createConnection().then(function () {
   let app = express();
@@ -17,10 +17,12 @@ createConnection().then(function () {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
-  app.use('/calls', callsController);
-  app.use('/agents', agentsController);
+  app.use('/calls', calls);
+  app.use('/agents', agents);
 
   app.listen(process.env.TELNYX_SERVER_APP_PORT, function () {
-    console.log(`App is listening on port ${process.env.TELNYX_SERVER_APP_PORT}`);
+    console.log(
+      `App is listening on port ${process.env.TELNYX_SERVER_APP_PORT}`
+    );
   });
 });
