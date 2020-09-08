@@ -3,42 +3,25 @@ import './App.css';
 import Login from './components/Login';
 import Common from './components/Common';
 import { logout } from './services/loginService';
+import IUser from './interfaces/IUser';
 
 function App() {
-  const agent = {
-    id: '',
-    createdAt: '',
-    loggedIn: false,
-    name: '',
-    sipUsername: '',
-  };
-
-  const [user, setUser] = useState({
-    error: '',
-    agent: {
-      ...agent,
-    },
-  });
+  const [user, setUser] = useState<IUser | undefined>(undefined);
 
   const handleLogout = async () => {
-    if (user.agent.id) {
+    if (user && user.id) {
       try {
-        await logout(user.agent.id);
-        setUser({
-          ...user,
-          agent: {
-            ...agent,
-          },
-        });
+        await logout(user.id);
+        setUser(undefined);
       } catch (error) {
         setUser({ ...user, error: error });
       }
     }
   };
-
+  console.log('USER', user);
   return (
     <main className="App">
-      {!user.agent.loggedIn ? (
+      {!user || !user.loggedIn ? (
         <Login user={user} onLogin={setUser}></Login>
       ) : (
         <Fragment>

@@ -5,7 +5,7 @@ import { login } from '../services/loginService';
 import IUser from '../interfaces/IUser';
 
 interface ILogin {
-  user: IUser;
+  user: IUser | undefined;
   onLogin: Function;
 }
 
@@ -25,10 +25,11 @@ function Login({ user, onLogin }: ILogin) {
       if ('data' in result && result.data) {
         return onLogin({
           ...user,
-          agent: result.data.agent,
+          ...result.data.agent,
           error: '',
         });
       }
+
       return onLogin({
         ...user,
         error: `Failed ${
@@ -36,6 +37,7 @@ function Login({ user, onLogin }: ILogin) {
         }`,
       });
     }
+
     return onLogin({
       ...user,
       error:
