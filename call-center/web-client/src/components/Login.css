@@ -1,12 +1,12 @@
 .Login {
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .Login-error {
-	color: red;
-	padding: 10px;
+  color: red;
+  padding: 10px;
 }
