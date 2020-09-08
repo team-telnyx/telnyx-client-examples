@@ -18,7 +18,7 @@ function App() {
       }
     }
   };
-  console.log('USER', user);
+
   return (
     <main className="App">
       {!user || !user.loggedIn ? (
