@@ -19,4 +19,4 @@ export const logout = async (id: number | string): Promise<AxiosResponse | Axios
 	})
 		.then((resp: AxiosResponse) => resp)
 		.catch((error: AxiosError) => error);
-};
+}; 
