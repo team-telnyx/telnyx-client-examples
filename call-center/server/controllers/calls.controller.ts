@@ -7,14 +7,17 @@ let telnyxPackage: any = require('telnyx');
 
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
-// NOTE I don't think we need to dynamically
-// encode call client state values so they're
-// hardcoded right now. The CC API expects
-// base64 encdoed values.
+// The CC API expects base64 encdoed values
+const base64Encode = (data: string) => {
+  let buffer = new Buffer(data);
+
+  return buffer.toString('base64');
+};
+
 const ENCODED_CALL_CLIENT_STATE = {
-  HANGUP: 'aGFuZ3Vw', // 'hangup'
-  BRIDGING: 'YnJpZGdpbmc=', // 'bridging'
-  BRIDGED: 'YnJpZGdlZA==', // 'bridged'
+  HANGUP: base64Encode('hangup'),
+  BRIDGING: base64Encode('bridging'),
+  BRIDGED: base64Encode('bridged'),
 };
 
 class CallsController {
