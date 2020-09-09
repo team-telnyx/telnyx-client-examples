@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 
 interface ICommon {
@@ -8,8 +8,20 @@ interface ICommon {
 
 function Common({ token }: ICommon) {
   const telnyxClientRef = useRef<any>();
+  // Check if component is mounted before updating state
+  // in TelnyxRTC callbacks
+  const isMountedRef = useRef<any>(null);
+  let [webRTCState, setWebRTCState] = useState<string>('');
+
+  const updateWebRTCState = (state: string) => {
+    if (isMountedRef.current) {
+      setWebRTCState(state);
+    }
+  };
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     const telnyxClient = new TelnyxRTC({
       // Required credentials
       login_token: token,
@@ -17,16 +29,22 @@ function Common({ token }: ICommon) {
 
     telnyxClient.on('telnyx.ready', () => {
       console.log('ready');
+
+      updateWebRTCState('ready');
     });
 
     telnyxClient.on('telnyx.error', (error: any) => {
       console.error('error:', error);
+
+      updateWebRTCState('error');
     });
 
     telnyxClient.on('telnyx.socket.close', () => {
       console.log('close');
 
       telnyxClient.disconnect();
+
+      updateWebRTCState('disconnected');
     });
 
     telnyxClient.on('telnyx.notification', (notification: any) => {
@@ -35,10 +53,19 @@ function Common({ token }: ICommon) {
 
     telnyxClientRef.current = telnyxClient;
     telnyxClientRef.current.connect();
+
+    return () => {
+      isMountedRef.current = false;
+
+      telnyxClientRef.current.disconnect();
+      telnyxClientRef.current = undefined;
+    };
   }, [token]);
 
   return (
     <div>
+      <section className="App-section">WebRTC status: {webRTCState}</section>
+
       <section className="App-section">
         <h2 className="App-heading App-headline">Other available agents</h2>
 
