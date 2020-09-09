@@ -1,8 +1,7 @@
-export default interface IUser {
-  id: number | string;
-  createdAt: string;
-  loggedIn: boolean;
-  name: string;
-  sipUsername: string;
-  error: string;
+import IAgent from './IAgent';
+
+export interface IUser extends IAgent {
+  token?: string;
 }
+
+export default IUser;

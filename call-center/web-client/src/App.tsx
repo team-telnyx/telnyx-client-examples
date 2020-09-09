@@ -5,24 +5,26 @@ import Common from './components/Common';
 import { logout } from './services/loginService';
 import { getAgent } from './services/agentsService';
 import IUser from './interfaces/IUser';
-import useLocalStorage from './hooks/useLocalStorage';
+import useSessionStorage from './hooks/useSessionStorage';
 
-interface ILocalStorageUser {
+interface ISessionStorageUser {
   id?: number | string;
   name?: string;
+  token?: string;
 }
 
 function App() {
-  const [localStorageUser, setLocalStorageUser] = useLocalStorage<
-    ILocalStorageUser
+  const [sessionStorageUser, setSessionStorageUser] = useSessionStorage<
+    ISessionStorageUser
   >('call_center_user', {});
 
   const [user, setUser] = useState<IUser | undefined>(undefined);
 
   const handleLogin = async (user: IUser) => {
-    setLocalStorageUser({
+    setSessionStorageUser({
       id: user.id,
       name: user.name,
+      token: user.token,
     });
 
     setUser(user);
@@ -33,10 +35,10 @@ function App() {
       try {
         await logout(user.id);
 
-        setLocalStorageUser({});
+        setSessionStorageUser({});
         setUser(undefined);
       } catch (error) {
-        setUser({ ...user, error: error });
+        setUser({ ...user });
       }
     }
   };
@@ -50,7 +52,7 @@ function App() {
   };
 
   useEffect(() => {
-    let { id } = localStorageUser;
+    let { id } = sessionStorageUser;
 
     if (id) {
       resumeSession(id);

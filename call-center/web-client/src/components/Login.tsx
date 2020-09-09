@@ -2,15 +2,16 @@ import React, { FormEvent, useState } from 'react';
 import './Login.css';
 import { AxiosError } from 'axios';
 import { login } from '../services/loginService';
-import IUser from '../interfaces/IUser';
+import IAgent from '../interfaces/IAgent';
 
 interface ILogin {
-  user: IUser | undefined;
+  user: IAgent | undefined;
   onLogin: Function;
 }
 
 function Login({ user, onLogin }: ILogin) {
   const [userName, setUserName] = useState('');
+  const [error, setError] = useState('');
 
   const handleUserName = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUserName(event.target.value);
@@ -23,18 +24,22 @@ function Login({ user, onLogin }: ILogin) {
       const result = await login(userName);
 
       if ('data' in result && result.data) {
+        setError('');
+
         return onLogin({
           ...user,
           ...result.data.agent,
-          error: '',
+          token: result.data.token,
         });
       }
 
+      setError(
+        `Failed ${(result as AxiosError).response?.data?.error?.message}`
+      );
+
       return onLogin({
         ...user,
-        error: `Failed ${
-          (result as AxiosError).response?.data?.error?.message
-        }`,
+        token: null,
       });
     }
 
@@ -69,9 +74,7 @@ function Login({ user, onLogin }: ILogin) {
           </button>
         </div>
       </form>
-      {user && user.error && user.error.length > 0 && (
-        <p className="Login-error">{user.error}</p>
-      )}
+      {error && error.length > 0 && <p className="Login-error">{error}</p>}
     </section>
   );
 }
