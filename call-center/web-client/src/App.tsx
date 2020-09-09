@@ -63,6 +63,7 @@ function App() {
         <Login user={user} onLogin={handleLogin}></Login>
       ) : (
         <Fragment>
+          <header>Logged in as {user.name}</header>
           <Common></Common>
           <footer>
             <button
