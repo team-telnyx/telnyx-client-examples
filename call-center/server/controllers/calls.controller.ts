@@ -7,6 +7,14 @@ let telnyxPackage: any = require('telnyx');
 
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
+// NOTE I don't think we need to dynamically
+// encode call client state values so they're
+// hardcoded right now. The CC API expects
+// base64 encdoed values.
+const ENCODED_CALL_CLIENT_STATE = {
+  HANGUP: 'Y2FsbC5oYW5ndXA=',
+};
+
 class CallsController {
   public static bridge = async function (req: Request, res: Response) {
     let { call_control_id, to } = req.body.data;
@@ -36,6 +44,9 @@ class CallsController {
         case 'call.hangup':
           await CallsController.handleCallHangup(event);
           break;
+        case 'call.speak.ended':
+          await CallsController.handleCallSpeakEnded(event);
+          break;
       }
     } catch (e) {
       res.status(500).json({ error: e });
@@ -48,7 +59,7 @@ class CallsController {
     let agentRepository = getManager().getRepository(Agent);
 
     async function findFirst() {
-      let firstAvailableAgent = await agentRepository.findOneOrFail({
+      let firstAvailableAgent = await agentRepository.findOne({
         available: true,
       });
 
@@ -116,14 +127,12 @@ class CallsController {
     if (to.startsWith('sip:')) {
       console.log('call answered by agent');
     } else {
-      try {
-        const availableAgent = await CallsController.getAvailableAgent();
+      let availableAgent = await CallsController.getAvailableAgent();
 
+      if (availableAgent) {
         await telnyxCall.transfer({
           to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
         });
-
-        console.log('transfer success:', availableAgent);
 
         availableAgent.available = false;
 
@@ -137,12 +146,28 @@ class CallsController {
         call.agents = [availableAgent];
 
         callRepository.save(call);
-      } catch (e) {
-        // TODO Catch no available agent error and pass as hangup reason
-        console.log('got error transferring call to available agent: ', e);
-
-        telnyxCall.hangup();
+      } else {
+        telnyxCall.speak({
+          // Let our app know we should hangup after call ends
+          client_state: ENCODED_CALL_CLIENT_STATE.HANGUP,
+          // All following fields are required:
+          language: 'en-US',
+          payload: 'Sorry, there are no agents available to take your call.',
+          voice: 'female',
+        });
       }
+    }
+  };
+
+  private static handleCallSpeakEnded = async function (event: any) {
+    let { client_state } = event.data.payload;
+
+    if (client_state === ENCODED_CALL_CLIENT_STATE.HANGUP) {
+      let telnyxCall = new telnyx.Call({
+        call_control_id: event.data.payload.call_control_id,
+      });
+
+      telnyxCall.hangup();
     }
   };
 
