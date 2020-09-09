@@ -60,7 +60,7 @@ function App() {
     if (id) {
       resumeSession(id);
     }
-  }, []);
+  }, [sessionStorageUser]);
 
   return (
     <main className="App">
