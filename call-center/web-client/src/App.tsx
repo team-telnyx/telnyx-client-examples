@@ -4,6 +4,7 @@ import Login from './components/Login';
 import Common from './components/Common';
 import { logout } from './services/loginService';
 import { getAgent } from './services/agentsService';
+import IAgent from './interfaces/IAgent';
 import IUser from './interfaces/IUser';
 import useSessionStorage from './hooks/useSessionStorage';
 
@@ -18,16 +19,18 @@ function App() {
     ISessionStorageUser
   >('call_center_user', {});
 
-  const [user, setUser] = useState<IUser | undefined>(undefined);
+  const [user, setUser] = useState<IAgent | undefined>(undefined);
 
   const handleLogin = async (user: IUser) => {
+    const { token, ...agent } = user;
+
     setSessionStorageUser({
       id: user.id,
       name: user.name,
       token: user.token,
     });
 
-    setUser(user);
+    setUser(agent);
   };
 
   const handleLogout = async () => {
