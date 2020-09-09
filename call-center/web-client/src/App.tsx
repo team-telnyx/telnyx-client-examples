@@ -4,8 +4,10 @@ import Login from './components/Login';
 import Common from './components/Common';
 import { logout } from './services/loginService';
 import IUser from './interfaces/IUser';
+import useLocalStorage from './hooks/useLocalStorage';
 
 function App() {
+  const [, setUserName] = useLocalStorage('call_center_user_name', '');
   const [user, setUser] = useState<IUser | undefined>(undefined);
 
   const handleLogout = async () => {
@@ -13,6 +15,7 @@ function App() {
       try {
         await logout(user.id);
         setUser(undefined);
+        setUserName('');
       } catch (error) {
         setUser({ ...user, error: error });
       }
