@@ -13,6 +13,7 @@ let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 // base64 encdoed values.
 const ENCODED_CALL_CLIENT_STATE = {
   HANGUP: 'Y2FsbC5oYW5ndXA=',
+  BRIDGED: 'Y2FsbC5icmlkZ2Vk',
 };
 
 class CallsController {
@@ -71,9 +72,6 @@ class CallsController {
   };
 
   private static handleInitiated = async function (event: any) {
-    let telnyxCall = new telnyx.Call({
-      call_control_id: event.data.payload.call_control_id,
-    });
     let callRepository = getManager().getRepository(Call);
 
     let {
@@ -101,11 +99,12 @@ class CallsController {
 
       await callRepository.save(call);
 
-      telnyxCall.answer();
+      CallsController.transferParkedCall(event);
     }
   };
 
-  private static handleAnswered = async function (event: any) {
+  private static transferParkedCall = async function (event: any) {
+    let callRepository = getManager().getRepository(Call);
     let {
       call_control_id,
       call_session_id,
@@ -114,46 +113,49 @@ class CallsController {
       from,
     } = event.data.payload;
 
+    let call = await callRepository.findOneOrFail({
+      callControlId: call_control_id,
+      callSessionId: call_session_id,
+      callLegId: call_leg_id,
+    });
+
     let telnyxCall = new telnyx.Call({
       call_control_id: event.data.payload.call_control_id,
     });
 
-    let callRepository = getManager().getRepository(Call);
+    await telnyxCall.answer();
 
-    // FIXME More robust way to handle whether call is being answered by
-    // this app (immediately after "parked" state) or by agent's SIP client?
-    if (to.startsWith('sip:')) {
+    let availableAgent = await CallsController.getAvailableAgent();
+
+    if (availableAgent) {
+      await telnyxCall.transfer({
+        to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+        client_state: ENCODED_CALL_CLIENT_STATE.BRIDGED,
+      });
+
+      availableAgent.available = false;
+      call.agents = [availableAgent];
+
+      callRepository.save(call);
+    } else {
+      telnyxCall.speak({
+        // Let our app know we should hangup after call ends
+        client_state: ENCODED_CALL_CLIENT_STATE.HANGUP,
+        // All following fields are required:
+        language: 'en-US',
+        payload: 'Sorry, there are no agents available to take your call.',
+        voice: 'female',
+      });
+    }
+  };
+
+  private static handleAnswered = async function (event: any) {
+    let { client_state } = event.data.payload;
+
+    if (client_state === ENCODED_CALL_CLIENT_STATE.BRIDGED) {
       console.log('call answered by agent');
     } else {
-      let availableAgent = await CallsController.getAvailableAgent();
-
-      if (availableAgent) {
-        await telnyxCall.transfer({
-          to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
-        });
-
-        availableAgent.available = false;
-
-        // FIXME Does this need to be a new call?
-        let call = new Call();
-        call.callSessionId = call_session_id;
-        call.callControlId = call_control_id;
-        call.callLegId = call_leg_id;
-        call.to = to;
-        call.from = from;
-        call.agents = [availableAgent];
-
-        callRepository.save(call);
-      } else {
-        telnyxCall.speak({
-          // Let our app know we should hangup after call ends
-          client_state: ENCODED_CALL_CLIENT_STATE.HANGUP,
-          // All following fields are required:
-          language: 'en-US',
-          payload: 'Sorry, there are no agents available to take your call.',
-          voice: 'female',
-        });
-      }
+      console.log('call answered by app');
     }
   };
 
