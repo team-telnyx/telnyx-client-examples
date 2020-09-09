@@ -23,6 +23,21 @@ class AgentsController {
     }
   };
 
+  public static getAgent = async function (req: Request, res: Response) {
+    let id = req.params.id;
+
+    try {
+      let agentRepository = getManager().getRepository(Agent);
+      res.json({
+        agent: await agentRepository.findOneOrFail(id),
+      });
+    } catch (e) {
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
+
   public static login = async function (req: Request, res: Response) {
     try {
       let credential = await getTelephonyCredentials({
