@@ -1,5 +1,42 @@
-import React from 'react';
-function Common() {
+import React, { useEffect, useRef } from 'react';
+import { TelnyxRTC } from '@telnyx/webrtc';
+
+interface ICommon {
+  // User's WebRTC JWT
+  token: string;
+}
+
+function Common({ token }: ICommon) {
+  const telnyxClientRef = useRef<any>();
+
+  useEffect(() => {
+    const telnyxClient = new TelnyxRTC({
+      // Required credentials
+      login_token: token,
+    });
+
+    telnyxClient.on('telnyx.ready', () => {
+      console.log('ready');
+    });
+
+    telnyxClient.on('telnyx.error', (error: any) => {
+      console.error('error:', error);
+    });
+
+    telnyxClient.on('telnyx.socket.close', () => {
+      console.log('close');
+
+      telnyxClient.disconnect();
+    });
+
+    telnyxClient.on('telnyx.notification', (notification: any) => {
+      console.log('notification:', notification);
+    });
+
+    telnyxClientRef.current = telnyxClient;
+    telnyxClientRef.current.connect();
+  }, [token]);
+
   return (
     <div>
       <section className="App-section">

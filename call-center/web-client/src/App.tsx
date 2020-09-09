@@ -69,12 +69,12 @@ function App() {
 
   return (
     <main className="App">
-      {!agent || !agent.loggedIn ? (
+      {!agent || !sessionStorageUser.token ? (
         <Login agent={agent} onLogin={handleLogin}></Login>
       ) : (
         <Fragment>
           <header>Logged in as {agent.name}</header>
-          <Common></Common>
+          <Common token={sessionStorageUser.token}></Common>
           <footer>
             <button
               type="button"
