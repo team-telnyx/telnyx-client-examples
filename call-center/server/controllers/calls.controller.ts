@@ -12,8 +12,9 @@ let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 // hardcoded right now. The CC API expects
 // base64 encdoed values.
 const ENCODED_CALL_CLIENT_STATE = {
-  HANGUP: 'Y2FsbC5oYW5ndXA=',
-  BRIDGED: 'Y2FsbC5icmlkZ2Vk',
+  HANGUP: 'aGFuZ3Vw', // 'hangup'
+  BRIDGING: 'YnJpZGdpbmc=', // 'bridging'
+  BRIDGED: 'YnJpZGdlZA==', // 'bridged'
 };
 
 class CallsController {
@@ -86,8 +87,6 @@ class CallsController {
     /*
      * Only answering parked calls because we also get the call.initiated
      * event for the second leg of the call
-     *
-     * Transfer to agent is handled in the `call.answered` event handler
      */
     if (state === 'parked') {
       let call = new Call();
@@ -105,16 +104,9 @@ class CallsController {
 
   private static transferParkedCall = async function (event: any) {
     let callRepository = getManager().getRepository(Call);
-    let {
-      call_control_id,
-      call_session_id,
-      call_leg_id,
-      to,
-      from,
-    } = event.data.payload;
+    let { call_session_id, call_leg_id } = event.data.payload;
 
     let call = await callRepository.findOneOrFail({
-      callControlId: call_control_id,
       callSessionId: call_session_id,
       callLegId: call_leg_id,
     });
@@ -123,13 +115,17 @@ class CallsController {
       call_control_id: event.data.payload.call_control_id,
     });
 
-    await telnyxCall.answer();
+    await telnyxCall.answer({
+      client_state: ENCODED_CALL_CLIENT_STATE.BRIDGING,
+    });
 
     let availableAgent = await CallsController.getAvailableAgent();
 
     if (availableAgent) {
       await telnyxCall.transfer({
         to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+        // NOTE Client state only persists on original leg of
+        // the call (not the one we're transferring to)
         client_state: ENCODED_CALL_CLIENT_STATE.BRIDGED,
       });
 
@@ -152,10 +148,10 @@ class CallsController {
   private static handleAnswered = async function (event: any) {
     let { client_state } = event.data.payload;
 
-    if (client_state === ENCODED_CALL_CLIENT_STATE.BRIDGED) {
-      console.log('call answered by agent');
+    if (client_state === ENCODED_CALL_CLIENT_STATE.BRIDGING) {
+      console.log('call answered by app\n');
     } else {
-      console.log('call answered by app');
+      console.log('call answered by agent\n');
     }
   };
 
