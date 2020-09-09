@@ -2,7 +2,6 @@ import React, { FormEvent, useState } from 'react';
 import './Login.css';
 import { AxiosError } from 'axios';
 import { login } from '../services/loginService';
-import useLocalStorage from '../hooks/useLocalStorage';
 import IUser from '../interfaces/IUser';
 
 interface ILogin {
@@ -11,7 +10,7 @@ interface ILogin {
 }
 
 function Login({ user, onLogin }: ILogin) {
-  const [userName, setUserName] = useLocalStorage('call_center_user_name', '');
+  const [userName, setUserName] = useState('');
 
   const handleUserName = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUserName(event.target.value);
