@@ -36,16 +36,16 @@ class CallsController {
     try {
       switch (event.data.event_type) {
         case 'call.initiated':
-          await CallsController.handleCallInitiated(event);
+          await CallsController.handleInitiated(event);
           break;
         case 'call.answered':
-          await CallsController.handleCallAnswered(event);
+          await CallsController.handleAnswered(event);
           break;
         case 'call.hangup':
-          await CallsController.handleCallHangup(event);
+          await CallsController.handleHangup(event);
           break;
         case 'call.speak.ended':
-          await CallsController.handleCallSpeakEnded(event);
+          await CallsController.handleSpeakEnded(event);
           break;
       }
     } catch (e) {
@@ -70,9 +70,8 @@ class CallsController {
     return findFirst();
   };
 
-  private static handleCallInitiated = async function (event: any) {
+  private static handleInitiated = async function (event: any) {
     let telnyxCall = new telnyx.Call({
-      connection_id: process.env.TELNYX_CC_APP_ID,
       call_control_id: event.data.payload.call_control_id,
     });
     let callRepository = getManager().getRepository(Call);
@@ -106,7 +105,7 @@ class CallsController {
     }
   };
 
-  private static handleCallAnswered = async function (event: any) {
+  private static handleAnswered = async function (event: any) {
     let {
       call_control_id,
       call_session_id,
@@ -116,7 +115,6 @@ class CallsController {
     } = event.data.payload;
 
     let telnyxCall = new telnyx.Call({
-      connection_id: process.env.TELNYX_CC_APP_ID,
       call_control_id: event.data.payload.call_control_id,
     });
 
@@ -159,7 +157,7 @@ class CallsController {
     }
   };
 
-  private static handleCallSpeakEnded = async function (event: any) {
+  private static handleSpeakEnded = async function (event: any) {
     let { client_state } = event.data.payload;
 
     if (client_state === ENCODED_CALL_CLIENT_STATE.HANGUP) {
@@ -174,11 +172,7 @@ class CallsController {
   /*
    * Cleanup agents and call relation on hangup
    */
-  private static handleCallHangup = async function (event: any) {
-    let telnyxCall = new telnyx.Call({
-      connection_id: process.env.TELNYX_CC_APP_ID,
-      call_control_id: event.data.payload.call_control_id,
-    });
+  private static handleHangup = async function (event: any) {
     let callRepository = getManager().getRepository(Call);
     let { call_session_id, call_leg_id } = event.data.payload;
 
