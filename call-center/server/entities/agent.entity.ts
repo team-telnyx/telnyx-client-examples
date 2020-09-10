@@ -10,7 +10,7 @@ import { Call } from './call.entity';
 
 @Entity()
 export class Agent {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column()
