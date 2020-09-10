@@ -81,10 +81,9 @@ class AgentsController {
       agent.name = name;
       agent.sipUsername = credential.data.data.sip_username;
       agent.loggedIn = true;
-      // TODO We may want some sort of user interaction
-      // to happen before marking an agent as "available"
-      // to take calls, and/or wait until WebRTC connection
-      agent.available = true;
+      // Client app will have to update agent availability
+      // after the agent completes WebRTC registration
+      agent.available = false;
       let savedAgent = await agentRepository.save(agent);
 
       res.json({
