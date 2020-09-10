@@ -74,7 +74,7 @@ function Login({ user, onLogin }: ILogin) {
           </button>
         </div>
       </form>
-      {error && error.length > 0 && <p className="Login-error">{error}</p>}
+      {error && error.length > 0 && <p className="App-error">{error}</p>}
     </section>
   );
 }

@@ -6,7 +6,7 @@
   align-items: center;
 }
 
-.Login-error {
+.App-error {
   color: red;
   padding: 10px;
 }

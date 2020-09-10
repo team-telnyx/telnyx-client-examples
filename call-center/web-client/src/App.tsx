@@ -20,6 +20,7 @@ function App() {
   >('call_center_user', {});
 
   const [user, setUser] = useState<IAgent | undefined>(undefined);
+  const [error, setError] = useState<string>('');
 
   const handleLogin = async (user: IUser) => {
     const { token, ...agent } = user;
@@ -34,6 +35,8 @@ function App() {
   };
 
   const handleLogout = async () => {
+    setError('');
+
     if (user && user.id) {
       try {
         await logout(user.id);
@@ -41,7 +44,10 @@ function App() {
         setSessionStorageUser({});
         setUser(undefined);
       } catch (error) {
+        console.error(error);
+
         setUser({ ...user });
+        setError('Something went wrong, could not log out');
       }
     }
   };
@@ -78,6 +84,8 @@ function App() {
             >
               Logout
             </button>
+
+            {error && error.length > 0 && <p className="App-error">{error}</p>}
           </footer>
         </Fragment>
       )}
