@@ -7,10 +7,15 @@ interface IActiveCall {
   // FIXME `IWebRTCCall.state` needs to be updated to be `State`
   // callState: State;
   callState: string;
+  answer: Function;
+  hangup: Function;
 }
 
-function ActiveCall({ callerID, callState }: IActiveCall) {
+function ActiveCall({ callerID, callState, answer, hangup }: IActiveCall) {
   console.log('callState:', callState);
+
+  const handleAnswerClick = () => answer();
+  const handleRejectClick = () => hangup();
 
   return (
     <section>
@@ -19,11 +24,21 @@ function ActiveCall({ callerID, callState }: IActiveCall) {
           <div>Incoming call</div>
           <div className="ActiveCall-callerId">{callerID}</div>
           <div className="ActiveCall-actions">
-            <button type="button" className="App-button App-button--primary">
+            <button
+              type="button"
+              className="App-button App-button--primary"
+              onClick={handleAnswerClick}
+            >
               Answer
             </button>
-            <button type="button" className="App-button App-button--danger">
-              Hangup
+
+            {/* TODO UX imprv: agents should transfer instead of reject */}
+            <button
+              type="button"
+              className="App-button App-button--danger"
+              onClick={handleRejectClick}
+            >
+              Reject
             </button>
           </div>
         </div>

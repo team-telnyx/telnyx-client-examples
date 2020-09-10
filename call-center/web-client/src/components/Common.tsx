@@ -11,6 +11,16 @@ interface ICommon {
   token: string;
 }
 
+interface IPartialWebRTCCall {
+  state: string;
+  options: {
+    remoteCallerName: string;
+    remoteCallerNumber: string;
+  };
+  answer: Function;
+  hangup: Function;
+}
+
 function Common({ agentId, agentName, token }: ICommon) {
   // Save the Telnyx WebRTC client as a ref as to persist
   // the client object through component updates
@@ -18,12 +28,12 @@ function Common({ agentId, agentName, token }: ICommon) {
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
-  let [webRTCState, setWebRTCState] = useState<string>('');
-  let [webRTCall, setWebRTCCall] = useState<IWebRTCCall | null>(null);
+  let [webRTCClientState, setWebRTCClientState] = useState<string>('');
+  let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>(null);
 
   const updateWebRTCState = (state: string) => {
     if (isMountedRef.current) {
-      setWebRTCState(state);
+      setWebRTCClientState(state);
     }
   };
 
@@ -64,15 +74,19 @@ function Common({ agentId, agentName, token }: ICommon) {
       console.log('notification:', notification);
 
       if (notification.call) {
-        setWebRTCCall(notification.call);
+        const { state, options, answer, hangup } = notification.call;
 
-        if (
-          notification.call.state === 'hangup' ||
-          notification.call.state === 'destroy'
-        ) {
+        console.log('state:', state);
+
+        if (state === 'hangup' || state === 'destroy') {
           setWebRTCCall(null);
         } else {
-          setWebRTCCall(notification.call);
+          setWebRTCCall({
+            state,
+            options,
+            answer: answer.bind(notification.call),
+            hangup: hangup.bind(notification.call),
+          });
         }
       }
     });
@@ -90,7 +104,9 @@ function Common({ agentId, agentName, token }: ICommon) {
 
   return (
     <div>
-      <section className="App-section">WebRTC status: {webRTCState}</section>
+      <section className="App-section">
+        WebRTC status: {webRTCClientState}
+      </section>
 
       {webRTCall && (
         <ActiveCall
@@ -99,6 +115,8 @@ function Common({ agentId, agentName, token }: ICommon) {
             webRTCall.options.remoteCallerNumber
           }
           callState={webRTCall.state}
+          answer={webRTCall.answer}
+          hangup={webRTCall.hangup}
         />
       )}
 
