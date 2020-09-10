@@ -38,6 +38,30 @@ class AgentsController {
     }
   };
 
+  public static updateAgent = async function (req: Request, res: Response) {
+    let id = req.params.id;
+
+    try {
+      let agentRepository = getManager().getRepository(Agent);
+      // TODO Better handling of allowed fields
+      let {
+        id: reqBodyId,
+        loggedIn,
+        createdAt,
+        activeCall,
+        ...allowedFields
+      } = req.body;
+
+      res.json({
+        agent: await agentRepository.update(id, allowedFields),
+      });
+    } catch (e) {
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
+
   public static login = async function (req: Request, res: Response) {
     try {
       let credential = await getTelephonyCredentials({
