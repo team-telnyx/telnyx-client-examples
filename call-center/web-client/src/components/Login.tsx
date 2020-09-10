@@ -2,32 +2,34 @@ import React, { FormEvent, useState } from 'react';
 import './Login.css';
 import { AxiosError } from 'axios';
 import { login } from '../services/loginService';
-import IAgent from '../interfaces/IAgent';
+import { IAgent } from '../interfaces/IAgent';
 
 interface ILogin {
-  user: IAgent | undefined;
+  agent: IAgent | undefined;
   onLogin: Function;
 }
 
-function Login({ user, onLogin }: ILogin) {
-  const [userName, setUserName] = useState('');
+function Login({ agent, onLogin }: ILogin) {
+  const [agentName, setAgentName] = useState('');
   const [error, setError] = useState('');
 
-  const handleUserName = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setUserName(event.target.value);
+  const handleChangeAgentName = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setAgentName(event.target.value);
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (userName) {
-      const result = await login(userName);
+    if (agentName) {
+      const result = await login(agentName);
 
       if ('data' in result && result.data) {
         setError('');
 
         return onLogin({
-          ...user,
+          ...agent,
           ...result.data.agent,
           token: result.data.token,
         });
@@ -38,13 +40,13 @@ function Login({ user, onLogin }: ILogin) {
       );
 
       return onLogin({
-        ...user,
+        ...agent,
         token: null,
       });
     }
 
     return onLogin({
-      ...user,
+      ...agent,
       error:
         'Please provide your name. This will be visible to callers and other agents.',
     });
@@ -57,17 +59,17 @@ function Login({ user, onLogin }: ILogin) {
       </header>
 
       <form className="App-form" onSubmit={handleSubmit}>
-        <label className="App-input-label" htmlFor="display_name_input">
+        <label className="App-input-label" htmlFor="name_input">
           Name
         </label>
         <div className="App-form-row">
           <input
-            id="display_name_input"
+            id="name_input"
             className="App-input"
-            name="display_name"
+            name="name"
             type="text"
-            value={userName}
-            onChange={handleUserName}
+            value={agentName}
+            onChange={handleChangeAgentName}
           />
           <button type="submit" className="App-button App-button--primary">
             Login

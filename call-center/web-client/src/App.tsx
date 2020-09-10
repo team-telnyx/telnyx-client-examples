@@ -4,8 +4,7 @@ import Login from './components/Login';
 import Common from './components/Common';
 import { logout } from './services/loginService';
 import { getAgent } from './services/agentsService';
-import IAgent from './interfaces/IAgent';
-import IUser from './interfaces/IUser';
+import { IAgent, ILoggedInAgent } from './interfaces/IAgent';
 import useSessionStorage from './hooks/useSessionStorage';
 
 interface ISessionStorageUser {
@@ -19,34 +18,34 @@ function App() {
     ISessionStorageUser
   >('call_center_user', {});
 
-  const [user, setUser] = useState<IAgent | undefined>(undefined);
+  const [agent, setAgent] = useState<IAgent | undefined>(undefined);
   const [error, setError] = useState<string>('');
 
-  const handleLogin = async (user: IUser) => {
-    const { token, ...agent } = user;
+  const handleLogin = async (loggedInAgent: ILoggedInAgent) => {
+    const { token, ...agentProps } = loggedInAgent;
 
     setSessionStorageUser({
-      id: user.id,
-      name: user.name,
-      token: user.token,
+      id: agentProps.id,
+      name: agentProps.name,
+      token,
     });
 
-    setUser(agent);
+    setAgent(agentProps);
   };
 
   const handleLogout = async () => {
     setError('');
 
-    if (user && user.id) {
+    if (agent && agent.id) {
       try {
-        await logout(user.id);
+        await logout(agent.id);
 
         setSessionStorageUser({});
-        setUser(undefined);
+        setAgent(undefined);
       } catch (error) {
         console.error(error);
 
-        setUser({ ...user });
+        setAgent({ ...agent });
         setError('Something went wrong, could not log out');
       }
     }
@@ -56,7 +55,7 @@ function App() {
     let result = await getAgent(id);
 
     if ('data' in result && result?.data?.agent) {
-      setUser(result.data.agent);
+      setAgent(result.data.agent);
     }
   };
 
@@ -70,11 +69,11 @@ function App() {
 
   return (
     <main className="App">
-      {!user || !user.loggedIn ? (
-        <Login user={user} onLogin={handleLogin}></Login>
+      {!agent || !agent.loggedIn ? (
+        <Login agent={agent} onLogin={handleLogin}></Login>
       ) : (
         <Fragment>
-          <header>Logged in as {user.name}</header>
+          <header>Logged in as {agent.name}</header>
           <Common></Common>
           <footer>
             <button
