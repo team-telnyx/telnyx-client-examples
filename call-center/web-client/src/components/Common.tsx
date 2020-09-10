@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { TelnyxRTC, ICall as ITelnyxCall } from '@telnyx/webrtc';
+import { TelnyxRTC } from '@telnyx/webrtc';
+import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
+import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
 import { updateAgent } from '../services/agentsService';
 import ActiveCall from './ActiveCall';
 
@@ -7,6 +9,11 @@ interface ICommon {
   agentId: string;
   // User's WebRTC JWT
   token: string;
+}
+
+// FIXME `IWebRTCCall.state` needs to be updated to be `State`
+interface IWebRTCCallWithState extends IWebRTCCall {
+  callState: State;
 }
 
 function Common({ agentId, token }: ICommon) {
@@ -17,7 +24,7 @@ function Common({ agentId, token }: ICommon) {
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
   let [webRTCState, setWebRTCState] = useState<string>('');
-  let [telnyxCall, setTelnyxCall] = useState<ITelnyxCall>();
+  let [webRTCall, setWebRTCCall] = useState<IWebRTCCallWithState>();
 
   const updateWebRTCState = (state: string) => {
     if (isMountedRef.current) {
@@ -59,11 +66,7 @@ function Common({ agentId, token }: ICommon) {
       console.log('notification:', notification);
 
       if (notification.call) {
-        // Get a simplified call object by modifying
-        // the call with `.telnyxStateCall`
-        let telnyxCall = TelnyxRTC.telnyxStateCall(notification.call);
-
-        setTelnyxCall(notification.call);
+        setWebRTCCall(notification.call);
       }
     });
 
@@ -159,7 +162,7 @@ function Common({ agentId, token }: ICommon) {
         </form>
       </section>
 
-      {telnyxCall && <ActiveCall callState={telnyxCall.state} />}
+      {webRTCall && <ActiveCall callState={webRTCall.callState} />}
     </div>
   );
 }

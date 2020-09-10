@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
+
 interface IActiveCall {
-  callState: string;
+  callState: State;
 }
 
 function ActiveCall({ callState }: IActiveCall) {
