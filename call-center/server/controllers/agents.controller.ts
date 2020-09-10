@@ -38,7 +38,7 @@ class AgentsController {
     }
   };
 
-  public static updateAgent = async function (req: Request, res: Response) {
+  public static patchAgent = async function (req: Request, res: Response) {
     let id = req.params.id;
 
     try {
