@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { TelnyxRTC } from '@telnyx/webrtc';
+import { TelnyxRTC, ICall as ITelnyxCall } from '@telnyx/webrtc';
 import { updateAgent } from '../services/agentsService';
+import ActiveCall from './ActiveCall';
 
 interface ICommon {
   agentId: string;
@@ -9,11 +10,14 @@ interface ICommon {
 }
 
 function Common({ agentId, token }: ICommon) {
-  const telnyxClientRef = useRef<any>();
+  // Save the Telnyx WebRTC client as a ref as to persist
+  // the client object through component updates
+  let telnyxClientRef = useRef<TelnyxRTC>();
   // Check if component is mounted before updating state
-  // in TelnyxRTC callbacks
-  const isMountedRef = useRef<any>(null);
+  // in the Telnyx WebRTC client callbacks
+  let isMountedRef = useRef<boolean>(false);
   let [webRTCState, setWebRTCState] = useState<string>('');
+  let [telnyxCall, setTelnyxCall] = useState<ITelnyxCall>();
 
   const updateWebRTCState = (state: string) => {
     if (isMountedRef.current) {
@@ -25,7 +29,7 @@ function Common({ agentId, token }: ICommon) {
     isMountedRef.current = true;
 
     const telnyxClient = new TelnyxRTC({
-      // Required credentials
+      // Required credentials:
       login_token: token,
     });
 
@@ -53,6 +57,14 @@ function Common({ agentId, token }: ICommon) {
 
     telnyxClient.on('telnyx.notification', (notification: any) => {
       console.log('notification:', notification);
+
+      if (notification.call) {
+        // Get a simplified call object by modifying
+        // the call with `.telnyxStateCall`
+        let telnyxCall = TelnyxRTC.telnyxStateCall(notification.call);
+
+        setTelnyxCall(notification.call);
+      }
     });
 
     telnyxClientRef.current = telnyxClient;
@@ -61,7 +73,7 @@ function Common({ agentId, token }: ICommon) {
     return () => {
       isMountedRef.current = false;
 
-      telnyxClientRef.current.disconnect();
+      telnyxClientRef.current?.disconnect();
       telnyxClientRef.current = undefined;
     };
   }, [token]);
@@ -147,55 +159,7 @@ function Common({ agentId, token }: ICommon) {
         </form>
       </section>
 
-      <section>
-        <div className="App-section">
-          <div>Incoming call</div>
-          <div className="App-callState-phoneNumber">+13125551111</div>
-          <div className="App-callState-actions">
-            <button type="button" className="App-button App-button--primary">
-              Answer
-            </button>
-            <button type="button" className="App-button App-button--danger">
-              Hangup
-            </button>
-          </div>
-        </div>
-
-        <div className="App-section">
-          <div>Call in progress</div>
-          <div className="App-callState-phoneNumber">+13125551111</div>
-          <div className="App-callState-actions">
-            <button type="button" className="App-button App-button--danger">
-              Hangup
-            </button>
-            <button type="button" className="App-button App-button--tertiary">
-              Mute
-            </button>
-          </div>
-        </div>
-
-        <div className="App-section">
-          <div>Conference call in progress</div>
-          <div className="App-callState-phoneNumber">+13125551111</div>
-          <div>
-            <div className="App-heading App-callState-agentsList-heading">
-              Agents on call
-            </div>
-            <ul className="App-callState-agentList">
-              <li className="App-callState-agentList-item">Agent Name</li>
-              <li className="App-callState-agentList-item">Agent Name</li>
-            </ul>
-          </div>
-          <div className="App-callState-actions">
-            <button type="button" className="App-button App-button--danger">
-              Hangup
-            </button>
-            <button type="button" className="App-button App-button--tertiary">
-              Mute
-            </button>
-          </div>
-        </div>
-      </section>
+      {telnyxCall && <ActiveCall callState={telnyxCall.state} />}
     </div>
   );
 }
