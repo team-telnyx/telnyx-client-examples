@@ -38,6 +38,30 @@ class AgentsController {
     }
   };
 
+  public static patchAgent = async function (req: Request, res: Response) {
+    let id = req.params.id;
+
+    try {
+      let agentRepository = getManager().getRepository(Agent);
+      // TODO Better handling of allowed fields
+      let {
+        id: reqBodyId,
+        loggedIn,
+        createdAt,
+        activeCall,
+        ...allowedFields
+      } = req.body;
+
+      res.json({
+        agent: await agentRepository.update(id, allowedFields),
+      });
+    } catch (e) {
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
+
   public static login = async function (req: Request, res: Response) {
     try {
       let credential = await getTelephonyCredentials({
@@ -57,10 +81,9 @@ class AgentsController {
       agent.name = name;
       agent.sipUsername = credential.data.data.sip_username;
       agent.loggedIn = true;
-      // TODO We may want some sort of user interaction
-      // to happen before marking an agent as "available"
-      // to take calls, and/or wait until WebRTC connection
-      agent.available = true;
+      // Client app will have to update agent availability
+      // after the agent completes WebRTC registration
+      agent.available = false;
       let savedAgent = await agentRepository.save(agent);
 
       res.json({
