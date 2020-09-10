@@ -16,6 +16,7 @@ function ActiveCall({ callerID, callState, answer, hangup }: IActiveCall) {
 
   const handleAnswerClick = () => answer();
   const handleRejectClick = () => hangup();
+  const handleHangupClick = () => hangup();
 
   return (
     <section>
@@ -44,19 +45,25 @@ function ActiveCall({ callerID, callState, answer, hangup }: IActiveCall) {
         </div>
       )}
 
-      {/* TODO Call in progress */}
-      {/* <div className="App-section">
-        <div>Call in progress</div>
-        <div className="ActiveCall-callerId">+13125551111</div>
-        <div className="ActiveCall-actions">
-          <button type="button" className="App-button App-button--danger">
-            Hangup
-          </button>
-          <button type="button" className="App-button App-button--tertiary">
-            Mute
-          </button>
+      {callState === 'active' && (
+        <div className="App-section">
+          <div>Call in progress</div>
+          <div className="ActiveCall-callerId">{callerID}</div>
+          <div className="ActiveCall-actions">
+            <button
+              type="button"
+              className="App-button App-button--danger"
+              onClick={handleHangupClick}
+            >
+              Hangup
+            </button>
+            {/* TODO Mute */}
+            {/* <button type="button" className="App-button App-button--tertiary">
+              Mute
+            </button> */}
+          </div>
         </div>
-      </div> */}
+      )}
 
       {/* TODO Conference calls with multiple agents */}
       {/* <div className="App-section">
