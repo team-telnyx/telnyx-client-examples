@@ -1,5 +1,5 @@
 export interface IAgent {
-  id: number | string;
+  id: string;
   createdAt: string;
   loggedIn: boolean;
   name: string;
