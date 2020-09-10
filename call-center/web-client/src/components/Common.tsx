@@ -7,16 +7,12 @@ import ActiveCall from './ActiveCall';
 
 interface ICommon {
   agentId: string;
+  agentName: string;
   // User's WebRTC JWT
   token: string;
 }
 
-// FIXME `IWebRTCCall.state` needs to be updated to be `State`
-interface IWebRTCCallWithState extends IWebRTCCall {
-  callState: State;
-}
-
-function Common({ agentId, token }: ICommon) {
+function Common({ agentId, agentName, token }: ICommon) {
   // Save the Telnyx WebRTC client as a ref as to persist
   // the client object through component updates
   let telnyxClientRef = useRef<TelnyxRTC>();
@@ -24,7 +20,7 @@ function Common({ agentId, token }: ICommon) {
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
   let [webRTCState, setWebRTCState] = useState<string>('');
-  let [webRTCall, setWebRTCCall] = useState<IWebRTCCallWithState | null>(null);
+  let [webRTCall, setWebRTCCall] = useState<IWebRTCCall | null>(null);
 
   const updateWebRTCState = (state: string) => {
     if (isMountedRef.current) {
@@ -36,7 +32,6 @@ function Common({ agentId, token }: ICommon) {
     isMountedRef.current = true;
 
     const telnyxClient = new TelnyxRTC({
-      // Required credentials:
       login_token: token,
     });
 
@@ -52,6 +47,8 @@ function Common({ agentId, token }: ICommon) {
       console.error('error:', error);
 
       updateWebRTCState('error');
+
+      updateAgent(agentId, { available: false });
     });
 
     telnyxClient.on('telnyx.socket.close', () => {
@@ -60,19 +57,24 @@ function Common({ agentId, token }: ICommon) {
       telnyxClient.disconnect();
 
       updateWebRTCState('disconnected');
+
+      updateAgent(agentId, { available: false });
     });
 
     telnyxClient.on('telnyx.notification', (notification: any) => {
       console.log('notification:', notification);
 
-      if (
-        notification.call &&
-        notification.type === 'callUpdate' &&
-        !['hangup', 'destroy'].includes(notification.call.state)
-      ) {
+      if (notification.call) {
         setWebRTCCall(notification.call);
-      } else {
-        setWebRTCCall(null);
+
+        if (
+          notification.call.state === 'hangup' ||
+          notification.call.state === 'destroy'
+        ) {
+          setWebRTCCall(null);
+        } else {
+          setWebRTCCall(notification.call);
+        }
       }
     });
 
@@ -85,7 +87,7 @@ function Common({ agentId, token }: ICommon) {
       telnyxClientRef.current?.disconnect();
       telnyxClientRef.current = undefined;
     };
-  }, [token]);
+  }, [token, agentId]);
 
   return (
     <div>
@@ -168,7 +170,7 @@ function Common({ agentId, token }: ICommon) {
         </form>
       </section>
 
-      {webRTCall && <ActiveCall callState={webRTCall.callState} />}
+      {webRTCall && <ActiveCall callState={webRTCall.state} />}
     </div>
   );
 }

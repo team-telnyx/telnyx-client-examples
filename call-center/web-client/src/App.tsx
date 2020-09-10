@@ -51,21 +51,23 @@ function App() {
     }
   };
 
-  const resumeSession = async (id: any) => {
-    let result = await getAgent(id);
-
-    if ('data' in result && result?.data?.agent) {
-      setAgent(result.data.agent);
-    }
-  };
-
   useEffect(() => {
     let { id } = sessionStorageUser;
+
+    const resumeSession = async (id: any) => {
+      let result = await getAgent(id);
+
+      if ('data' in result && result?.data?.agent) {
+        setAgent(result.data.agent);
+      } else {
+        setSessionStorageUser({});
+      }
+    };
 
     if (id) {
       resumeSession(id);
     }
-  }, [sessionStorageUser]);
+  }, []);
 
   return (
     <main className="App">
@@ -74,7 +76,11 @@ function App() {
       ) : (
         <Fragment>
           <header>Logged in as {agent.name}</header>
-          <Common agentId={agent.id} token={sessionStorageUser.token}></Common>
+          <Common
+            agentId={agent.id}
+            agentName={agent.name}
+            token={sessionStorageUser.token}
+          ></Common>
           <footer>
             <button
               type="button"
