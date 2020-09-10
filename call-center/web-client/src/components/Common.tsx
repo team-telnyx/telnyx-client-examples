@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
-import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
 import { updateAgent } from '../services/agentsService';
 import ActiveCall from './ActiveCall';
 
@@ -93,6 +92,16 @@ function Common({ agentId, agentName, token }: ICommon) {
     <div>
       <section className="App-section">WebRTC status: {webRTCState}</section>
 
+      {webRTCall && (
+        <ActiveCall
+          callerID={
+            webRTCall.options.remoteCallerName ||
+            webRTCall.options.remoteCallerNumber
+          }
+          callState={webRTCall.state}
+        />
+      )}
+
       <section className="App-section">
         <h2 className="App-heading App-headline">Other available agents</h2>
 
@@ -169,8 +178,6 @@ function Common({ agentId, agentName, token }: ICommon) {
           </div>
         </form>
       </section>
-
-      {webRTCall && <ActiveCall callState={webRTCall.state} />}
     </div>
   );
 }

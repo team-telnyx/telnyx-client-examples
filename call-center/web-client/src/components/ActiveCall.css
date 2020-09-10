@@ -1,0 +1,27 @@
+.ActiveCall-callerId {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin: 1rem 0;
+}
+
+.ActiveCall-actions {
+  margin-top: 1rem;
+}
+
+.ActiveCall-agentList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ActiveCall-agentsList-heading {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.ActiveCall-agentList-item {
+  background-color: rgba(255, 255, 255, 0.05);
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+}
