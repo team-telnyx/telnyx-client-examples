@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
+import { updateAgent } from '../services/agentsService';
 
 interface ICommon {
+  agentId: string;
   // User's WebRTC JWT
   token: string;
 }
 
-function Common({ token }: ICommon) {
+function Common({ agentId, token }: ICommon) {
   const telnyxClientRef = useRef<any>();
   // Check if component is mounted before updating state
   // in TelnyxRTC callbacks
@@ -31,6 +33,8 @@ function Common({ token }: ICommon) {
       console.log('ready');
 
       updateWebRTCState('ready');
+
+      updateAgent(agentId, { available: true });
     });
 
     telnyxClient.on('telnyx.error', (error: any) => {

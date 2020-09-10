@@ -4,6 +4,7 @@ export interface IAgent {
   loggedIn: boolean;
   name: string;
   sipUsername: string;
+  available: boolean;
 }
 
 export interface ILoggedInAgent extends IAgent {

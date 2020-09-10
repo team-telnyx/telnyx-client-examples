@@ -74,7 +74,7 @@ function App() {
       ) : (
         <Fragment>
           <header>Logged in as {agent.name}</header>
-          <Common token={sessionStorageUser.token}></Common>
+          <Common agentId={agent.id} token={sessionStorageUser.token}></Common>
           <footer>
             <button
               type="button"
