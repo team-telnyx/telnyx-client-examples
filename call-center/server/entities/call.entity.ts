@@ -3,7 +3,7 @@ import { Agent } from './agent.entity';
 
 @Entity()
 export class Call {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column()

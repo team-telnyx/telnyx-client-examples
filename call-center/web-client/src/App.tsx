@@ -8,7 +8,7 @@ import { IAgent, ILoggedInAgent } from './interfaces/IAgent';
 import useSessionStorage from './hooks/useSessionStorage';
 
 interface ISessionStorageUser {
-  id?: number | string;
+  id?: string;
   name?: string;
   token?: string;
 }
