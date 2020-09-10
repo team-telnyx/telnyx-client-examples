@@ -24,7 +24,7 @@ function Common({ agentId, token }: ICommon) {
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
   let [webRTCState, setWebRTCState] = useState<string>('');
-  let [webRTCall, setWebRTCCall] = useState<IWebRTCCallWithState>();
+  let [webRTCall, setWebRTCCall] = useState<IWebRTCCallWithState | null>(null);
 
   const updateWebRTCState = (state: string) => {
     if (isMountedRef.current) {
@@ -65,8 +65,14 @@ function Common({ agentId, token }: ICommon) {
     telnyxClient.on('telnyx.notification', (notification: any) => {
       console.log('notification:', notification);
 
-      if (notification.call) {
+      if (
+        notification.call &&
+        notification.type === 'callUpdate' &&
+        !['hangup', 'destroy'].includes(notification.call.state)
+      ) {
         setWebRTCCall(notification.call);
+      } else {
+        setWebRTCCall(null);
       }
     });
 
