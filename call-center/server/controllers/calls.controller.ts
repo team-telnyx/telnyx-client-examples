@@ -9,7 +9,7 @@ let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
 // The CC API expects base64 encdoed values
 const base64Encode = (data: string) => {
-  let buffer = new Buffer(data);
+  let buffer = Buffer.from(data);
 
   return buffer.toString('base64');
 };
