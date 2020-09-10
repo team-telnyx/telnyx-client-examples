@@ -99,6 +99,11 @@
   text-decoration: underline;
 }
 
+.App-error {
+  color: red;
+  padding: 10px;
+}
+
 .App-agentList {
   margin: 0;
   padding: 0;

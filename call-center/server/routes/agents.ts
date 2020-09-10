@@ -4,6 +4,7 @@ import AgentsController from '../controllers/agents.controller';
 let router = express.Router();
 
 router.get('/', AgentsController.getLoggedIn);
+router.get('/:id', AgentsController.getAgent);
 router.post('/login', AgentsController.login);
 router.post('/logout', AgentsController.logout);
 

@@ -1,30 +1,79 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import './App.css';
 import Login from './components/Login';
 import Common from './components/Common';
 import { logout } from './services/loginService';
-import IUser from './interfaces/IUser';
+import { getAgent } from './services/agentsService';
+import { IAgent, ILoggedInAgent } from './interfaces/IAgent';
+import useSessionStorage from './hooks/useSessionStorage';
+
+interface ISessionStorageUser {
+  id?: number | string;
+  name?: string;
+  token?: string;
+}
 
 function App() {
-  const [user, setUser] = useState<IUser | undefined>(undefined);
+  const [sessionStorageUser, setSessionStorageUser] = useSessionStorage<
+    ISessionStorageUser
+  >('call_center_user', {});
+
+  const [agent, setAgent] = useState<IAgent | undefined>(undefined);
+  const [error, setError] = useState<string>('');
+
+  const handleLogin = async (loggedInAgent: ILoggedInAgent) => {
+    const { token, ...agentProps } = loggedInAgent;
+
+    setSessionStorageUser({
+      id: agentProps.id,
+      name: agentProps.name,
+      token,
+    });
+
+    setAgent(agentProps);
+  };
 
   const handleLogout = async () => {
-    if (user && user.id) {
+    setError('');
+
+    if (agent && agent.id) {
       try {
-        await logout(user.id);
-        setUser(undefined);
+        await logout(agent.id);
+
+        setSessionStorageUser({});
+        setAgent(undefined);
       } catch (error) {
-        setUser({ ...user, error: error });
+        console.error(error);
+
+        setAgent({ ...agent });
+        setError('Something went wrong, could not log out');
       }
     }
   };
 
+  const resumeSession = async (id: any) => {
+    let result = await getAgent(id);
+
+    if ('data' in result && result?.data?.agent) {
+      setAgent(result.data.agent);
+    }
+  };
+
+  useEffect(() => {
+    let { id } = sessionStorageUser;
+
+    if (id) {
+      resumeSession(id);
+    }
+  }, [sessionStorageUser]);
+
   return (
     <main className="App">
-      {!user || !user.loggedIn ? (
-        <Login user={user} onLogin={setUser}></Login>
+      {!agent || !agent.loggedIn ? (
+        <Login agent={agent} onLogin={handleLogin}></Login>
       ) : (
         <Fragment>
+          <header>Logged in as {agent.name}</header>
           <Common></Common>
           <footer>
             <button
@@ -34,6 +83,8 @@ function App() {
             >
               Logout
             </button>
+
+            {error && error.length > 0 && <p className="App-error">{error}</p>}
           </footer>
         </Fragment>
       )}
