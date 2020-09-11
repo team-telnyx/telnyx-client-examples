@@ -19,17 +19,19 @@ interface IPartialWebRTCCall {
   };
   answer: Function;
   hangup: Function;
+  remoteStream?: MediaStream;
 }
 
 function Common({ agentId, agentName, token }: ICommon) {
   // Save the Telnyx WebRTC client as a ref as to persist
   // the client object through component updates
   let telnyxClientRef = useRef<TelnyxRTC>();
+  let audioRef = useRef<HTMLAudioElement>(null);
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
-  let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>(null);
+  let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
 
   const updateWebRTCState = (state: string) => {
     if (isMountedRef.current) {
@@ -74,7 +76,13 @@ function Common({ agentId, agentName, token }: ICommon) {
       console.log('notification:', notification);
 
       if (notification.call) {
-        const { state, options, answer, hangup } = notification.call;
+        const {
+          state,
+          options,
+          answer,
+          hangup,
+          remoteStream,
+        } = notification.call;
 
         console.log('state:', state);
 
@@ -84,6 +92,7 @@ function Common({ agentId, agentName, token }: ICommon) {
           setWebRTCCall({
             state,
             options,
+            remoteStream,
             answer: answer.bind(notification.call),
             hangup: hangup.bind(notification.call),
           });
@@ -102,11 +111,18 @@ function Common({ agentId, agentName, token }: ICommon) {
     };
   }, [token, agentId]);
 
+  // Set up remote stream to hear audio from incoming calls
+  if (audioRef.current && webRTCall && webRTCall.remoteStream) {
+    audioRef.current.srcObject = webRTCall.remoteStream;
+  }
+
   return (
     <div>
       <section className="App-section">
         WebRTC status: {webRTCClientState}
       </section>
+
+      <audio ref={audioRef} autoPlay controls={false} />
 
       {webRTCall && (
         <ActiveCall
