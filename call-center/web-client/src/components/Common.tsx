@@ -157,7 +157,7 @@ function Common({ agentId, agentName, token }: ICommon) {
       </section>
 
       <section className="App-section">
-        <Agents />
+        <Agents agentId={agentId} />
       </section>
     </div>
   );
