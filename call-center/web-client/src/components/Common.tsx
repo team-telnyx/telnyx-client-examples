@@ -1,23 +1,39 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
+import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
 import { updateAgent } from '../services/agentsService';
+import ActiveCall from './ActiveCall';
 
 interface ICommon {
   agentId: string;
+  agentName: string;
   // User's WebRTC JWT
   token: string;
 }
 
-function Common({ agentId, token }: ICommon) {
-  const telnyxClientRef = useRef<any>();
+interface IPartialWebRTCCall {
+  state: string;
+  options: {
+    remoteCallerName: string;
+    remoteCallerNumber: string;
+  };
+  answer: Function;
+  hangup: Function;
+}
+
+function Common({ agentId, agentName, token }: ICommon) {
+  // Save the Telnyx WebRTC client as a ref as to persist
+  // the client object through component updates
+  let telnyxClientRef = useRef<TelnyxRTC>();
   // Check if component is mounted before updating state
-  // in TelnyxRTC callbacks
-  const isMountedRef = useRef<any>(null);
-  let [webRTCState, setWebRTCState] = useState<string>('');
+  // in the Telnyx WebRTC client callbacks
+  let isMountedRef = useRef<boolean>(false);
+  let [webRTCClientState, setWebRTCClientState] = useState<string>('');
+  let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>(null);
 
   const updateWebRTCState = (state: string) => {
     if (isMountedRef.current) {
-      setWebRTCState(state);
+      setWebRTCClientState(state);
     }
   };
 
@@ -25,7 +41,6 @@ function Common({ agentId, token }: ICommon) {
     isMountedRef.current = true;
 
     const telnyxClient = new TelnyxRTC({
-      // Required credentials
       login_token: token,
     });
 
@@ -41,6 +56,8 @@ function Common({ agentId, token }: ICommon) {
       console.error('error:', error);
 
       updateWebRTCState('error');
+
+      updateAgent(agentId, { available: false });
     });
 
     telnyxClient.on('telnyx.socket.close', () => {
@@ -49,10 +66,29 @@ function Common({ agentId, token }: ICommon) {
       telnyxClient.disconnect();
 
       updateWebRTCState('disconnected');
+
+      updateAgent(agentId, { available: false });
     });
 
     telnyxClient.on('telnyx.notification', (notification: any) => {
       console.log('notification:', notification);
+
+      if (notification.call) {
+        const { state, options, answer, hangup } = notification.call;
+
+        console.log('state:', state);
+
+        if (state === 'hangup' || state === 'destroy') {
+          setWebRTCCall(null);
+        } else {
+          setWebRTCCall({
+            state,
+            options,
+            answer: answer.bind(notification.call),
+            hangup: hangup.bind(notification.call),
+          });
+        }
+      }
     });
 
     telnyxClientRef.current = telnyxClient;
@@ -61,14 +97,28 @@ function Common({ agentId, token }: ICommon) {
     return () => {
       isMountedRef.current = false;
 
-      telnyxClientRef.current.disconnect();
+      telnyxClientRef.current?.disconnect();
       telnyxClientRef.current = undefined;
     };
-  }, [token]);
+  }, [token, agentId]);
 
   return (
     <div>
-      <section className="App-section">WebRTC status: {webRTCState}</section>
+      <section className="App-section">
+        WebRTC status: {webRTCClientState}
+      </section>
+
+      {webRTCall && (
+        <ActiveCall
+          callerID={
+            webRTCall.options.remoteCallerName ||
+            webRTCall.options.remoteCallerNumber
+          }
+          callState={webRTCall.state}
+          answer={webRTCall.answer}
+          hangup={webRTCall.hangup}
+        />
+      )}
 
       <section className="App-section">
         <h2 className="App-heading App-headline">Other available agents</h2>
@@ -145,56 +195,6 @@ function Common({ agentId, token }: ICommon) {
             </button>
           </div>
         </form>
-      </section>
-
-      <section>
-        <div className="App-section">
-          <div>Incoming call</div>
-          <div className="App-callState-phoneNumber">+13125551111</div>
-          <div className="App-callState-actions">
-            <button type="button" className="App-button App-button--primary">
-              Answer
-            </button>
-            <button type="button" className="App-button App-button--danger">
-              Hangup
-            </button>
-          </div>
-        </div>
-
-        <div className="App-section">
-          <div>Call in progress</div>
-          <div className="App-callState-phoneNumber">+13125551111</div>
-          <div className="App-callState-actions">
-            <button type="button" className="App-button App-button--danger">
-              Hangup
-            </button>
-            <button type="button" className="App-button App-button--tertiary">
-              Mute
-            </button>
-          </div>
-        </div>
-
-        <div className="App-section">
-          <div>Conference call in progress</div>
-          <div className="App-callState-phoneNumber">+13125551111</div>
-          <div>
-            <div className="App-heading App-callState-agentsList-heading">
-              Agents on call
-            </div>
-            <ul className="App-callState-agentList">
-              <li className="App-callState-agentList-item">Agent Name</li>
-              <li className="App-callState-agentList-item">Agent Name</li>
-            </ul>
-          </div>
-          <div className="App-callState-actions">
-            <button type="button" className="App-button App-button--danger">
-              Hangup
-            </button>
-            <button type="button" className="App-button App-button--tertiary">
-              Mute
-            </button>
-          </div>
-        </div>
       </section>
     </div>
   );

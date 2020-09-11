@@ -118,31 +118,3 @@
   margin-bottom: 0.6rem;
   padding: 0.5rem 0.5rem 0.5rem 1rem;
 }
-
-.App-callState-phoneNumber {
-  font-size: 1.5rem;
-  line-height: 1;
-  margin: 1rem 0;
-}
-
-.App-callState-actions {
-  margin-top: 1rem;
-}
-
-.App-callState-agentList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.App-callState-agentsList-heading {
-  font-size: 0.9rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.App-callState-agentList-item {
-  background-color: rgba(255, 255, 255, 0.05);
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
-}
