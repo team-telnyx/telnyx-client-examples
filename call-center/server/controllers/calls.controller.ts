@@ -7,18 +7,22 @@ let telnyxPackage: any = require('telnyx');
 
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
-// The CC API expects base64 encdoed values
-const base64Encode = (data: string) => {
-  let buffer = Buffer.from(data);
+// The CC API expects base64 encoded values for `client_state`.
+// Client state is used to pass forward arbitrary data
+// through your call flow
+function encodeClientState(data: any) {
+  let jsonStr = JSON.stringify(data);
+  let buffer = Buffer.from(jsonStr);
 
   return buffer.toString('base64');
-};
+}
 
-const ENCODED_CALL_CLIENT_STATE = {
-  HANGUP: base64Encode('hangup'),
-  BRIDGING: base64Encode('bridging'),
-  BRIDGED: base64Encode('bridged'),
-};
+function decodeClientState(data: string) {
+  let buffer = Buffer.from(data, 'base64');
+  let str = buffer.toString('ascii');
+
+  return JSON.parse(str);
+}
 
 class CallsController {
   public static bridge = async function (req: Request, res: Response) {
@@ -119,7 +123,7 @@ class CallsController {
     });
 
     await telnyxCall.answer({
-      client_state: ENCODED_CALL_CLIENT_STATE.BRIDGING,
+      client_state: encodeClientState('bridging'),
     });
 
     let availableAgent = await CallsController.getAvailableAgent();
@@ -129,7 +133,7 @@ class CallsController {
         to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
         // NOTE Client state only persists on original leg of
         // the call (not the one we're transferring to)
-        client_state: ENCODED_CALL_CLIENT_STATE.BRIDGED,
+        client_state: encodeClientState('bridged'),
       });
 
       availableAgent.available = false;
@@ -139,7 +143,7 @@ class CallsController {
     } else {
       telnyxCall.speak({
         // Let our app know we should hangup after call ends
-        client_state: ENCODED_CALL_CLIENT_STATE.HANGUP,
+        client_state: encodeClientState('hangup'),
         // All following fields are required:
         language: 'en-US',
         payload: 'Sorry, there are no agents available to take your call.',
@@ -151,7 +155,7 @@ class CallsController {
   private static handleAnswered = async function (event: any) {
     let { client_state } = event.data.payload;
 
-    if (client_state === ENCODED_CALL_CLIENT_STATE.BRIDGING) {
+    if (client_state === encodeClientState('bridging')) {
       console.log('call answered by app\n');
     } else {
       console.log('call answered by agent\n');
@@ -161,7 +165,7 @@ class CallsController {
   private static handleSpeakEnded = async function (event: any) {
     let { client_state } = event.data.payload;
 
-    if (client_state === ENCODED_CALL_CLIENT_STATE.HANGUP) {
+    if (client_state === encodeClientState('hangup')) {
       let telnyxCall = new telnyx.Call({
         call_control_id: event.data.payload.call_control_id,
       });
