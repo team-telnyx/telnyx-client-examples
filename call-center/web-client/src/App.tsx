@@ -2,6 +2,7 @@ import React, { useState, useEffect, Fragment } from 'react';
 import './App.css';
 import Login from './components/Login';
 import Common from './components/Common';
+import Agents from './components/Agents';
 import { logout } from './services/loginService';
 import { getAgent } from './services/agentsService';
 import { IAgent, ILoggedInAgent } from './interfaces/IAgent';
@@ -81,6 +82,7 @@ function App() {
             agentName={agent.name}
             token={sessionStorageUser.token}
           ></Common>
+          <Agents />
           <footer>
             <button
               type="button"

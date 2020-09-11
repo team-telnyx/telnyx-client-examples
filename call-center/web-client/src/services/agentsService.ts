@@ -15,6 +15,14 @@ export const getAgent = async (
     .catch((error: AxiosError) => error);
 };
 
+export const getLoggedInAgents = async (): Promise<AxiosResponse<IAgent[]>> => {
+  return await axios.get(`${BASE_URL}/agents`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
 export const updateAgent = async (
   id: any,
   params: Partial<IAgent>
