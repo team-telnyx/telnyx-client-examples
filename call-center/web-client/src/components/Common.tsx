@@ -3,6 +3,7 @@ import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
 import { updateAgent } from '../services/agentsService';
 import ActiveCall from './ActiveCall';
+import Agents from './Agents';
 
 interface ICommon {
   agentId: string;
@@ -137,64 +138,6 @@ function Common({ agentId, agentName, token }: ICommon) {
       )}
 
       <section className="App-section">
-        <h2 className="App-heading App-headline">Other available agents</h2>
-
-        <ul className="App-agentList">
-          <li className="App-agentList-item">
-            <div>Agent Name</div>
-            <div>
-              <button
-                type="button"
-                className="App-button App-button--secondary"
-              >
-                Transfer
-              </button>
-              <button
-                type="button"
-                className="App-button App-button--secondary"
-              >
-                Add
-              </button>
-            </div>
-          </li>
-          <li className="App-agentList-item">
-            <div>Agent Name</div>
-            <div>
-              <button
-                type="button"
-                className="App-button App-button--secondary"
-              >
-                Transfer
-              </button>
-              <button
-                type="button"
-                className="App-button App-button--secondary"
-              >
-                Add
-              </button>
-            </div>
-          </li>
-          <li className="App-agentList-item">
-            <div>Agent Name</div>
-            <div>
-              <button
-                type="button"
-                className="App-button App-button--secondary"
-              >
-                Transfer
-              </button>
-              <button
-                type="button"
-                className="App-button App-button--secondary"
-              >
-                Add
-              </button>
-            </div>
-          </li>
-        </ul>
-      </section>
-
-      <section className="App-section">
         <form className="App-form">
           <label className="App-input-label" htmlFor="phone_number_input">
             Phone number
@@ -211,6 +154,10 @@ function Common({ agentId, agentName, token }: ICommon) {
             </button>
           </div>
         </form>
+      </section>
+
+      <section className="App-section">
+        <Agents />
       </section>
     </div>
   );

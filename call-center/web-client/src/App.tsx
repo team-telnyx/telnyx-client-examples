@@ -82,7 +82,6 @@ function App() {
             agentName={agent.name}
             token={sessionStorageUser.token}
           ></Common>
-          <Agents />
           <footer>
             <button
               type="button"

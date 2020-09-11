@@ -15,7 +15,9 @@ export const getAgent = async (
     .catch((error: AxiosError) => error);
 };
 
-export const getLoggedInAgents = async (): Promise<AxiosResponse<IAgent[]>> => {
+export const getLoggedInAgents = async (): Promise<
+  AxiosResponse<{ agents: IAgent[] }>
+> => {
   return await axios.get(`${BASE_URL}/agents`, {
     headers: {
       'Content-Type': 'application/json',
