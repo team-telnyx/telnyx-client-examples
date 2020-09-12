@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getManager, In } from 'typeorm';
+import { getManager, getConnection, In } from 'typeorm';
 import { Call } from '../entities/call.entity';
 import { Agent } from '../entities/agent.entity';
 
@@ -7,17 +7,26 @@ let telnyxPackage: any = require('telnyx');
 
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
-// The CC API expects base64 encoded values for `client_state`.
-// Client state is used to pass forward arbitrary data
-// through your call flow
-function encodeClientState(data: any) {
+enum CustomCallStates {
+  AnswerIncomingParked = 'answer_incoming_parked',
+  TransferToAgent = 'transfer_to_agent',
+  SpeakNoAvailableAgents = 'speak_no_available_agents',
+}
+
+interface IClientState {
+  customCallState: CustomCallStates;
+}
+
+function encodeClientState(data: IClientState) {
   let jsonStr = JSON.stringify(data);
   let buffer = Buffer.from(jsonStr);
 
   return buffer.toString('base64');
 }
 
-function decodeClientState(data: string) {
+function decodeClientState(data?: string): Partial<IClientState> {
+  if (!data) return {};
+
   let buffer = Buffer.from(data, 'base64');
   let str = buffer.toString('ascii');
 
@@ -37,6 +46,9 @@ class CallsController {
     res.json({});
   };
 
+  /*
+   * Directs the call flow based on the Call Control event type
+   */
   public static callControl = async function (req: Request, res: Response) {
     console.log('/callbacks/call-control-app | req body', req.body);
 
@@ -58,6 +70,8 @@ class CallsController {
           break;
       }
     } catch (e) {
+      console.error(e);
+
       res.status(500).json({ error: e });
     }
 
@@ -80,94 +94,116 @@ class CallsController {
   };
 
   private static handleInitiated = async function (event: any) {
-    let callRepository = getManager().getRepository(Call);
-
-    let {
-      state,
-      call_control_id,
-      call_session_id,
-      call_leg_id,
-      to,
-      from,
-    } = event.data.payload;
+    let { state, call_control_id, call_session_id, from } = event.data.payload;
 
     /*
      * Only answering parked calls because we also get the call.initiated
      * event for the second leg of the call
      */
     if (state === 'parked') {
+      // Create a new call in our database so that we have
+      // a historical record of calls answered by agents
+      let callRepository = getManager().getRepository(Call);
+
       let call = new Call();
       call.callSessionId = call_session_id;
-      call.callControlId = call_control_id;
-      call.callLegId = call_leg_id;
-      call.to = to;
       call.from = from;
 
       await callRepository.save(call);
 
-      CallsController.transferParkedCall(event);
-    }
-  };
-
-  private static transferParkedCall = async function (event: any) {
-    let callRepository = getManager().getRepository(Call);
-    let { call_session_id, call_leg_id } = event.data.payload;
-
-    let call = await callRepository.findOneOrFail({
-      callSessionId: call_session_id,
-      callLegId: call_leg_id,
-    });
-
-    let telnyxCall = new telnyx.Call({
-      call_control_id: event.data.payload.call_control_id,
-    });
-
-    await telnyxCall.answer({
-      client_state: encodeClientState('bridging'),
-    });
-
-    let availableAgent = await CallsController.getAvailableAgent();
-
-    if (availableAgent) {
-      await telnyxCall.transfer({
-        to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
-        // NOTE Client state only persists on original leg of
-        // the call (not the one we're transferring to)
-        client_state: encodeClientState('bridged'),
+      // Create a new Telnyx Call in order to issue call control commands
+      let telnyxCall = new telnyx.Call({
+        call_control_id,
       });
 
-      availableAgent.available = false;
-      call.agents = [availableAgent];
-
-      callRepository.save(call);
-    } else {
-      telnyxCall.speak({
-        // Let our app know we should hangup after call ends
-        client_state: encodeClientState('hangup'),
-        // All following fields are required:
-        language: 'en-US',
-        payload: 'Sorry, there are no agents available to take your call.',
-        voice: 'female',
+      telnyxCall.answer({
+        client_state: encodeClientState({
+          // Include a custom call state so that we know how to direct
+          // the call flow when handling the `call.answered` event
+          customCallState: CustomCallStates.AnswerIncomingParked,
+        }),
       });
     }
   };
 
   private static handleAnswered = async function (event: any) {
-    let { client_state } = event.data.payload;
+    let {
+      call_control_id,
+      call_session_id,
+      to,
+      client_state,
+    } = event.data.payload;
+    let callRepository = getManager().getRepository(Call);
+    let call = await callRepository.findOneOrFail({
+      callSessionId: call_session_id,
+    });
 
-    if (client_state === encodeClientState('bridging')) {
-      console.log('call answered by app\n');
+    // Create a new Telnyx Call in order to issue call control commands
+    let telnyxCall = new telnyx.Call({
+      call_control_id,
+    });
+
+    let clientState = decodeClientState(client_state);
+
+    if (clientState.customCallState === CustomCallStates.AnswerIncomingParked) {
+      let availableAgent = await CallsController.getAvailableAgent();
+
+      if (availableAgent) {
+        telnyxCall.transfer({
+          to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+          // NOTE Client state only persists on original call
+          client_state: encodeClientState({
+            // Include a custom call state so that we know how to direct
+            // the call flow when handling the `call.answered` event
+            customCallState: CustomCallStates.TransferToAgent,
+          }),
+        });
+      } else {
+        telnyxCall.speak({
+          // Use client state to let our app know we should hangup after call ends
+          client_state: encodeClientState({
+            // Include a custom call state so that we know how to direct
+            // the call flow when handling the `call.speak.ended` event
+            customCallState: CustomCallStates.SpeakNoAvailableAgents,
+          }),
+          // All following fields are required:
+          language: 'en-US',
+          payload: 'Sorry, there are no agents available to take your call.',
+          voice: 'female',
+        });
+      }
     } else {
-      console.log('call answered by agent\n');
+      let sipUsername = to.substring(to.indexOf(':') + 1, to.indexOf('@sip'));
+
+      if (sipUsername) {
+        // Save a record of who answered the call in our database
+        let agentRepository = getManager().getRepository(Agent);
+        let agent = await agentRepository.findOneOrFail({
+          sipUsername,
+        });
+
+        agent.available = false;
+
+        if (agent.calls) {
+          agent.calls.push(call);
+        } else {
+          agent.calls = [call];
+        }
+
+        agentRepository.save(agent);
+      }
     }
   };
 
   private static handleSpeakEnded = async function (event: any) {
-    let { client_state } = event.data.payload;
+    let { call_control_id, client_state } = event.data.payload;
+    let clientState = decodeClientState(client_state);
 
-    if (client_state === encodeClientState('hangup')) {
+    if (
+      clientState.customCallState === CustomCallStates.SpeakNoAvailableAgents
+    ) {
       let telnyxCall = new telnyx.Call({
-        call_control_id: event.data.payload.call_control_id,
+        call_control_id,
       });
 
       telnyxCall.hangup();
@@ -178,40 +214,30 @@ class CallsController {
    * Cleanup agents and call relation on hangup
    */
   private static handleHangup = async function (event: any) {
-    let callRepository = getManager().getRepository(Call);
-    let { call_session_id, call_leg_id } = event.data.payload;
+    // let callRepository = getManager().getRepository(Call);
+    let { call_session_id, client_state } = event.data.payload;
+    let clientState = decodeClientState(client_state);
 
-    let calls = await callRepository.find({
-      where: {
-        callSessionId: call_session_id,
-        callLegId: call_leg_id,
-      },
-      relations: ['agents'],
-    });
+    if (clientState.customCallState === CustomCallStates.TransferToAgent) {
+      let callRepository = getManager().getRepository(Call);
+      let call = await callRepository.findOneOrFail({
+        where: {
+          callSessionId: call_session_id,
+        },
+        relations: ['agents'],
+      });
 
-    if (calls.length > 0) {
-      // FIXME Better way of handling saves using query builder?
-      await callRepository.save(
-        calls.map((call) => {
-          call.agents = call.agents.map((agent) => {
-            agent.available = true;
+      if (call.agents) {
+        // IDEA In production, you'll likely want to add some time
+        // here for the agent(s) to finish up tasks associated with
+        // the call before marking them as available again.
+        call.agents.forEach((agent) => {
+          agent.available = true;
+        });
 
-            return agent;
-          });
-
-          return call;
-        })
-      );
-
-      // Remove active calls from agents
-      // Saves both ways because of cascade rules
-      await callRepository.save(
-        calls.map((call) => {
-          call.agents = [];
-
-          return call;
-        })
-      );
+        // Saves both ways because of cascade rules
+        callRepository.save(call);
+      }
     }
   };
 }
