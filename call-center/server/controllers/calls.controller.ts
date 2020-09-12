@@ -216,15 +216,13 @@ class CallsController {
     }
   };
 
-  /*
-   * Cleanup agents and call relation on hangup
-   */
   private static handleHangup = async function (event: any) {
-    // let callRepository = getManager().getRepository(Call);
     let { call_session_id, client_state } = event.data.payload;
     let clientState = decodeClientState(client_state);
 
     if (clientState.appCallState === 'transfer_to_agent') {
+      // Handle hangup event from the original call
+
       let callRepository = getManager().getRepository(Call);
       let call = await callRepository.findOneOrFail({
         where: {
@@ -234,9 +232,9 @@ class CallsController {
       });
 
       if (call.agents) {
+        // Mark agents as available again.
         // IDEA In production, you'll likely want to add some time here for
-        // agent(s) to finish up tasks associated with the call before
-        // marking them as available again.
+        // agent(s) to finish up tasks associated with the call.
         call.agents.forEach((agent) => {
           agent.available = true;
         });
