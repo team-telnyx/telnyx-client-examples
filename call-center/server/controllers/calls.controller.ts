@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getManager, getConnection, In } from 'typeorm';
+import { getManager } from 'typeorm';
 import { Call } from '../entities/call.entity';
 import { Agent } from '../entities/agent.entity';
 
@@ -7,16 +7,20 @@ let telnyxPackage: any = require('telnyx');
 
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
-enum CustomCallStates {
+// Define your own call states to direct the flow of the call
+// through your application
+enum AppCallStates {
   AnswerIncomingParked = 'answer_incoming_parked',
   TransferToAgent = 'transfer_to_agent',
   SpeakNoAvailableAgents = 'speak_no_available_agents',
 }
 
 interface IClientState {
-  customCallState: CustomCallStates;
+  appCallState: AppCallStates;
 }
 
+// The Telnyx Call Control API expects the client state to be
+// base64 encoded, so we have our encode/decode helpers here
 function encodeClientState(data: IClientState) {
   let jsonStr = JSON.stringify(data);
   let buffer = Buffer.from(jsonStr);
@@ -120,7 +124,7 @@ class CallsController {
         client_state: encodeClientState({
           // Include a custom call state so that we know how to direct
           // the call flow when handling the `call.answered` event
-          customCallState: CustomCallStates.AnswerIncomingParked,
+          appCallState: AppCallStates.AnswerIncomingParked,
         }),
       });
     }
@@ -145,7 +149,13 @@ class CallsController {
 
     let clientState = decodeClientState(client_state);
 
-    if (clientState.customCallState === CustomCallStates.AnswerIncomingParked) {
+    if (clientState.appCallState === AppCallStates.AnswerIncomingParked) {
+      // Handle a call answered by our application
+
+      // Find the first available agent and transfer the call to them.
+      // You may want more complex functionality here, such as transferring
+      // the call to multiple available agents and then assigning the call
+      // to the first agent who answers.
       let availableAgent = await CallsController.getAvailableAgent();
 
       if (availableAgent) {
@@ -155,16 +165,18 @@ class CallsController {
           client_state: encodeClientState({
             // Include a custom call state so that we know how to direct
             // the call flow when handling the `call.answered` event
-            customCallState: CustomCallStates.TransferToAgent,
+            appCallState: AppCallStates.TransferToAgent,
           }),
         });
       } else {
+        // Handle when no agents are available to answer the call
+
         telnyxCall.speak({
           // Use client state to let our app know we should hangup after call ends
           client_state: encodeClientState({
             // Include a custom call state so that we know how to direct
             // the call flow when handling the `call.speak.ended` event
-            customCallState: CustomCallStates.SpeakNoAvailableAgents,
+            appCallState: AppCallStates.SpeakNoAvailableAgents,
           }),
           // All following fields are required:
           language: 'en-US',
@@ -173,10 +185,12 @@ class CallsController {
         });
       }
     } else {
+      // Handle a call answered by an agent logged into the WebRTC client
+
       let sipUsername = to.substring(to.indexOf(':') + 1, to.indexOf('@sip'));
 
       if (sipUsername) {
-        // Save a record of who answered the call in our database
+        // Save a record of who answered the call in our app database
         let agentRepository = getManager().getRepository(Agent);
         let agent = await agentRepository.findOneOrFail({
           sipUsername,
@@ -199,9 +213,7 @@ class CallsController {
     let { call_control_id, client_state } = event.data.payload;
     let clientState = decodeClientState(client_state);
 
-    if (
-      clientState.customCallState === CustomCallStates.SpeakNoAvailableAgents
-    ) {
+    if (clientState.appCallState === AppCallStates.SpeakNoAvailableAgents) {
       let telnyxCall = new telnyx.Call({
         call_control_id,
       });
@@ -218,7 +230,7 @@ class CallsController {
     let { call_session_id, client_state } = event.data.payload;
     let clientState = decodeClientState(client_state);
 
-    if (clientState.customCallState === CustomCallStates.TransferToAgent) {
+    if (clientState.appCallState === AppCallStates.TransferToAgent) {
       let callRepository = getManager().getRepository(Call);
       let call = await callRepository.findOneOrFail({
         where: {
@@ -228,14 +240,14 @@ class CallsController {
       });
 
       if (call.agents) {
-        // IDEA In production, you'll likely want to add some time
-        // here for the agent(s) to finish up tasks associated with
-        // the call before marking them as available again.
+        // IDEA In production, you'll likely want to add some time here for
+        // agent(s) to finish up tasks associated with the call before
+        // marking them as available again.
         call.agents.forEach((agent) => {
           agent.available = true;
         });
 
-        // Saves both ways because of cascade rules
+        // Saves both ways because of cascade rules:
         callRepository.save(call);
       }
     }
