@@ -7,16 +7,10 @@ let telnyxPackage: any = require('telnyx');
 
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
-// Define your own call states to direct the flow of the call
-// through your application
-enum AppCallStates {
-  AnswerIncomingParked = 'answer_incoming_parked',
-  TransferToAgent = 'transfer_to_agent',
-  SpeakNoAvailableAgents = 'speak_no_available_agents',
-}
-
 interface IClientState {
-  appCallState: AppCallStates;
+  // Define your own call states to direct the flow of the call
+  // through your application
+  appCallState: string;
 }
 
 // The Telnyx Call Control API expects the client state to be
@@ -124,7 +118,7 @@ class CallsController {
         client_state: encodeClientState({
           // Include a custom call state so that we know how to direct
           // the call flow when handling the `call.answered` event
-          appCallState: AppCallStates.AnswerIncomingParked,
+          appCallState: 'answer_incoming_parked',
         }),
       });
     }
@@ -149,7 +143,7 @@ class CallsController {
 
     let clientState = decodeClientState(client_state);
 
-    if (clientState.appCallState === AppCallStates.AnswerIncomingParked) {
+    if (clientState.appCallState === 'answer_incoming_parked') {
       // Handle a call answered by our application
 
       // Find the first available agent and transfer the call to them.
@@ -165,7 +159,7 @@ class CallsController {
           client_state: encodeClientState({
             // Include a custom call state so that we know how to direct
             // the call flow when handling the `call.answered` event
-            appCallState: AppCallStates.TransferToAgent,
+            appCallState: 'transfer_to_agent',
           }),
         });
       } else {
@@ -176,7 +170,7 @@ class CallsController {
           client_state: encodeClientState({
             // Include a custom call state so that we know how to direct
             // the call flow when handling the `call.speak.ended` event
-            appCallState: AppCallStates.SpeakNoAvailableAgents,
+            appCallState: 'speak_no_available_agents',
           }),
           // All following fields are required:
           language: 'en-US',
@@ -213,7 +207,7 @@ class CallsController {
     let { call_control_id, client_state } = event.data.payload;
     let clientState = decodeClientState(client_state);
 
-    if (clientState.appCallState === AppCallStates.SpeakNoAvailableAgents) {
+    if (clientState.appCallState === 'speak_no_available_agents') {
       let telnyxCall = new telnyx.Call({
         call_control_id,
       });
@@ -230,7 +224,7 @@ class CallsController {
     let { call_session_id, client_state } = event.data.payload;
     let clientState = decodeClientState(client_state);
 
-    if (clientState.appCallState === AppCallStates.TransferToAgent) {
+    if (clientState.appCallState === 'transfer_to_agent') {
       let callRepository = getManager().getRepository(Call);
       let call = await callRepository.findOneOrFail({
         where: {
