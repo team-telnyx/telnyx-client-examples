@@ -67,13 +67,7 @@ class CallsController {
   };
 
   private static handleInitiated = async function (event: any) {
-    let {
-      state,
-      call_control_id,
-      call_session_id,
-      connection_id,
-      from,
-    } = event.data.payload;
+    let { state, call_control_id, call_session_id, from } = event.data.payload;
 
     /*
      * Only answering parked calls because we also get the call.initiated
@@ -232,6 +226,9 @@ class CallsController {
           // Pass in original call's call control ID in order to share the
           // same call session ID:
           link_to: call_control_id,
+          // IDEA Specify a short answer timeout so that you can quickly
+          // rotate to a different agent if one doesn't answer within X
+          timeout_secs: 10,
           client_state: encodeClientState({
             appCallState: 'dial_agent',
             aLegCallControlId: clientState.aLegCallControlId,
