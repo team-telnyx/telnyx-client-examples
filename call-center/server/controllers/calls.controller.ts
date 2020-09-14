@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { getManager } from 'typeorm';
 import { Call } from '../entities/call.entity';
 import { Agent } from '../entities/agent.entity';
+import { format } from 'path';
 
 let telnyxPackage: any = require('telnyx');
 
@@ -13,6 +14,8 @@ interface IClientState {
   appCallState: string;
   aLegCallControlId: string;
   agentSipUsername?: string;
+  aLegFrom?: string;
+  connectionId?: string;
 }
 
 class CallsController {
@@ -64,7 +67,13 @@ class CallsController {
   };
 
   private static handleInitiated = async function (event: any) {
-    let { state, call_control_id, call_session_id, from } = event.data.payload;
+    let {
+      state,
+      call_control_id,
+      call_session_id,
+      connection_id,
+      from,
+    } = event.data.payload;
 
     /*
      * Only answering parked calls because we also get the call.initiated
@@ -102,7 +111,13 @@ class CallsController {
   };
 
   private static handleAnswered = async function (event: any) {
-    let { call_control_id, call_session_id, client_state } = event.data.payload;
+    let {
+      call_control_id,
+      call_session_id,
+      connection_id,
+      from,
+      client_state,
+    } = event.data.payload;
     let callRepository = getManager().getRepository(Call);
     let call = await callRepository.findOneOrFail({
       callSessionId: call_session_id,
@@ -135,6 +150,10 @@ class CallsController {
         client_state: encodeClientState({
           appCallState: 'start_on_hold_audio',
           aLegCallControlId: clientState.aLegCallControlId,
+          // Pass forward additional original call information that won't
+          // be present in the event data for `call.playback.started`:
+          aLegFrom: from,
+          connectionId: connection_id,
         }),
       });
     } else if (clientState.appCallState === 'dial_agent') {
@@ -179,18 +198,7 @@ class CallsController {
   };
 
   private static handlePlaybackStarted = async function (event: any) {
-    let {
-      call_control_id,
-      call_session_id,
-      connection_id,
-      to,
-      from,
-      client_state,
-    } = event.data.payload;
-    let callRepository = getManager().getRepository(Call);
-    let call = await callRepository.findOneOrFail({
-      callSessionId: call_session_id,
-    });
+    let { call_control_id, client_state } = event.data.payload;
 
     // Create a new Telnyx Call in order to issue call control commands
     let telnyxCall = new telnyx.Call({
@@ -218,9 +226,9 @@ class CallsController {
         // existing call for more fine grained control over the `client_state`
         // of each leg of the call.
         telnyx.calls.create({
-          connection_id,
-          from,
           to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+          from: clientState.aLegFrom,
+          connection_id: clientState.connectionId,
           // Pass in original call's call control ID in order to share the
           // same call session ID:
           link_to: call_control_id,
