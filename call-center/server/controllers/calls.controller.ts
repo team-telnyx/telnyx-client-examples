@@ -15,8 +15,6 @@ interface IClientState {
   appCallState: string;
   aLegCallControlId: string;
   agentSipUsername?: string;
-  aLegFrom?: string;
-  connectionId?: string;
 }
 
 class CallsController {
@@ -47,9 +45,6 @@ class CallsController {
           break;
         case 'call.answered':
           await CallsController.handleAnswered(event);
-          break;
-        case 'call.playback.started':
-          await CallsController.handlePlaybackStarted(event);
           break;
         case 'call.hangup':
           await CallsController.handleHangup(event);
@@ -128,25 +123,71 @@ class CallsController {
     if (clientState.appCallState === 'answer_incoming_parked') {
       // Handle a call answered by our application
 
-      // Start playing hold music
-      telnyxCall.playback_start({
-        // Audio file needs to be hosted somewhere that can be reached
-        // via a public URL.
-        // During local development, you can use the audio file included
-        // in the `public` folder by replacing the placerholder ngrok
-        // subdomain in `.env` with your actual ngrok subdomain.
-        audio_url: process.env.HOLD_AUDIO_URL,
-        loop: 'infinity',
-        client_state: encodeClientState({
-          appCallId: clientState.appCallId,
-          appCallState: 'start_on_hold_audio',
-          aLegCallControlId: clientState.aLegCallControlId,
-          // Pass forward additional original call information that won't
-          // be present in the event data for `call.playback.started`:
-          aLegFrom: from,
-          connectionId: connection_id,
-        }),
-      });
+      // Find the first available agent and transfer the call to them.
+      // You may want more complex functionality here, such as transferring
+      // the call to multiple available agents and then assigning the call
+      // to the first agent who answers.
+      let availableAgent = await CallsController.getAvailableAgent();
+
+      if (availableAgent) {
+        // Start playing hold music
+        await telnyxCall.playback_start({
+          // Audio file needs to be hosted somewhere that can be reached
+          // via a public URL.
+          // During local development, you can use the audio file included
+          // in the `public` folder by replacing the placerholder ngrok
+          // subdomain in `.env` with your actual ngrok subdomain.
+          audio_url: process.env.HOLD_AUDIO_URL,
+          loop: 'infinity',
+          client_state: encodeClientState({
+            appCallId: clientState.appCallId,
+            appCallState: 'play_on_hold_audio',
+            aLegCallControlId: clientState.aLegCallControlId,
+          }),
+        });
+
+        // Initiate transfer to the agent
+        //
+        // We're using bridging a brand new call instead transferring the
+        // existing call for more fine grained control over the `client_state`
+        // of each leg of the call.
+        telnyx.calls.create({
+          to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+          from,
+          connection_id,
+          // Pass in original call's call control ID in order to share the
+          // same call session ID:
+          link_to: call_control_id,
+          // IDEA Specify a short answer timeout so that you can quickly
+          // rotate to a different agent if one doesn't answer within X
+          timeout_secs: 10,
+          client_state: encodeClientState({
+            appCallId: clientState.appCallId,
+            appCallState: 'dial_agent',
+            aLegCallControlId: clientState.aLegCallControlId,
+            agentSipUsername: availableAgent.sipUsername,
+          }),
+        });
+      } else {
+        // Handle when no agents are available to transfer the call
+
+        await telnyxCall.playback_stop();
+
+        telnyxCall.speak({
+          // Use client state to let our app know we should hangup after call ends
+          client_state: encodeClientState({
+            appCallId: clientState.appCallId,
+            // Include a custom call state so that we know how to direct
+            // the call flow when handling the `call.speak.ended` event
+            appCallState: 'speak_no_available_agents',
+            aLegCallControlId: clientState.aLegCallControlId,
+          }),
+          // All following fields are required:
+          language: 'en-US',
+          payload: 'Sorry, there are no agents available to take your call.',
+          voice: 'female',
+        });
+      }
     } else if (clientState.appCallState === 'dial_agent') {
       // Handle a call answered by an agent logged into the WebRTC client
 
@@ -188,74 +229,6 @@ class CallsController {
         }
 
         agentRepository.save(agent);
-      }
-    }
-  };
-
-  private static handlePlaybackStarted = async function (event: any) {
-    let { call_control_id, client_state } = event.data.payload;
-
-    // Create a new Telnyx Call in order to issue call control commands
-    let telnyxCall = new telnyx.Call({
-      call_control_id,
-    });
-
-    let clientState = decodeClientState(client_state);
-
-    if (!clientState.appCallId || !clientState.aLegCallControlId) {
-      // TODO Better edge case handling; app got into a bad state
-      return telnyxCall.hangup();
-    }
-
-    if (clientState.appCallState === 'start_on_hold_audio') {
-      // Find the first available agent and transfer the call to them.
-      // You may want more complex functionality here, such as transferring
-      // the call to multiple available agents and then assigning the call
-      // to the first agent who answers.
-      let availableAgent = await CallsController.getAvailableAgent();
-
-      if (availableAgent) {
-        // Initiate transfer to the agent
-        //
-        // We're using bridging a brand new call instead transferring the
-        // existing call for more fine grained control over the `client_state`
-        // of each leg of the call.
-        telnyx.calls.create({
-          to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
-          from: clientState.aLegFrom,
-          connection_id: clientState.connectionId,
-          // Pass in original call's call control ID in order to share the
-          // same call session ID:
-          link_to: call_control_id,
-          // IDEA Specify a short answer timeout so that you can quickly
-          // rotate to a different agent if one doesn't answer within X
-          timeout_secs: 10,
-          client_state: encodeClientState({
-            appCallId: clientState.appCallId,
-            appCallState: 'dial_agent',
-            aLegCallControlId: clientState.aLegCallControlId,
-            agentSipUsername: availableAgent.sipUsername,
-          }),
-        });
-      } else {
-        // Handle when no agents are available to transfer the call
-
-        await telnyxCall.playback_stop();
-
-        telnyxCall.speak({
-          // Use client state to let our app know we should hangup after call ends
-          client_state: encodeClientState({
-            appCallId: clientState.appCallId,
-            // Include a custom call state so that we know how to direct
-            // the call flow when handling the `call.speak.ended` event
-            appCallState: 'speak_no_available_agents',
-            aLegCallControlId: clientState.aLegCallControlId,
-          }),
-          // All following fields are required:
-          language: 'en-US',
-          payload: 'Sorry, there are no agents available to take your call.',
-          voice: 'female',
-        });
       }
     }
   };
