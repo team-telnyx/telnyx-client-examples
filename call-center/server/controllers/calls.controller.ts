@@ -191,7 +191,7 @@ class CallsController {
     } else if (clientState.appCallState === 'dial_agent') {
       // Handle a call answered by an agent logged into the WebRTC client
 
-      // Stop playing hold music and bridge the call
+      // Stop playing hold music
       //
       // Since this is a transferred call we're dealing with, we need to
       // create another Telnyx Call using the original call control ID
@@ -201,8 +201,10 @@ class CallsController {
       });
 
       await telnyxCallALeg.playback_stop();
-      await telnyxCallALeg.bridge({
-        call_control_id,
+
+      // Bridge the call back to the original call
+      await telnyxCall.bridge({
+        call_control_id: clientState.aLegCallControlId,
         client_state: encodeClientState({
           appCallId: clientState.appCallId,
           appCallState: 'bridge_agent',
@@ -270,6 +272,15 @@ class CallsController {
         // Saves both ways because of cascade rules:
         callRepository.save(call);
       }
+    } else {
+      // If an agent can't be reached in production, you'll likely want to
+      // reroute the bridged call to the next available agent.
+      // In this example we'll just hang up the original call.
+      let telnyxCallALeg = new telnyx.Call({
+        call_control_id: clientState.aLegCallControlId,
+      });
+
+      telnyxCallALeg.hangup();
     }
   };
 
