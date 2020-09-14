@@ -105,6 +105,7 @@ class CallsController {
 
       let call = new Call();
       call.callSessionId = call_session_id;
+      call.originalCallControlId = call_control_id;
       call.from = from;
 
       await callRepository.save(call);
@@ -114,6 +115,7 @@ class CallsController {
         call_control_id,
       });
 
+      // Answer the call to initiate transfer to agent
       telnyxCall.answer({
         client_state: encodeClientState({
           // Include a custom call state so that we know how to direct
@@ -153,6 +155,17 @@ class CallsController {
       let availableAgent = await CallsController.getAvailableAgent();
 
       if (availableAgent) {
+        // Start playing hold music
+        await telnyxCall.playback_start({
+          // Audio file needs to be hosted somewhere that can be reached
+          // via a public URL.
+          // During local development, you can use the audio file included
+          // in the `public` folder by replacing the placerholder ngrok
+          // subdomain in `.env` with your actual ngrok subdomain.
+          audio_url: process.env.HOLD_AUDIO_URL,
+          loop: 'infinity',
+        });
+
         telnyxCall.transfer({
           to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
           // NOTE Client state only persists on original call
@@ -180,6 +193,17 @@ class CallsController {
       }
     } else {
       // Handle a call answered by an agent logged into the WebRTC client
+
+      // Stop playing hold music
+      //
+      // Since this is a transferred call we're dealing with, we need to
+      // create another Telnyx Call using the original Call Control ID
+      // in order to issue commands from the call that started the audio.
+      let originalTelnyxCall = new telnyx.Call({
+        call_control_id: call.originalCallControlId,
+      });
+
+      await originalTelnyxCall.playback_stop();
 
       let sipUsername = to.substring(to.indexOf(':') + 1, to.indexOf('@sip'));
 

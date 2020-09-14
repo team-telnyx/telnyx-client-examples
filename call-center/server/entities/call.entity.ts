@@ -10,6 +10,9 @@ export class Call {
   callSessionId!: string;
 
   @Column()
+  originalCallControlId!: string;
+
+  @Column()
   from!: string;
 
   @ManyToMany((type) => Agent, (agent) => agent.calls, {
