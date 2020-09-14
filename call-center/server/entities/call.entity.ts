@@ -7,9 +7,6 @@ export class Call {
   id!: string;
 
   @Column()
-  callSessionId!: string;
-
-  @Column()
   from!: string;
 
   @ManyToMany((type) => Agent, (agent) => agent.calls, {

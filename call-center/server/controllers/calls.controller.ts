@@ -11,6 +11,7 @@ let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 interface IClientState {
   // Define your own call states to direct the flow of the call
   // through your application
+  appCallId: string;
   appCallState: string;
   aLegCallControlId: string;
   agentSipUsername?: string;
@@ -67,7 +68,7 @@ class CallsController {
   };
 
   private static handleInitiated = async function (event: any) {
-    let { state, call_control_id, call_session_id, from } = event.data.payload;
+    let { state, call_control_id, from } = event.data.payload;
 
     /*
      * Only answering parked calls because we also get the call.initiated
@@ -79,8 +80,9 @@ class CallsController {
       let callRepository = getManager().getRepository(Call);
 
       let call = new Call();
-      call.callSessionId = call_session_id;
       call.from = from;
+
+      console.log('\n\ncall.id:', call.id);
 
       await callRepository.save(call);
 
@@ -92,6 +94,7 @@ class CallsController {
       // Answer the call to initiate transfer to agent
       telnyxCall.answer({
         client_state: encodeClientState({
+          appCallId: call.id,
           // Include a custom call state so that we know how to direct
           // the call flow in call control event handlers:
           appCallState: 'answer_incoming_parked',
@@ -107,15 +110,10 @@ class CallsController {
   private static handleAnswered = async function (event: any) {
     let {
       call_control_id,
-      call_session_id,
       connection_id,
       from,
       client_state,
     } = event.data.payload;
-    let callRepository = getManager().getRepository(Call);
-    let call = await callRepository.findOneOrFail({
-      callSessionId: call_session_id,
-    });
 
     // Create a new Telnyx Call in order to issue call control commands
     let telnyxCall = new telnyx.Call({
@@ -124,8 +122,8 @@ class CallsController {
 
     let clientState = decodeClientState(client_state);
 
-    if (!clientState.aLegCallControlId) {
-      // Unknown error
+    if (!clientState.appCallId || !clientState.aLegCallControlId) {
+      // TODO Better edge case handling; app got into a bad state
       return telnyxCall.hangup();
     }
 
@@ -142,6 +140,7 @@ class CallsController {
         audio_url: process.env.HOLD_AUDIO_URL,
         loop: 'infinity',
         client_state: encodeClientState({
+          appCallId: clientState.appCallId,
           appCallState: 'start_on_hold_audio',
           aLegCallControlId: clientState.aLegCallControlId,
           // Pass forward additional original call information that won't
@@ -166,12 +165,16 @@ class CallsController {
       await telnyxCallALeg.bridge({
         call_control_id,
         client_state: encodeClientState({
+          appCallId: clientState.appCallId,
           appCallState: 'bridge_agent',
           aLegCallControlId: clientState.aLegCallControlId,
         }),
       });
 
       if (clientState.agentSipUsername) {
+        let callRepository = getManager().getRepository(Call);
+        let call = await callRepository.findOneOrFail(clientState.appCallId);
+
         // Save a record of who answered the call in our app database
         let agentRepository = getManager().getRepository(Agent);
         let agent = await agentRepository.findOneOrFail({
@@ -201,8 +204,8 @@ class CallsController {
 
     let clientState = decodeClientState(client_state);
 
-    if (!clientState.aLegCallControlId) {
-      // Unknown error
+    if (!clientState.appCallId || !clientState.aLegCallControlId) {
+      // TODO Better edge case handling; app got into a bad state
       return telnyxCall.hangup();
     }
 
@@ -230,6 +233,7 @@ class CallsController {
           // rotate to a different agent if one doesn't answer within X
           timeout_secs: 10,
           client_state: encodeClientState({
+            appCallId: clientState.appCallId,
             appCallState: 'dial_agent',
             aLegCallControlId: clientState.aLegCallControlId,
             agentSipUsername: availableAgent.sipUsername,
@@ -243,6 +247,7 @@ class CallsController {
         telnyxCall.speak({
           // Use client state to let our app know we should hangup after call ends
           client_state: encodeClientState({
+            appCallId: clientState.appCallId,
             // Include a custom call state so that we know how to direct
             // the call flow when handling the `call.speak.ended` event
             appCallState: 'speak_no_available_agents',
@@ -271,17 +276,14 @@ class CallsController {
   };
 
   private static handleHangup = async function (event: any) {
-    let { call_session_id, call_control_id, client_state } = event.data.payload;
+    let { call_control_id, client_state } = event.data.payload;
     let clientState = decodeClientState(client_state);
 
     if (call_control_id === clientState.aLegCallControlId) {
       // Handle hangup event from the original call
 
       let callRepository = getManager().getRepository(Call);
-      let call = await callRepository.findOneOrFail({
-        where: {
-          callSessionId: call_session_id,
-        },
+      let call = await callRepository.findOneOrFail(clientState.appCallId, {
         relations: ['agents'],
       });
 
