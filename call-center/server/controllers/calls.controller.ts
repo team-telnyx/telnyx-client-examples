@@ -82,9 +82,7 @@ class CallsController {
       let call = new Call();
       call.from = from;
 
-      console.log('\n\ncall.id:', call.id);
-
-      await callRepository.save(call);
+      let { id } = await callRepository.save(call);
 
       // Create a new Telnyx Call in order to issue call control commands
       let telnyxCall = new telnyx.Call({
@@ -94,7 +92,7 @@ class CallsController {
       // Answer the call to initiate transfer to agent
       telnyxCall.answer({
         client_state: encodeClientState({
-          appCallId: call.id,
+          appCallId: id,
           // Include a custom call state so that we know how to direct
           // the call flow in call control event handlers:
           appCallState: 'answer_incoming_parked',
