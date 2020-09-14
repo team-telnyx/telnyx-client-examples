@@ -255,7 +255,11 @@ class CallsController {
   };
 
   private static handleHangup = async function (event: any) {
-    let { call_control_id, client_state } = event.data.payload;
+    let {
+      call_control_id,
+      client_state,
+      sip_hangup_cause,
+    } = event.data.payload;
     let clientState = decodeClientState(client_state);
 
     if (call_control_id === clientState.aLegCallControlId) {
@@ -279,14 +283,16 @@ class CallsController {
         callRepository.save(call);
       }
     } else {
-      // If an agent can't be reached in production, you'll likely want to
-      // reroute the bridged call to the next available agent.
-      // In this example we'll just hang up the original call.
-      let telnyxCallALeg = new telnyx.Call({
-        call_control_id: clientState.aLegCallControlId,
-      });
+      if (sip_hangup_cause === '404') {
+        // If an agent can't be reached in production, you'll likely want to
+        // reroute the bridged call to the next available agent.
+        // In this example we'll just hang up the original call.
+        let telnyxCallALeg = new telnyx.Call({
+          call_control_id: clientState.aLegCallControlId,
+        });
 
-      telnyxCallALeg.hangup();
+        telnyxCallALeg.hangup();
+      }
     }
   };
 
