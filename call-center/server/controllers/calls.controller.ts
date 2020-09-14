@@ -90,7 +90,7 @@ class CallsController {
           appCallId: id,
           // Include a custom call state so that we know how to direct
           // the call flow in call control event handlers:
-          appCallState: 'answer_incoming_parked',
+          appCallState: 'A_answer_incoming_parked',
           // Pass along the original call control ID so that events
           // coming from a bridged call can still issue commands to
           // and from the original call (i.e. A leg):
@@ -120,7 +120,7 @@ class CallsController {
       return telnyxCall.hangup();
     }
 
-    if (clientState.appCallState === 'answer_incoming_parked') {
+    if (clientState.appCallState === 'A_answer_incoming_parked') {
       // Handle a call answered by our application
 
       // Find the first available agent and transfer the call to them.
@@ -141,7 +141,7 @@ class CallsController {
           loop: 'infinity',
           client_state: encodeClientState({
             appCallId: clientState.appCallId,
-            appCallState: 'play_on_hold_audio',
+            appCallState: 'A_start_hold_audio',
             aLegCallControlId: clientState.aLegCallControlId,
           }),
         });
@@ -163,7 +163,7 @@ class CallsController {
           timeout_secs: 10,
           client_state: encodeClientState({
             appCallId: clientState.appCallId,
-            appCallState: 'dial_agent',
+            appCallState: 'B_dial_agent',
             aLegCallControlId: clientState.aLegCallControlId,
             agentSipUsername: availableAgent.sipUsername,
           }),
@@ -188,7 +188,7 @@ class CallsController {
           voice: 'female',
         });
       }
-    } else if (clientState.appCallState === 'dial_agent') {
+    } else if (clientState.appCallState === 'B_dial_agent') {
       // Handle a call answered by an agent logged into the WebRTC client
 
       // Stop playing hold music
@@ -200,14 +200,20 @@ class CallsController {
         call_control_id: clientState.aLegCallControlId,
       });
 
-      await telnyxCallALeg.playback_stop();
+      await telnyxCallALeg.playback_stop({
+        client_state: encodeClientState({
+          appCallId: clientState.appCallId,
+          appCallState: 'A_stop_hold_audio',
+          aLegCallControlId: clientState.aLegCallControlId,
+        }),
+      });
 
       // Bridge the call back to the original call
       await telnyxCall.bridge({
         call_control_id: clientState.aLegCallControlId,
         client_state: encodeClientState({
           appCallId: clientState.appCallId,
-          appCallState: 'bridge_agent',
+          appCallState: 'B_bridge_agent',
           aLegCallControlId: clientState.aLegCallControlId,
         }),
       });
