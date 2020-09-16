@@ -9,14 +9,33 @@ interface IActiveCall {
   callState: string;
   answer: Function;
   hangup: Function;
+  muteAudio: Function;
+  unmuteAudio: Function;
 }
 
-function ActiveCall({ callerID, callState, answer, hangup }: IActiveCall) {
+function ActiveCall({
+  callerID,
+  callState,
+  answer,
+  hangup,
+  muteAudio,
+  unmuteAudio,
+}: IActiveCall) {
   console.log('callState:', callState);
-
+  const [isMuted, setIsMuted] = useState(false);
   const handleAnswerClick = () => answer();
   const handleRejectClick = () => hangup();
   const handleHangupClick = () => hangup();
+
+  const handleMuteClick = () => {
+    setIsMuted(true);
+    muteAudio();
+  };
+
+  const handleUnmuteClick = () => {
+    unmuteAudio();
+    setIsMuted(false);
+  };
 
   return (
     <section>
@@ -57,10 +76,21 @@ function ActiveCall({ callerID, callState, answer, hangup }: IActiveCall) {
             >
               Hangup
             </button>
-            {/* TODO Mute */}
-            {/* <button type="button" className="App-button App-button--tertiary">
-              Mute
-            </button> */}
+            <button
+              type="button"
+              className="App-button App-button--tertiary"
+              onClick={isMuted ? handleUnmuteClick : handleMuteClick}
+            >
+              {isMuted ? (
+                <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
+                  🔈
+                </span>
+              ) : (
+                <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
+                  🔇
+                </span>
+              )}
+            </button>
           </div>
         </div>
       )}

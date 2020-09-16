@@ -20,6 +20,8 @@ interface IPartialWebRTCCall {
   answer: Function;
   hangup: Function;
   remoteStream?: MediaStream;
+  muteAudio: Function;
+  unmuteAudio: Function;
 }
 
 function Common({ agentId, agentName, token }: ICommon) {
@@ -81,6 +83,8 @@ function Common({ agentId, agentName, token }: ICommon) {
           options,
           answer,
           hangup,
+          muteAudio,
+          unmuteAudio,
           remoteStream,
         } = notification.call;
 
@@ -95,6 +99,8 @@ function Common({ agentId, agentName, token }: ICommon) {
             remoteStream,
             answer: answer.bind(notification.call),
             hangup: hangup.bind(notification.call),
+            muteAudio: muteAudio.bind(notification.call),
+            unmuteAudio: unmuteAudio.bind(notification.call),
           });
         }
       }
@@ -133,6 +139,8 @@ function Common({ agentId, agentName, token }: ICommon) {
           callState={webRTCall.state}
           answer={webRTCall.answer}
           hangup={webRTCall.hangup}
+          muteAudio={webRTCall.muteAudio}
+          unmuteAudio={webRTCall.unmuteAudio}
         />
       )}
 
