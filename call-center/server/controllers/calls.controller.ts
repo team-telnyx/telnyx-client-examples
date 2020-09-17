@@ -133,10 +133,7 @@ class CallsController {
         // Start playing hold music
         await telnyxCall.playback_start({
           // Audio file needs to be hosted somewhere that can be reached
-          // via a public URL.
-          // During local development, you can use the audio file included
-          // in the `public` folder by replacing the placerholder ngrok
-          // subdomain in `.env` with your actual ngrok subdomain.
+          // via a public URL
           audio_url: process.env.HOLD_AUDIO_URL,
           loop: 'infinity',
           client_state: encodeClientState({
