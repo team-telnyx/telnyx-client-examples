@@ -1,0 +1,31 @@
+.Agents {
+}
+
+.Agents-heading {
+  font-size: 2rem;
+  font-weight: normal;
+  line-height: 1;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.Agents-error {
+  text-color: red;
+}
+
+.Agents-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.Agents-list-item {
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 1rem;
+}
