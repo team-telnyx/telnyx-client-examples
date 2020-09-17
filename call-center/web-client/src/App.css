@@ -103,18 +103,3 @@
   color: red;
   padding: 10px;
 }
-
-.App-agentList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.App-agentList-item {
-  background-color: rgba(255, 255, 255, 0.05);
-  display: grid;
-  grid-template-columns: 1fr max-content;
-  align-items: center;
-  margin-bottom: 0.6rem;
-  padding: 0.5rem 0.5rem 0.5rem 1rem;
-}
