@@ -52,6 +52,7 @@ class CallsController {
         connection_id,
         from,
         sip_hangup_cause,
+        hangup_source,
       } = event.data.payload;
 
       let clientState = decodeClientState(client_state);
@@ -193,7 +194,7 @@ class CallsController {
               call_control_id: clientState.aLegCallControlId,
               client_state: encodeClientState({
                 appCallId: clientState.appCallId,
-                appCallState: 'B_bridge_agent',
+                appCallState: 'A_bridge_agent',
                 aLegCallControlId: clientState.aLegCallControlId,
               }),
             });
@@ -260,6 +261,14 @@ class CallsController {
               // If an agent can't be reached in production, you'll likely want to
               // reroute the bridged call to the next available agent.
               // In this example we'll just hang up the original call.
+              await new telnyx.Call({
+                call_control_id: clientState.aLegCallControlId,
+              }).hangup();
+            }
+
+            if (hangup_source === 'callee') {
+              // If an agent hangs up, hang up the original call (A leg) as well.
+              // In production, you may want to issue more commands.
               await new telnyx.Call({
                 call_control_id: clientState.aLegCallControlId,
               }).hangup();
