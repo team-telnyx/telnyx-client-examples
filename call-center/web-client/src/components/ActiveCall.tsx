@@ -83,11 +83,11 @@ function ActiveCall({
             >
               {isMuted ? (
                 <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
-                  🔈
+                  🔇
                 </span>
               ) : (
                 <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
-                  🔇
+                  🔈
                 </span>
               )}
             </button>
