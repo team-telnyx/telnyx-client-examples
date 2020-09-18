@@ -51,6 +51,7 @@ class CallsController {
         call_control_id,
         connection_id,
         from,
+        to,
         sip_hangup_cause,
         hangup_source,
       } = event.data.payload;
@@ -75,7 +76,6 @@ class CallsController {
           if (state === 'parked') {
             // Create a new call in our database so that we have
             // a historical record of calls answered by agents
-
             let call = new Call();
             call.from = from;
 
@@ -199,23 +199,38 @@ class CallsController {
               }),
             });
 
-            if (clientState.agentSipUsername) {
-              let call = await callRepository.findOneOrFail(
-                clientState.appCallId
-              );
+            // Save a record of who answered the call in our app database
+            let agentRepository = getManager().getRepository(Agent);
+            let agent = await agentRepository.findOne({
+              sipUsername: clientState.agentSipUsername,
+            });
 
-              // Save a record of who answered the call in our app database
-              let agentRepository = getManager().getRepository(Agent);
-              let agent = await agentRepository.findOneOrFail({
-                sipUsername: clientState.agentSipUsername,
-              });
+            // Create a conference so that agent can add other agents to the call
+            let conferenceName = `${
+              (agent ? agent.name : clientState.agentSipUsername) || to
+            }'s Conference Room`;
 
+            await telnyx.conferences.create({
+              call_control_id,
+              name: conferenceName,
+              client_state: encodeClientState({
+                appCallId: clientState.appCallId,
+                appCallState: 'B_create_conference',
+                aLegCallControlId: clientState.aLegCallControlId,
+              }),
+            });
+
+            if (agent) {
               agent.available = false;
 
-              if (agent.calls) {
-                agent.calls.push(call);
-              } else {
-                agent.calls = [call];
+              let call = await callRepository.findOne(clientState.appCallId);
+
+              if (call) {
+                if (agent.calls) {
+                  agent.calls.push(call);
+                } else {
+                  agent.calls = [call];
+                }
               }
 
               await agentRepository.save(agent);
