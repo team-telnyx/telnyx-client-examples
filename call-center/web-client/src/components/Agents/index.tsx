@@ -36,7 +36,7 @@ export default function Agents({ agentId }: IAgents) {
   return (
     <div className="Agents">
       <h2 className="Agents-heading">
-        Other available agents {loading && <LoadingIcon />}
+        Other agents {loading && <LoadingIcon />}
       </h2>
 
       {error && <p className="Agents-error">Error: {error}</p>}
@@ -45,6 +45,15 @@ export default function Agents({ agentId }: IAgents) {
           {agents.map((agent) => (
             <li key={agent.id} className="Agents-list-item">
               <div>{agent.name}</div>
+              <div>
+                <div
+                  className={`Agents-list-label--${
+                    agent.available ? 'available' : 'busy'
+                  }`}
+                >
+                  {agent.available ? 'Available' : 'Busy'}
+                </div>
+              </div>
             </li>
           ))}
         </ul>

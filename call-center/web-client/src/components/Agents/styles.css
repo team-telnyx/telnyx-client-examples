@@ -29,3 +29,20 @@
   margin-bottom: 0.5rem;
   padding: 0.5rem 1rem;
 }
+
+.Agents-list-label--available,
+.Agents-list-label--busy {
+  border-radius: var(--border-radius);
+  font-size: 0.8em;
+  padding: 0.4em;
+}
+
+.Agents-list-label--available {
+  background-color: var(--primary-color-faded);
+  color: var(--primary-color);
+}
+
+.Agents-list-label--busy {
+  background-color: var(--tertiary-color-faded);
+  color: var(--tertiary-color);
+}
