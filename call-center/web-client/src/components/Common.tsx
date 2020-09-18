@@ -133,7 +133,8 @@ function Common({ agentId, agentName, token }: ICommon) {
 
       {webRTCall && (
         <ActiveCall
-          callerID={
+          agentId={agentId}
+          callerId={
             webRTCall.options.remoteCallerName ||
             webRTCall.options.remoteCallerNumber
           }
@@ -145,28 +146,35 @@ function Common({ agentId, agentName, token }: ICommon) {
         />
       )}
 
-      <section className="App-section">
-        <form className="App-form">
-          <label className="App-input-label" htmlFor="phone_number_input">
-            Phone number
-          </label>
-          <div className="App-form-row">
-            <input
-              id="phone_number_input"
-              className="App-input"
-              name="phone_number"
-              type="text"
-            />
-            <button type="submit" className="App-button App-button--primary">
-              Call
-            </button>
-          </div>
-        </form>
-      </section>
+      {!webRTCall && (
+        <div>
+          <section className="App-section">
+            <form className="App-form">
+              <label className="App-input-label" htmlFor="phone_number_input">
+                Phone number
+              </label>
+              <div className="App-form-row">
+                <input
+                  id="phone_number_input"
+                  className="App-input"
+                  name="phone_number"
+                  type="text"
+                />
+                <button
+                  type="submit"
+                  className="App-button App-button--primary"
+                >
+                  Call
+                </button>
+              </div>
+            </form>
+          </section>
 
-      <section className="App-section">
-        <Agents agentId={agentId} />
-      </section>
+          <section className="App-section">
+            <Agents agentId={agentId} />
+          </section>
+        </div>
+      )}
     </div>
   );
 }

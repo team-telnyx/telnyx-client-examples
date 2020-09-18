@@ -30,8 +30,7 @@
   padding: 0.5rem 1rem;
 }
 
-.Agents-list-label--available,
-.Agents-list-label--busy {
+.Agents-list-label {
   border-radius: var(--border-radius);
   font-size: 0.8em;
   padding: 0.4em;
