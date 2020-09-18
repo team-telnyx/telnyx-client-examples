@@ -13,6 +13,7 @@ interface IClientState {
   appCallState: string;
   aLegCallControlId: string;
   agentSipUsername?: string;
+  conferenceId?: string;
 }
 
 class CallsController {
@@ -30,6 +31,44 @@ class CallsController {
 
     callToBridge.bridge({ call_control_id });
     res.json({});
+  };
+
+  // Invite an agent to join another agent's conference call
+  public static invite = async function (req: Request, res: Response) {
+    // TODO Move `telnyx` declaration to module import once issue is re-fixed:
+    // https://github.com/team-telnyx/telnyx-node/issues/26
+    let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
+
+    let { hostId, agentId } = req.body;
+
+    try {
+      let agentRepository = getManager().getRepository(Agent);
+      let hostAgent = await agentRepository.findOneOrFail(hostId, {
+        relations: ['calls'],
+      });
+      let agentToInvite = await agentRepository.findOneOrFail(agentId);
+      // TODO More robust way of getting active call?
+      let hostAgentCall = hostAgent.calls[hostAgent.calls.length - 1];
+
+      res.json({
+        data: await telnyx.calls.create({
+          to: agentToInvite.sipUsername,
+          from: hostAgent.sipUsername,
+          connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
+          client_state: encodeClientState({
+            appCallId: hostAgentCall.id,
+            appCallState: 'C_invite_to_conference',
+            conferenceId: hostAgent.hostConferenceId,
+            // TEMP May need to rename/repurpose `aLegCallControlId`:
+            aLegCallControlId: 'TEMP',
+          }),
+        }),
+      });
+    } catch (e) {
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
   };
 
   /*

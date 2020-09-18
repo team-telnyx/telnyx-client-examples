@@ -24,7 +24,7 @@ export class Agent {
   @Column()
   available!: boolean;
 
-  @Column()
+  @Column({ nullable: true })
   hostConferenceId!: string;
 
   @ManyToMany((type) => Call, (call) => call.agents, {
