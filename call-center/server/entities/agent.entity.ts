@@ -1,10 +1,9 @@
 import {
   Entity,
   Column,
-  CreateDateColumn,
   PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { Call } from './call.entity';
 
@@ -25,12 +24,9 @@ export class Agent {
   @Column()
   available!: boolean;
 
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @ManyToOne((type) => Call, (call) => call.agents, {
+  @ManyToMany((type) => Call, (call) => call.agents, {
     cascade: ['update'],
   })
-  @JoinColumn()
-  activeCall!: Call;
+  @JoinTable()
+  calls!: Call[];
 }

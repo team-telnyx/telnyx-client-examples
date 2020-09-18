@@ -15,10 +15,11 @@ class AgentsController {
           where: { loggedIn: true },
           // IDEA This could be a separate route,
           // as to not query relations on GET
-          relations: ['activeCall'],
+          relations: ['calls'],
         }),
       });
     } catch (e) {
+      console.error(e);
       res.status(500).send({ error: e });
     }
   };
@@ -48,7 +49,7 @@ class AgentsController {
         id: reqBodyId,
         loggedIn,
         createdAt,
-        activeCall,
+        calls,
         ...allowedFields
       } = req.body;
 
