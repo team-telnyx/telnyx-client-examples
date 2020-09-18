@@ -24,6 +24,9 @@ export class Agent {
   @Column()
   available!: boolean;
 
+  @Column()
+  hostConferenceId!: string;
+
   @ManyToMany((type) => Call, (call) => call.agents, {
     cascade: ['update'],
   })

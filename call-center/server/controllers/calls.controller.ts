@@ -210,7 +210,7 @@ class CallsController {
               (agent ? agent.name : clientState.agentSipUsername) || to
             }'s Conference Room`;
 
-            await telnyx.conferences.create({
+            let { data: conference } = await telnyx.conferences.create({
               call_control_id,
               name: conferenceName,
               client_state: encodeClientState({
@@ -222,6 +222,7 @@ class CallsController {
 
             if (agent) {
               agent.available = false;
+              agent.hostConferenceId = conference.id;
 
               let call = await callRepository.findOne(clientState.appCallId);
 
@@ -234,6 +235,11 @@ class CallsController {
               }
 
               await agentRepository.save(agent);
+            } else {
+              console.warn(
+                'No agent found for call control ID: ',
+                call_control_id
+              );
             }
           }
 
