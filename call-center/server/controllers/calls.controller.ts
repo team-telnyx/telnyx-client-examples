@@ -53,7 +53,10 @@ class CallsController {
       res.json({
         data: await telnyx.calls.create({
           to: agentToInvite.sipUsername,
-          from: hostAgent.sipUsername,
+          // Specifying the host SIP username doesn't seem to work,
+          // possibly because connection ID relationship?
+          // from: hostAgent.sipUsername,
+          from: process.env.TELNYX_SIP_OB_NUMBER,
           connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
           client_state: encodeClientState({
             appCallId: hostAgentCall.id,

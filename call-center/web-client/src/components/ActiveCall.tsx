@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 // import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
+import { inviteAgent } from '../services/callsService';
 import Agents from './Agents';
 import './ActiveCall.css';
 
@@ -40,9 +41,11 @@ function ActiveCall({
     setIsMuted(false);
   };
 
-  const addAgent = (agent: any) => {
-    console.log('agent:', agent);
-  };
+  const addAgent = (agenttoAdd: any) =>
+    inviteAgent({
+      hostId: agentId,
+      agentId: agenttoAdd.id,
+    });
 
   return (
     <section>
