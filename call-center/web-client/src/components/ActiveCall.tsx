@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 // import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
+import Agents from './Agents';
 import './ActiveCall.css';
 
 interface IActiveCall {
-  callerID: string;
+  agentId: string;
+  callerId: string;
   // FIXME `IWebRTCCall.state` needs to be updated to be `State`
   // callState: State;
   callState: string;
@@ -14,7 +16,8 @@ interface IActiveCall {
 }
 
 function ActiveCall({
-  callerID,
+  agentId,
+  callerId,
   callState,
   answer,
   hangup,
@@ -37,12 +40,16 @@ function ActiveCall({
     setIsMuted(false);
   };
 
+  const addAgent = (agent: any) => {
+    console.log('agent:', agent);
+  };
+
   return (
     <section>
       {callState === 'ringing' && (
         <div className="App-section">
           <div>Incoming call</div>
-          <div className="ActiveCall-callerId">{callerID}</div>
+          <div className="ActiveCall-callerId">{callerId}</div>
           <div className="ActiveCall-actions">
             <button
               type="button"
@@ -67,7 +74,7 @@ function ActiveCall({
       {callState === 'active' && (
         <div className="App-section">
           <div>Call in progress</div>
-          <div className="ActiveCall-callerId">{callerID}</div>
+          <div className="ActiveCall-callerId">{callerId}</div>
           <div className="ActiveCall-actions">
             <button
               type="button"
@@ -94,6 +101,10 @@ function ActiveCall({
           </div>
         </div>
       )}
+
+      <section className="App-section">
+        <Agents agentId={agentId} addAgent={addAgent} />
+      </section>
 
       {/* TODO Conference calls with multiple agents */}
       {/* <div className="App-section">

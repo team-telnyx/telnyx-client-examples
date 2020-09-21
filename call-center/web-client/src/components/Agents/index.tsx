@@ -7,9 +7,10 @@ import useInterval from '../../hooks/useInterval';
 
 interface IAgents {
   agentId: string;
+  addAgent?: Function;
 }
 
-export default function Agents({ agentId }: IAgents) {
+export default function Agents({ agentId, addAgent }: IAgents) {
   let [loading, setLoading] = useState<boolean>(true);
   let [error, setError] = useState<string | undefined>();
   let [agents, setAgents] = useState<IAgent[] | undefined>();
@@ -36,7 +37,7 @@ export default function Agents({ agentId }: IAgents) {
   return (
     <div className="Agents">
       <h2 className="Agents-heading">
-        Other available agents {loading && <LoadingIcon />}
+        Other agents {loading && <LoadingIcon />}
       </h2>
 
       {error && <p className="Agents-error">Error: {error}</p>}
@@ -45,6 +46,38 @@ export default function Agents({ agentId }: IAgents) {
           {agents.map((agent) => (
             <li key={agent.id} className="Agents-list-item">
               <div>{agent.name}</div>
+
+              {addAgent && (
+                <div>
+                  {agent.available ? (
+                    <div>
+                      <button
+                        type="button"
+                        className="App-button App-button--secondary"
+                        onClick={() => addAgent(agent)}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="Agents-list-label Agents-list-label--available">
+                      busy
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!addAgent && (
+                <div>
+                  <div
+                    className={`Agents-list-label Agents-list-label--${
+                      agent.available ? 'available' : 'busy'
+                    }`}
+                  >
+                    {agent.available ? 'Available' : 'Busy'}
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>

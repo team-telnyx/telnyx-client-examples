@@ -1,7 +1,9 @@
 .App {
   --primary-color: #00c08b;
+  --primary-color-faded: rgba(0, 192, 139, 0.2);
   --secondary-color: #1fb6ff;
   --tertiary-color: #80868b;
+  --tertiary-color-faded: rgba(128, 134, 139, 0.2);
   --danger-color: #ff6666;
   --border-radius: 3px;
 
