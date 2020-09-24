@@ -54,8 +54,7 @@ function ActiveCall({
   const isIncoming = callDirection === 'inbound';
   const isRinging = callState === 'ringing';
   const isCalling =
-    !isIncoming ||
-    callState === 'new' ||
+    (!isIncoming && callState === 'new') ||
     callState === 'requesting' ||
     callState === 'trying' ||
     callState === 'early';
