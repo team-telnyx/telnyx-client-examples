@@ -2,11 +2,11 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import { BASE_URL } from '../configs/constants';
 
 interface IInviteAgentParams {
-  hostId: string;
-  agentId: string;
+  inviterSipUsername: string;
+  to: string;
 }
 
-export const inviteAgent = async (
+export const invite = async (
   params: IInviteAgentParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios

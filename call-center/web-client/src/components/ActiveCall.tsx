@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 // import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
-import { inviteAgent } from '../services/callsService';
+import { invite } from '../services/callsService';
 import Agents from './Agents';
 import './ActiveCall.css';
 
 interface IActiveCall {
-  agentId: string;
+  sipUsername: string;
   callerId: string;
   // FIXME `IWebRTCCall.state` needs to be updated to be `State`
   // callState: State;
@@ -17,7 +17,7 @@ interface IActiveCall {
 }
 
 function ActiveCall({
-  agentId,
+  sipUsername,
   callerId,
   callState,
   answer,
@@ -42,9 +42,9 @@ function ActiveCall({
   };
 
   const addAgent = (agenttoAdd: any) =>
-    inviteAgent({
-      hostId: agentId,
-      agentId: agenttoAdd.id,
+    invite({
+      inviterSipUsername: sipUsername,
+      to: `sip:${agenttoAdd.sipUsername}@sip.telnyx.com`,
     });
 
   return (
@@ -106,7 +106,7 @@ function ActiveCall({
       )}
 
       <section className="App-section">
-        <Agents agentId={agentId} addAgent={addAgent} />
+        <Agents sipUsername={sipUsername} addAgent={addAgent} />
       </section>
 
       {/* TODO Conference calls with multiple agents */}

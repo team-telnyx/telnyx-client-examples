@@ -7,6 +7,7 @@ import Agents from './Agents';
 
 interface ICommon {
   agentId: string;
+  agentSipUsername: string;
   agentName: string;
   // User's WebRTC JWT
   token: string;
@@ -25,7 +26,7 @@ interface IPartialWebRTCCall {
   unmuteAudio: Function;
 }
 
-function Common({ agentId, agentName, token }: ICommon) {
+function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Save the Telnyx WebRTC client as a ref as to persist
   // the client object through component updates
   let telnyxClientRef = useRef<TelnyxRTC>();
@@ -142,7 +143,7 @@ function Common({ agentId, agentName, token }: ICommon) {
 
       {webRTCall && (
         <ActiveCall
-          agentId={agentId}
+          sipUsername={agentSipUsername}
           callerId={
             webRTCall.options.remoteCallerName ||
             webRTCall.options.remoteCallerNumber
@@ -180,7 +181,7 @@ function Common({ agentId, agentName, token }: ICommon) {
           </section>
 
           <section className="App-section">
-            <Agents agentId={agentId} />
+            <Agents sipUsername={sipUsername} />
           </section>
         </div>
       )}

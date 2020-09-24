@@ -12,6 +12,7 @@ interface IClientState {
   // through your application
   // appCallLegId: string;
   appCallState?: string;
+  appConferenceId?: string;
 }
 
 class CallsController {
@@ -31,37 +32,51 @@ class CallsController {
     res.json({});
   };
 
-  // Invite an agent to join another agent's conference call
+  // Invite an agent or phone number to join another agent's conference call
   public static invite = async function (req: Request, res: Response) {
     // TODO Move `telnyx` declaration to module import once issue is re-fixed:
     // https://github.com/team-telnyx/telnyx-node/issues/26
     let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
-    let { hostId, agentId } = req.body;
+    let { inviterSipUsername, to } = req.body;
 
     try {
-      let agentRepository = getManager().getRepository(Agent);
-      let hostAgent = await agentRepository.findOneOrFail(hostId, {
-        relations: ['calls'],
+      // Find the correct call leg by inviter's SIP username
+      let callLegRepository = getManager().getRepository(CallLeg);
+      let appInviterCallLeg = await callLegRepository.findOneOrFail({
+        where: {
+          // status: '',
+          to: `sip:${inviterSipUsername}@sip.telnyx.com`,
+        },
+        relations: ['conference'],
       });
-      let agentToInvite = await agentRepository.findOneOrFail(agentId);
-      // TODO More robust way of getting active call?
-      let hostAgentCall = hostAgent.calls[hostAgent.calls.length - 1];
+
+      // NOTE Specifying the host SIP username doesn't seem to work,
+      // possibly because connection ID relationship?
+      // let from = `sip:${inviterSipUsername}@sip.telnyx.com`;
+      let from = process.env.TELNYX_SIP_OB_NUMBER || '';
+
+      let { agentTelnyxCall } = await telnyx.calls.create({
+        to,
+        from,
+        connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
+        client_state: encodeClientState({
+          appCallState: 'dial_agent',
+          appConferenceId: appInviterCallLeg.conference.id,
+        }),
+      });
+
+      // Save newly created leg to our database
+      let appAgentCallLeg = new CallLeg();
+      appAgentCallLeg.from = from;
+      appAgentCallLeg.to = to;
+      appAgentCallLeg.telnyxCallControlId = agentTelnyxCall.call_control_id;
+      appAgentCallLeg.conference = appInviterCallLeg.conference;
+
+      await callLegRepository.save(appAgentCallLeg);
 
       res.json({
-        data: await telnyx.calls.create({
-          to: agentToInvite.sipUsername,
-          // Specifying the host SIP username doesn't seem to work,
-          // possibly because connection ID relationship?
-          // from: hostAgent.sipUsername,
-          from: process.env.TELNYX_SIP_OB_NUMBER,
-          connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
-          client_state: encodeClientState({
-            appCallId: hostAgentCall.id,
-            appCallState: 'C_invite_to_conference',
-            conferenceId: hostAgent.hostConferenceId,
-          }),
-        }),
+        data: agentTelnyxCall,
       });
     } catch (e) {
       res
@@ -185,6 +200,7 @@ class CallsController {
                 timeout_secs: 60,
                 client_state: encodeClientState({
                   appCallState: 'dial_agent',
+                  appConferenceId: appConference.id,
                 }),
               });
 
@@ -216,28 +232,31 @@ class CallsController {
             }
           } else if (clientState.appCallState === 'dial_agent') {
             // Handle a call answered by an agent logged into the WebRTC client
-            let appConference = await conferenceRepository.findOneOrFail({
-              where: {
-                callLeg: { to, telnyxCallControlId: call_control_id },
-              },
-              relations: ['callLeg'],
-            });
 
-            // Join the conference with the original caller
-            let telnyxConference = await new telnyx.Conference({
-              id: appConference.telnyxConferenceId,
-            });
+            if (clientState.appConferenceId) {
+              let appConference = await conferenceRepository.findOneOrFail(
+                clientState.appConferenceId,
+                {
+                  relations: ['callLeg'],
+                }
+              );
 
-            telnyxConference.join({
-              call_control_id,
-            });
+              // Join the conference with the original caller
+              let telnyxConference = await new telnyx.Conference({
+                id: appConference.telnyxConferenceId,
+              });
 
-            // Stop playing hold music
-            telnyxConference.unhold({
-              call_control_ids: appConference.callLegs.map(
-                (callLeg) => callLeg.telnyxCallControlId
-              ),
-            });
+              telnyxConference.join({
+                call_control_id,
+              });
+
+              // Stop playing hold music
+              telnyxConference.unhold({
+                call_control_ids: appConference.callLegs.map(
+                  (callLeg) => callLeg.telnyxCallControlId
+                ),
+              });
+            }
           }
 
           break;
