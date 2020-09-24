@@ -8,9 +8,14 @@ import useInterval from '../../hooks/useInterval';
 interface IAgents {
   sipUsername: string;
   addAgent?: Function;
+  transferToAgent?: Function;
 }
 
-export default function Agents({ sipUsername, addAgent }: IAgents) {
+export default function Agents({
+  sipUsername,
+  addAgent,
+  transferToAgent,
+}: IAgents) {
   let [loading, setLoading] = useState<boolean>(true);
   let [error, setError] = useState<string | undefined>();
   let [agents, setAgents] = useState<IAgent[] | undefined>();
@@ -47,28 +52,38 @@ export default function Agents({ sipUsername, addAgent }: IAgents) {
             <li key={agent.id} className="Agents-list-item">
               <div>{agent.name}</div>
 
-              {addAgent && (
-                <div>
-                  {agent.available ? (
-                    <div>
-                      <button
-                        type="button"
-                        className="App-button App-button--secondary"
-                        onClick={() => addAgent(agent)}
-                      >
-                        Add
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="Agents-list-label Agents-list-label--available">
-                      busy
+              {(addAgent || transferToAgent) && (
+                <div className="Agents-list-actions">
+                  {addAgent && agent.available && (
+                    <button
+                      type="button"
+                      className="App-button App-button--small App-button--primary"
+                      onClick={() => addAgent(agent)}
+                    >
+                      Add
+                    </button>
+                  )}
+
+                  {transferToAgent && agent.available && (
+                    <button
+                      type="button"
+                      className="App-button App-button--small App-button--secondary"
+                      onClick={() => transferToAgent(agent)}
+                    >
+                      Transfer
+                    </button>
+                  )}
+
+                  {(addAgent || transferToAgent) && !agent.available && (
+                    <div className="Agents-list-label Agents-list-label--busy">
+                      Busy
                     </div>
                   )}
                 </div>
               )}
 
-              {!addAgent && (
-                <div>
+              {!addAgent && !transferToAgent && (
+                <div className="Agents-list-actions">
                   <div
                     className={`Agents-list-label Agents-list-label--${
                       agent.available ? 'available' : 'busy'
