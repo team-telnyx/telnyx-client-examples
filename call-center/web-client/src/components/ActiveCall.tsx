@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 // import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
+import { invite } from '../services/callsService';
 import Agents from './Agents';
 import './ActiveCall.css';
 
 interface IActiveCall {
-  agentId: string;
+  sipUsername: string;
   callerId: string;
   // FIXME `IWebRTCCall.state` needs to be updated to be `State`
   // callState: State;
@@ -16,7 +17,7 @@ interface IActiveCall {
 }
 
 function ActiveCall({
-  agentId,
+  sipUsername,
   callerId,
   callState,
   answer,
@@ -40,9 +41,11 @@ function ActiveCall({
     setIsMuted(false);
   };
 
-  const addAgent = (agent: any) => {
-    console.log('agent:', agent);
-  };
+  const addAgent = (agenttoAdd: any) =>
+    invite({
+      inviterSipUsername: sipUsername,
+      to: `sip:${agenttoAdd.sipUsername}@sip.telnyx.com`,
+    });
 
   return (
     <section>
@@ -70,7 +73,6 @@ function ActiveCall({
           </div>
         </div>
       )}
-
       {callState === 'active' && (
         <div className="App-section">
           <div>Call in progress</div>
@@ -101,11 +103,9 @@ function ActiveCall({
           </div>
         </div>
       )}
-
       <section className="App-section">
-        <Agents agentId={agentId} addAgent={addAgent} />
+        <Agents sipUsername={sipUsername} addAgent={addAgent} />
       </section>
-
       {/* TODO Conference calls with multiple agents */}
       {/* <div className="App-section">
         <div>Conference call in progress</div>

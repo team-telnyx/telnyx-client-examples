@@ -7,6 +7,7 @@ import Agents from './Agents';
 
 interface ICommon {
   agentId: string;
+  agentSipUsername: string;
   agentName: string;
   // User's WebRTC JWT
   token: string;
@@ -25,7 +26,7 @@ interface IPartialWebRTCCall {
   unmuteAudio: Function;
 }
 
-function Common({ agentId, agentName, token }: ICommon) {
+function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Save the Telnyx WebRTC client as a ref as to persist
   // the client object through component updates
   let telnyxClientRef = useRef<TelnyxRTC>();
@@ -75,37 +76,46 @@ function Common({ agentId, agentName, token }: ICommon) {
       updateAgent(agentId, { available: false });
     });
 
-    telnyxClient.on('telnyx.notification', (notification: any) => {
-      console.log('notification:', notification);
+    telnyxClient.on(
+      'telnyx.notification',
+      (notification: any, ...args: any[]) => {
+        console.log('notification:', notification, ...args);
 
-      if (notification.call) {
-        const {
-          state,
-          options,
-          answer,
-          hangup,
-          muteAudio,
-          unmuteAudio,
-          remoteStream,
-        } = notification.call;
-
-        console.log('state:', state);
-
-        if (state === 'hangup' || state === 'destroy') {
-          setWebRTCCall(null);
-        } else {
-          setWebRTCCall({
+        if (notification.call) {
+          const {
             state,
             options,
+            answer,
+            hangup,
+            muteAudio,
+            unmuteAudio,
             remoteStream,
-            answer: answer.bind(notification.call),
-            hangup: hangup.bind(notification.call),
-            muteAudio: muteAudio.bind(notification.call),
-            unmuteAudio: unmuteAudio.bind(notification.call),
-          });
+          } = notification.call;
+
+          console.log('state:', state);
+
+          if (state === 'hangup' || state === 'destroy') {
+            setWebRTCCall(null);
+
+            updateAgent(agentId, { available: true });
+          } else {
+            if (state === 'answering') {
+              updateAgent(agentId, { available: false });
+            }
+
+            setWebRTCCall({
+              state,
+              options,
+              remoteStream,
+              answer: answer.bind(notification.call),
+              hangup: hangup.bind(notification.call),
+              muteAudio: muteAudio.bind(notification.call),
+              unmuteAudio: unmuteAudio.bind(notification.call),
+            });
+          }
         }
       }
-    });
+    );
 
     telnyxClientRef.current = telnyxClient;
     telnyxClientRef.current.connect();
@@ -133,7 +143,7 @@ function Common({ agentId, agentName, token }: ICommon) {
 
       {webRTCall && (
         <ActiveCall
-          agentId={agentId}
+          sipUsername={agentSipUsername}
           callerId={
             webRTCall.options.remoteCallerName ||
             webRTCall.options.remoteCallerNumber
@@ -171,7 +181,7 @@ function Common({ agentId, agentName, token }: ICommon) {
           </section>
 
           <section className="App-section">
-            <Agents agentId={agentId} />
+            <Agents sipUsername={agentSipUsername} />
           </section>
         </div>
       )}

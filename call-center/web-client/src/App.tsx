@@ -78,6 +78,7 @@ function App() {
           <header>Logged in as {agent.name}</header>
           <Common
             agentId={agent.id}
+            agentSipUsername={agent.sipUsername}
             agentName={agent.name}
             token={sessionStorageUser.token}
           ></Common>

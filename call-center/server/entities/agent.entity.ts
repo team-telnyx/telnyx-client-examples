@@ -1,11 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToMany,
-  JoinTable,
-} from 'typeorm';
-import { Call } from './call.entity';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Agent {
@@ -23,10 +16,4 @@ export class Agent {
 
   @Column()
   available!: boolean;
-
-  @ManyToMany((type) => Call, (call) => call.agents, {
-    cascade: ['update'],
-  })
-  @JoinTable()
-  calls!: Call[];
 }

@@ -6,17 +6,14 @@ import {
 import { getManager } from 'typeorm';
 import { Agent } from '../entities/agent.entity';
 
+let telnyxPackage: any = require('telnyx');
+
 class AgentsController {
   public static getLoggedIn = async function (req: Request, res: Response) {
     try {
       let agentRepository = getManager().getRepository(Agent);
       res.json({
-        agents: await agentRepository.find({
-          where: { loggedIn: true },
-          // IDEA This could be a separate route,
-          // as to not query relations on GET
-          relations: ['calls'],
-        }),
+        agents: await agentRepository.find({ loggedIn: true }),
       });
     } catch (e) {
       console.error(e);

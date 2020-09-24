@@ -6,11 +6,11 @@ import LoadingIcon from '../LoadingIcon';
 import useInterval from '../../hooks/useInterval';
 
 interface IAgents {
-  agentId: string;
+  sipUsername: string;
   addAgent?: Function;
 }
 
-export default function Agents({ agentId, addAgent }: IAgents) {
+export default function Agents({ sipUsername, addAgent }: IAgents) {
   let [loading, setLoading] = useState<boolean>(true);
   let [error, setError] = useState<string | undefined>();
   let [agents, setAgents] = useState<IAgent[] | undefined>();
@@ -21,7 +21,7 @@ export default function Agents({ agentId, addAgent }: IAgents) {
     return getLoggedInAgents()
       .then((res) => {
         let otherAgents = res.data.agents.filter(
-          (agent) => agent.id !== agentId
+          (agent) => agent.sipUsername !== sipUsername
         );
 
         setAgents(otherAgents);
