@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { getManager } from 'typeorm';
-import { CallLeg } from '../entities/callLeg.entity';
+import { CallLeg, CallLegStatus } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import { Agent } from '../entities/agent.entity';
 import { format } from 'path';
@@ -15,9 +15,9 @@ interface IClientState {
   appConferenceId?: string;
 }
 
-interface IDialAgentParams {
-  sipUsername: string;
+interface IDialParams {
   from: string;
+  to: string;
   connectionId: string;
   appConferenceId: string;
 }
@@ -41,18 +41,15 @@ class CallsController {
 
   // Invite an agent or phone number to join another agent's conference call
   public static invite = async function (req: Request, res: Response) {
-    // TODO Move `telnyx` declaration to module import once issue is re-fixed:
-    // https://github.com/team-telnyx/telnyx-node/issues/26
-    let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
-
     let { inviterSipUsername, to } = req.body;
 
     try {
-      // Find the correct call leg by inviter's SIP username
+      // Find the correct call leg and conference by inviter's SIP username
       let callLegRepository = getManager().getRepository(CallLeg);
       let appInviterCallLeg = await callLegRepository.findOneOrFail({
         where: {
-          // status: '',
+          // TODO More robust way of identifying current call leg
+          status: CallLegStatus.ACTIVE,
           to: `sip:${inviterSipUsername}@sip.telnyx.com`,
         },
         relations: ['conference'],
@@ -65,14 +62,16 @@ class CallsController {
 
       // Call the agent to invite them to join the conference call
       res.json({
-        data: await CallsController.dialAgent({
-          sipUsername: inviterSipUsername,
+        data: await CallsController.dial({
+          to,
           from,
-          connectionId: process.env.TELNYX_SIP_CONNECTION_ID || '',
+          connectionId: appInviterCallLeg.telnyxConnectionId,
           appConferenceId: appInviterCallLeg.conference.id,
         }),
       });
     } catch (e) {
+      console.error(e);
+
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
         .send({ error: e });
@@ -129,6 +128,7 @@ class CallsController {
             appIncomingCallLeg.from = from;
             appIncomingCallLeg.to = to;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
+            appIncomingCallLeg.telnyxConnectionId = connection_id;
 
             await callLegRepository.save(appIncomingCallLeg);
 
@@ -180,8 +180,8 @@ class CallsController {
               await conferenceRepository.save(appConference);
 
               // Call the agent to invite them to join the conference call
-              await CallsController.dialAgent({
-                sipUsername: availableAgent.sipUsername,
+              await CallsController.dial({
+                to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
                 from,
                 connectionId: connection_id,
                 appConferenceId: appConference.id,
@@ -239,6 +239,23 @@ class CallsController {
           break;
         }
 
+        case 'call.hangup': {
+          let appCallLegs = await callLegRepository.find({
+            to,
+            status: CallLegStatus.ACTIVE,
+          });
+
+          callLegRepository.save(
+            appCallLegs.map((callLeg) => {
+              callLeg.status = CallLegStatus.INACTIVE;
+
+              return callLeg;
+            })
+          );
+
+          break;
+        }
+
         default:
           break;
       }
@@ -255,20 +272,19 @@ class CallsController {
     res.json({});
   };
 
-  private static dialAgent = async function ({
-    sipUsername,
+  private static dial = async function ({
     from,
+    to,
     connectionId,
     appConferenceId,
-  }: IDialAgentParams) {
+  }: IDialParams) {
     // TODO Move `telnyx` declaration to module import once issue is re-fixed:
     // https://github.com/team-telnyx/telnyx-node/issues/26
     let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
     let callLegRepository = getManager().getRepository(CallLeg);
     let conferenceRepository = getManager().getRepository(Conference);
-    let to = `sip:${sipUsername}@sip.telnyx.com`;
 
-    let { data: telnyxAgentCall } = await telnyx.calls.create({
+    let { data: telnyxOutgoingCall } = await telnyx.calls.create({
       to,
       from,
       connection_id: connectionId,
@@ -285,14 +301,14 @@ class CallsController {
     let appAgentCallLeg = new CallLeg();
     appAgentCallLeg.to = to;
     appAgentCallLeg.from = from;
-    appAgentCallLeg.telnyxCallControlId = telnyxAgentCall.call_control_id;
+    appAgentCallLeg.status = CallLegStatus.ACTIVE;
+    appAgentCallLeg.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
+    appAgentCallLeg.telnyxConnectionId = connectionId;
     appAgentCallLeg.conference = await conferenceRepository.findOneOrFail(
       appConferenceId
     );
 
-    await callLegRepository.save(appAgentCallLeg);
-
-    return telnyxAgentCall;
+    return callLegRepository.save(appAgentCallLeg);
   };
 
   private static getAvailableAgent = async function () {

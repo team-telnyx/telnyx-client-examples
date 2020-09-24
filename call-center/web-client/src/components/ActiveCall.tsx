@@ -73,7 +73,6 @@ function ActiveCall({
           </div>
         </div>
       )}
-
       {callState === 'active' && (
         <div className="App-section">
           <div>Call in progress</div>
@@ -104,11 +103,9 @@ function ActiveCall({
           </div>
         </div>
       )}
-
       <section className="App-section">
         <Agents sipUsername={sipUsername} addAgent={addAgent} />
       </section>
-
       {/* TODO Conference calls with multiple agents */}
       {/* <div className="App-section">
         <div>Conference call in progress</div>

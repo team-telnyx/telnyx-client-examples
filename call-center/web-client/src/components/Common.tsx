@@ -137,6 +137,8 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
     <div>
       <section className="App-section">
         WebRTC status: {webRTCClientState}
+        <br />
+        sipUsername: {agentSipUsername}
       </section>
 
       <audio ref={audioRef} autoPlay controls={false} />
