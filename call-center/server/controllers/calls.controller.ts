@@ -162,6 +162,9 @@ class CallsController {
               let { data: telnyxConference } = await telnyx.conferences.create({
                 name: `Call from ${from} at ${Date.now()}`,
                 call_control_id,
+                // Place caller on hold until agent joins the call
+                hold_audio_url: process.env.HOLD_AUDIO_URL,
+                start_conference_on_create: false,
               });
 
               // Save the conference and incoming call in our database so that we can
@@ -175,12 +178,6 @@ class CallsController {
               appConference.callLegs = [appIncomingCallLeg];
 
               await conferenceRepository.save(appConference);
-
-              // Place caller on hold
-              await telnyxConference.hold({
-                call_control_id,
-                hold_audio_url: process.env.HOLD_AUDIO_URL,
-              });
 
               // Call the agent to invite them to join the conference call
               await CallsController.dialAgent({
@@ -222,15 +219,11 @@ class CallsController {
                 id: appConference.telnyxConferenceId,
               });
 
-              telnyxConference.join({
+              await telnyxConference.join({
                 call_control_id,
-              });
-
-              // Stop playing hold music
-              telnyxConference.unhold({
-                call_control_ids: appConference.callLegs.map(
-                  (callLeg) => callLeg.telnyxCallControlId
-                ),
+                // Start the conference upon joining. This will also stop the
+                // hold music playing for the caller
+                start_conference_on_enter: true,
               });
             }
           }
