@@ -28,7 +28,7 @@ function Dialer({ dial }: IDialer) {
     <section className="App-section">
       <form className="App-form" onSubmit={handleSubmit}>
         <label className="App-input-label" htmlFor="dial_destination_input">
-          Phone number
+          Destination
         </label>
         <div className="App-form-row">
           <input
@@ -37,6 +37,7 @@ function Dialer({ dial }: IDialer) {
             name="dial_destination"
             type="text"
             value={destination}
+            placeholder="Phone number or SIP URI"
             required
             onChange={handleChangeDestination}
           />
