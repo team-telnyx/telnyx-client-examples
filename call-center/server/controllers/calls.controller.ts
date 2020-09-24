@@ -15,6 +15,13 @@ interface IClientState {
   appConferenceId?: string;
 }
 
+interface IDialAgentParams {
+  sipUsername: string;
+  from: string;
+  connectionId: string;
+  appConferenceId: string;
+}
+
 class CallsController {
   public static bridge = async function (req: Request, res: Response) {
     // TODO Move `telnyx` declaration to module import once issue is re-fixed:
@@ -56,27 +63,14 @@ class CallsController {
       // let from = `sip:${inviterSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER || '';
 
-      let { agentTelnyxCall } = await telnyx.calls.create({
-        to,
-        from,
-        connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
-        client_state: encodeClientState({
-          appCallState: 'dial_agent',
+      // Call the agent to invite them to join the conference call
+      res.json({
+        data: await CallsController.dialAgent({
+          sipUsername: inviterSipUsername,
+          from,
+          connectionId: process.env.TELNYX_SIP_CONNECTION_ID || '',
           appConferenceId: appInviterCallLeg.conference.id,
         }),
-      });
-
-      // Save newly created leg to our database
-      let appAgentCallLeg = new CallLeg();
-      appAgentCallLeg.from = from;
-      appAgentCallLeg.to = to;
-      appAgentCallLeg.telnyxCallControlId = agentTelnyxCall.call_control_id;
-      appAgentCallLeg.conference = appInviterCallLeg.conference;
-
-      await callLegRepository.save(appAgentCallLeg);
-
-      res.json({
-        data: agentTelnyxCall,
       });
     } catch (e) {
       res
@@ -165,7 +159,7 @@ class CallsController {
               // Create a new Telnyx Conference to organize & issue commands
               // to multiple call legs at once
               let { data: telnyxConference } = await telnyx.conferences.create({
-                name: `Call from ${from}`,
+                name: `Call from ${from} at ${Date.now()}`,
                 call_control_id,
               });
 
@@ -188,31 +182,12 @@ class CallsController {
               });
 
               // Call the agent to invite them to join the conference call
-              let { data: agentTelnyxCall } = await telnyx.calls.create({
-                to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
+              await CallsController.dialAgent({
+                sipUsername: availableAgent.sipUsername,
                 from,
-                connection_id,
-                // Pass in original call's call control ID in order to share the
-                // same call session ID:
-                link_to: call_control_id,
-                // IDEA Specify a short answer timeout so that you can quickly
-                // rotate to a different agent if one doesn't answer within X
-                timeout_secs: 60,
-                client_state: encodeClientState({
-                  appCallState: 'dial_agent',
-                  appConferenceId: appConference.id,
-                }),
+                connectionId: connection_id,
+                appConferenceId: appConference.id,
               });
-
-              // Save newly created leg to our database
-              let appAgentCallLeg = new CallLeg();
-              appAgentCallLeg.from = from;
-              appAgentCallLeg.to = to;
-              appAgentCallLeg.telnyxCallControlId =
-                agentTelnyxCall.call_control_id;
-              appAgentCallLeg.conference = appConference;
-
-              await callLegRepository.save(appAgentCallLeg);
             } else {
               // Handle when no agents are available to transfer the call
 
@@ -284,6 +259,45 @@ class CallsController {
     }
 
     res.json({});
+  };
+
+  private static dialAgent = async function ({
+    sipUsername,
+    from,
+    connectionId,
+    appConferenceId,
+  }: IDialAgentParams) {
+    // TODO Move `telnyx` declaration to module import once issue is re-fixed:
+    // https://github.com/team-telnyx/telnyx-node/issues/26
+    let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
+    let callLegRepository = getManager().getRepository(CallLeg);
+    let conferenceRepository = getManager().getRepository(Conference);
+
+    let { data: telnyxAgentCall } = await telnyx.calls.create({
+      to: `sip:${sipUsername}@sip.telnyx.com`,
+      from,
+      connection_id: connectionId,
+      // IDEA Specify a short answer timeout so that you can quickly
+      // rotate to a different agent if one doesn't answer within X
+      timeout_secs: 60,
+      client_state: encodeClientState({
+        appCallState: 'dial_agent',
+        appConferenceId: appConferenceId,
+      }),
+    });
+
+    // Save newly created leg to our database
+    let appAgentCallLeg = new CallLeg();
+    appAgentCallLeg.from = telnyxAgentCall.from;
+    appAgentCallLeg.to = telnyxAgentCall.to;
+    appAgentCallLeg.telnyxCallControlId = telnyxAgentCall.call_control_id;
+    appAgentCallLeg.conference = await conferenceRepository.findOneOrFail(
+      appConferenceId
+    );
+
+    await callLegRepository.save(appAgentCallLeg);
+
+    return telnyxAgentCall;
   };
 
   private static getAvailableAgent = async function () {
