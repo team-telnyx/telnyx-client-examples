@@ -237,7 +237,7 @@ class CallsController {
               let appConference = await conferenceRepository.findOneOrFail(
                 clientState.appConferenceId,
                 {
-                  relations: ['callLeg'],
+                  relations: ['callLegs'],
                 }
               );
 
@@ -275,6 +275,10 @@ class CallsController {
       }
     } catch (e) {
       console.error(e);
+
+      if (e?.raw?.errors) {
+        console.error(e.raw.errors);
+      }
 
       res.status(500).json({ error: e });
     }
