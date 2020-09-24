@@ -181,7 +181,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
           </section>
 
           <section className="App-section">
-            <Agents sipUsername={sipUsername} />
+            <Agents sipUsername={agentSipUsername} />
           </section>
         </div>
       )}

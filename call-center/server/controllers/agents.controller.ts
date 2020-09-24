@@ -13,12 +13,7 @@ class AgentsController {
     try {
       let agentRepository = getManager().getRepository(Agent);
       res.json({
-        agents: await agentRepository.find({
-          where: { loggedIn: true },
-          // IDEA This could be a separate route,
-          // as to not query relations on GET
-          relations: ['calls'],
-        }),
+        agents: await agentRepository.find({ loggedIn: true }),
       });
     } catch (e) {
       console.error(e);
