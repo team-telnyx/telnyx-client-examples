@@ -6,6 +6,7 @@ import { Agent } from '../entities/agent.entity';
 import { format } from 'path';
 
 let telnyxPackage: any = require('telnyx');
+let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
 interface IClientState {
   // Define your own call states to direct the flow of the call
@@ -24,10 +25,6 @@ interface IDialParams {
 
 class CallsController {
   public static bridge = async function (req: Request, res: Response) {
-    // TODO Move `telnyx` declaration to module import once issue is re-fixed:
-    // https://github.com/team-telnyx/telnyx-node/issues/26
-    let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
-
     let { call_control_id, to } = req.body.data;
     let callToBridge = await telnyx.calls.create({
       connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
@@ -82,10 +79,6 @@ class CallsController {
    * Directs the call flow based on the Call Control event type
    */
   public static callControl = async function (req: Request, res: Response) {
-    // TODO Move `telnyx` declaration to module import once issue is re-fixed:
-    // https://github.com/team-telnyx/telnyx-node/issues/26
-    let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
-
     console.log('\n\n/callbacks/call-control-app | req body', req.body);
 
     try {
@@ -278,9 +271,6 @@ class CallsController {
     connectionId,
     appConferenceId,
   }: IDialParams) {
-    // TODO Move `telnyx` declaration to module import once issue is re-fixed:
-    // https://github.com/team-telnyx/telnyx-node/issues/26
-    let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
     let callLegRepository = getManager().getRepository(CallLeg);
     let conferenceRepository = getManager().getRepository(Conference);
 
