@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
 import { updateAgent } from '../services/agentsService';
 import ActiveCall from './ActiveCall';
 import Agents from './Agents';
+import Dialer from './Dialer';
 
 interface ICommon {
   agentId: string;
@@ -128,6 +129,28 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
     };
   }, [token, agentId]);
 
+  const dial = useCallback(
+    (destination) => {
+      if (!telnyxClientRef.current) {
+        return;
+      }
+
+      let call = telnyxClientRef.current.newCall({
+        destinationNumber: destination,
+        // TODO Find difference between `remote`-
+        callerName: `Call Center`,
+        // Your outbound-enabled phone number:
+        // TODO Remove hardcoded number, get from .env
+        callerNumber: '+12134639257',
+        remoteCallerName: agentName,
+        remoteCallerNumber: `sip:${agentSipUsername}@sip.telnyx.com`,
+        audio: true,
+        video: false,
+      });
+    },
+    [telnyxClientRef.current]
+  );
+
   // Set up remote stream to hear audio from incoming calls
   if (audioRef.current && webRTCall && webRTCall.remoteStream) {
     audioRef.current.srcObject = webRTCall.remoteStream;
@@ -159,25 +182,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       {!webRTCall && (
         <div>
           <section className="App-section">
-            <form className="App-form">
-              <label className="App-input-label" htmlFor="phone_number_input">
-                Phone number
-              </label>
-              <div className="App-form-row">
-                <input
-                  id="phone_number_input"
-                  className="App-input"
-                  name="phone_number"
-                  type="text"
-                />
-                <button
-                  type="submit"
-                  className="App-button App-button--primary"
-                >
-                  Call
-                </button>
-              </div>
-            </form>
+            <Dialer dial={dial} />
           </section>
 
           <section className="App-section">
