@@ -95,7 +95,13 @@ function Common({ agentId, agentName, token }: ICommon) {
 
           if (state === 'hangup' || state === 'destroy') {
             setWebRTCCall(null);
+
+            updateAgent(agentId, { available: true });
           } else {
+            if (state === 'answering') {
+              updateAgent(agentId, { available: false });
+            }
+
             setWebRTCCall({
               state,
               options,
