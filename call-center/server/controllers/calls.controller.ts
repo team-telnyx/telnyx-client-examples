@@ -273,9 +273,10 @@ class CallsController {
     let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
     let callLegRepository = getManager().getRepository(CallLeg);
     let conferenceRepository = getManager().getRepository(Conference);
+    let to = `sip:${sipUsername}@sip.telnyx.com`;
 
     let { data: telnyxAgentCall } = await telnyx.calls.create({
-      to: `sip:${sipUsername}@sip.telnyx.com`,
+      to,
       from,
       connection_id: connectionId,
       // IDEA Specify a short answer timeout so that you can quickly
@@ -289,8 +290,8 @@ class CallsController {
 
     // Save newly created leg to our database
     let appAgentCallLeg = new CallLeg();
-    appAgentCallLeg.from = telnyxAgentCall.from;
-    appAgentCallLeg.to = telnyxAgentCall.to;
+    appAgentCallLeg.to = to;
+    appAgentCallLeg.from = from;
     appAgentCallLeg.telnyxCallControlId = telnyxAgentCall.call_control_id;
     appAgentCallLeg.conference = await conferenceRepository.findOneOrFail(
       appConferenceId
