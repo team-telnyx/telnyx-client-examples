@@ -5,6 +5,7 @@ import { updateAgent } from '../services/agentsService';
 import ActiveCall from './ActiveCall';
 import Agents from './Agents';
 import Dialer from './Dialer';
+import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 
 interface ICommon {
   agentId: string;
@@ -16,9 +17,11 @@ interface ICommon {
 
 interface IPartialWebRTCCall {
   state: string;
+  direction: 'inbound' | 'outbound';
   options: {
     remoteCallerName: string;
     remoteCallerNumber: string;
+    destinationNumber: string;
   };
   answer: Function;
   hangup: Function;
@@ -77,46 +80,45 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       updateAgent(agentId, { available: false });
     });
 
-    telnyxClient.on(
-      'telnyx.notification',
-      (notification: any, ...args: any[]) => {
-        console.log('notification:', notification, ...args);
+    telnyxClient.on('telnyx.notification', (notification: any) => {
+      console.log('notification:', notification);
 
-        if (notification.call) {
-          const {
-            state,
-            options,
-            answer,
-            hangup,
-            muteAudio,
-            unmuteAudio,
-            remoteStream,
-          } = notification.call;
+      if (notification.call) {
+        const {
+          state,
+          direction,
+          options,
+          answer,
+          hangup,
+          muteAudio,
+          unmuteAudio,
+          remoteStream,
+        } = notification.call;
 
-          console.log('state:', state);
+        console.log('state:', state);
 
-          if (state === 'hangup' || state === 'destroy') {
-            setWebRTCCall(null);
+        if (state === 'hangup' || state === 'destroy') {
+          setWebRTCCall(null);
 
-            updateAgent(agentId, { available: true });
-          } else {
-            if (state === 'answering') {
-              updateAgent(agentId, { available: false });
-            }
-
-            setWebRTCCall({
-              state,
-              options,
-              remoteStream,
-              answer: answer.bind(notification.call),
-              hangup: hangup.bind(notification.call),
-              muteAudio: muteAudio.bind(notification.call),
-              unmuteAudio: unmuteAudio.bind(notification.call),
-            });
+          updateAgent(agentId, { available: true });
+        } else {
+          if (state === 'answering') {
+            updateAgent(agentId, { available: false });
           }
+
+          setWebRTCCall({
+            state,
+            direction,
+            options,
+            remoteStream,
+            answer: answer.bind(notification.call),
+            hangup: hangup.bind(notification.call),
+            muteAudio: muteAudio.bind(notification.call),
+            unmuteAudio: unmuteAudio.bind(notification.call),
+          });
         }
       }
-    );
+    });
 
     telnyxClientRef.current = telnyxClient;
     telnyxClientRef.current.connect();
@@ -167,6 +169,8 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       {webRTCall && (
         <ActiveCall
           sipUsername={agentSipUsername}
+          callDirection={webRTCall.direction}
+          callDestination={webRTCall.options.destinationNumber}
           callerId={
             webRTCall.options.remoteCallerName ||
             webRTCall.options.remoteCallerNumber
