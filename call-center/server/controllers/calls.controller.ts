@@ -99,6 +99,7 @@ class CallsController {
         connection_id,
         from,
         to,
+        direction,
         sip_hangup_cause,
         hangup_source,
       } = event.data.payload;
@@ -121,7 +122,7 @@ class CallsController {
            * Only answering parked calls because we also get the call.initiated
            * event for the second leg of the call
            */
-          if (state === 'parked') {
+          if (direction === 'incoming' && state === 'parked' && !client_state) {
             // Create a new call in our database so that we can retrieve call
             // information on the frontend
             let appIncomingCallLeg = new CallLeg();
