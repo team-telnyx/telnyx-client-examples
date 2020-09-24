@@ -75,6 +75,59 @@ class CallsController {
     }
   };
 
+  // Transfer the call to an agent or phone number to join
+  public static transfer = async function (req: Request, res: Response) {
+    // TODO Move `telnyx` declaration to module import once issue is re-fixed:
+    // https://github.com/team-telnyx/telnyx-node/issues/26
+    let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
+    let { transfererSipUsername, to } = req.body;
+
+    try {
+      // Find the correct call leg and conference by transferer's SIP username
+      let callLegRepository = getManager().getRepository(CallLeg);
+      let appTransfererCallLeg = await callLegRepository.findOneOrFail({
+        where: {
+          // TODO More robust way of identifying current call leg
+          status: CallLegStatus.ACTIVE,
+          to: `sip:${transfererSipUsername}@sip.telnyx.com`,
+        },
+        relations: ['conference'],
+      });
+
+      // NOTE Specifying the host SIP username doesn't seem to work,
+      // possibly because connection ID relationship?
+      // let from = `sip:${transfererSipUsername}@sip.telnyx.com`;
+      let from = process.env.TELNYX_SIP_OB_NUMBER || '';
+
+      // Call the agent to invite them to join the conference call
+      let newAgentDial = await CallsController.dial({
+        to,
+        from,
+        connectionId: appTransfererCallLeg.telnyxConnectionId,
+        appConferenceId: appTransfererCallLeg.conference.id,
+      });
+
+      // Create a new Telnyx Call in order to issue call control commands
+      // to the transferer call leg
+      let transfererCall = new telnyx.Call({
+        call_control_id: appTransfererCallLeg.telnyxCallControlId,
+      });
+
+      // Hang the transferer up
+      transfererCall.hangup();
+
+      res.json({
+        data: newAgentDial,
+      });
+    } catch (e) {
+      console.error(e);
+
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
+
   /*
    * Directs the call flow based on the Call Control event type
    */
