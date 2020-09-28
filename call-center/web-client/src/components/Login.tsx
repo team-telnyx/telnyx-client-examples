@@ -70,6 +70,7 @@ function Login({ agent, onLogin }: ILogin) {
             type="text"
             value={agentName}
             onChange={handleChangeAgentName}
+            required
           />
           <button type="submit" className="App-button App-button--primary">
             Login

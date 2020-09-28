@@ -6,6 +6,8 @@ import './ActiveCall.css';
 
 interface IActiveCall {
   sipUsername: string;
+  callDirection: string;
+  callDestination: string;
   callerId: string;
   // FIXME `IWebRTCCall.state` needs to be updated to be `State`
   // callState: State;
@@ -18,6 +20,8 @@ interface IActiveCall {
 
 function ActiveCall({
   sipUsername,
+  callDirection,
+  callDestination,
   callerId,
   callState,
   answer,
@@ -47,9 +51,18 @@ function ActiveCall({
       to: `sip:${agenttoAdd.sipUsername}@sip.telnyx.com`,
     });
 
+  const isIncoming = callDirection === 'inbound';
+  const isRinging = callState === 'ringing';
+  const isCalling =
+    (!isIncoming && callState === 'new') ||
+    callState === 'requesting' ||
+    callState === 'trying' ||
+    callState === 'early';
+  const isActive = callState === 'active';
+
   return (
     <section>
-      {callState === 'ringing' && (
+      {isRinging && (
         <div className="App-section">
           <div>Incoming call</div>
           <div className="ActiveCall-callerId">{callerId}</div>
@@ -73,10 +86,27 @@ function ActiveCall({
           </div>
         </div>
       )}
-      {callState === 'active' && (
+      {isCalling && (
+        <div className="App-section">
+          <div>Calling...</div>
+          <div className="ActiveCall-callerId">{callDestination}</div>
+          <div className="ActiveCall-actions">
+            <button
+              type="button"
+              className="App-button App-button--danger"
+              onClick={handleHangupClick}
+            >
+              Hangup
+            </button>
+          </div>
+        </div>
+      )}
+      {isActive && (
         <div className="App-section">
           <div>Call in progress</div>
-          <div className="ActiveCall-callerId">{callerId}</div>
+          <div className="ActiveCall-callerId">
+            {isIncoming ? callerId : callDestination}
+          </div>
           <div className="ActiveCall-actions">
             <button
               type="button"
