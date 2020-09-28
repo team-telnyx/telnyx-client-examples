@@ -4,11 +4,23 @@ import './styles.css';
 
 interface IAgents {
   agents?: IAgent[];
-  addAgent?: Function;
-  transferToAgent?: Function;
+  addToCall?: Function;
+  transferCall?: Function;
 }
 
-export default function Agents({ agents, addAgent, transferToAgent }: IAgents) {
+export default function Agents({ agents, addToCall, transferCall }: IAgents) {
+  function addAgent(agent: IAgent) {
+    if (addToCall) {
+      return addToCall(`sip:${agent.sipUsername}@sip.telnyx.com`);
+    }
+  }
+
+  function transferToAgent(agent: IAgent) {
+    if (transferCall) {
+      return transferCall(`sip:${agent.sipUsername}@sip.telnyx.com`);
+    }
+  }
+
   return (
     <div className="Agents">
       {agents && agents.length > 0 && (
@@ -17,9 +29,9 @@ export default function Agents({ agents, addAgent, transferToAgent }: IAgents) {
             <li key={agent.id} className="Agents-list-item">
               <div>{agent.name}</div>
 
-              {(addAgent || transferToAgent) && (
+              {(addToCall || transferCall) && (
                 <div className="Agents-list-actions">
-                  {addAgent && agent.available && (
+                  {addToCall && agent.available && (
                     <button
                       type="button"
                       className="App-button App-button--small App-button--primary"
@@ -29,7 +41,7 @@ export default function Agents({ agents, addAgent, transferToAgent }: IAgents) {
                     </button>
                   )}
 
-                  {transferToAgent && agent.available && (
+                  {transferCall && agent.available && (
                     <button
                       type="button"
                       className="App-button App-button--small App-button--secondary"
@@ -39,7 +51,7 @@ export default function Agents({ agents, addAgent, transferToAgent }: IAgents) {
                     </button>
                   )}
 
-                  {(addAgent || transferToAgent) && !agent.available && (
+                  {(addToCall || transferCall) && !agent.available && (
                     <div className="Agents-list-label Agents-list-label--busy">
                       Busy
                     </div>
@@ -47,7 +59,7 @@ export default function Agents({ agents, addAgent, transferToAgent }: IAgents) {
                 </div>
               )}
 
-              {!addAgent && !transferToAgent && (
+              {!addToCall && !transferCall && (
                 <div className="Agents-list-actions">
                   <div
                     className={`Agents-list-label Agents-list-label--${

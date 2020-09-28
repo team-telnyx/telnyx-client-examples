@@ -48,16 +48,16 @@ function ActiveCall({
     setIsMuted(false);
   };
 
-  const addAgent = (agentToAdd: any) =>
+  const addToCall = (destination: string) =>
     invite({
       inviterSipUsername: sipUsername,
-      to: `sip:${agentToAdd.sipUsername}@sip.telnyx.com`,
+      to: destination,
     });
 
-  const transferToAgent = (agentToTransfer: any) =>
+  const transferCall = (destination: string) =>
     transfer({
       transfererSipUsername: sipUsername,
-      to: `sip:${agentToTransfer.sipUsername}@sip.telnyx.com`,
+      to: destination,
     });
 
   const isIncoming = callDirection === 'inbound';
@@ -145,8 +145,8 @@ function ActiveCall({
       <section className="App-section">
         <Agents
           agents={agents}
-          addAgent={addAgent}
-          transferToAgent={transferToAgent}
+          addToCall={addToCall}
+          transferCall={transferCall}
         />
       </section>
       {/* TODO Conference calls with multiple agents */}
