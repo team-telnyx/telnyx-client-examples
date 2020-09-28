@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 // import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
 import { invite, transfer } from '../services/callsService';
+import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
 import './ActiveCall.css';
 
@@ -16,6 +17,7 @@ interface IActiveCall {
   hangup: Function;
   muteAudio: Function;
   unmuteAudio: Function;
+  agents?: IAgent[];
 }
 
 function ActiveCall({
@@ -28,6 +30,7 @@ function ActiveCall({
   hangup,
   muteAudio,
   unmuteAudio,
+  agents,
 }: IActiveCall) {
   console.log('callState:', callState);
   const [isMuted, setIsMuted] = useState(false);
@@ -141,7 +144,7 @@ function ActiveCall({
       )}
       <section className="App-section">
         <Agents
-          sipUsername={sipUsername}
+          agents={agents}
           addAgent={addAgent}
           transferToAgent={transferToAgent}
         />

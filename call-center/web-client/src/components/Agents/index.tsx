@@ -1,51 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import './styles.css';
-import { getLoggedInAgents } from '../../services/agentsService';
 import IAgent from '../../interfaces/IAgent';
-import LoadingIcon from '../LoadingIcon';
-import useInterval from '../../hooks/useInterval';
+import './styles.css';
 
 interface IAgents {
-  sipUsername: string;
+  agents?: IAgent[];
   addAgent?: Function;
   transferToAgent?: Function;
 }
 
-export default function Agents({
-  sipUsername,
-  addAgent,
-  transferToAgent,
-}: IAgents) {
-  let [loading, setLoading] = useState<boolean>(true);
-  let [error, setError] = useState<string | undefined>();
-  let [agents, setAgents] = useState<IAgent[] | undefined>();
-
-  function loadLoggedInAgents() {
-    setLoading(true);
-
-    return getLoggedInAgents()
-      .then((res) => {
-        let otherAgents = res.data.agents.filter(
-          (agent) => agent.sipUsername !== sipUsername
-        );
-
-        setAgents(otherAgents);
-      })
-      .catch((error) => {
-        setError(error.toString());
-      })
-      .finally(() => setLoading(false));
-  }
-
-  useInterval(loadLoggedInAgents, 5000);
-
+export default function Agents({ agents, addAgent, transferToAgent }: IAgents) {
   return (
     <div className="Agents">
-      <h2 className="Agents-heading">
-        Other agents {loading && <LoadingIcon />}
-      </h2>
-
-      {error && <p className="Agents-error">Error: {error}</p>}
       {agents && agents.length > 0 && (
         <ul className="Agents-list">
           {agents.map((agent) => (
