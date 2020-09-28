@@ -101,6 +101,11 @@
   text-decoration: underline;
 }
 
+.App-button--small {
+  padding: 0.4rem;
+  min-width: initial;
+}
+
 .App-error {
   color: red;
   padding: 10px;

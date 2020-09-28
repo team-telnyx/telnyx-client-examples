@@ -30,6 +30,14 @@
   padding: 0.5rem 1rem;
 }
 
+.Agents-list-actions {
+  display: flex;
+}
+
+.Agents-list-action + .Agents-list-action {
+  margin-left: 0.6rem;
+}
+
 .Agents-list-label {
   border-radius: var(--border-radius);
   font-size: 0.8em;
