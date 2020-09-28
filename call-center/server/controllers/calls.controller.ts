@@ -77,9 +77,6 @@ class CallsController {
 
   // Transfer the call to an agent or phone number to join
   public static transfer = async function (req: Request, res: Response) {
-    // TODO Move `telnyx` declaration to module import once issue is re-fixed:
-    // https://github.com/team-telnyx/telnyx-node/issues/26
-    let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
     let { transfererSipUsername, to } = req.body;
 
     try {
