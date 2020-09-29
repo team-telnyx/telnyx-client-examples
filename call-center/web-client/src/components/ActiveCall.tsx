@@ -4,6 +4,9 @@ import { invite, transfer } from '../services/callsService';
 import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
 import './ActiveCall.css';
+import useInterval from '../hooks/useInterval';
+import { getConference } from '../services/conferencesService';
+import IConference from '../interfaces/IConference';
 
 interface IActiveCall {
   sipUsername: string;
@@ -20,6 +23,30 @@ interface IActiveCall {
   agents?: IAgent[];
 }
 
+function useActiveConference(sipUsername: string) {
+  let [loading, setLoading] = useState<boolean>(true);
+  let [error, setError] = useState<string | undefined>();
+  let [conference, setConference] = useState<IConference | undefined>();
+
+  function loadConference() {
+    setLoading(true);
+
+    return getConference(`sip:${sipUsername}@sip.telnyx.com`)
+      .then((res) => {
+        setConference(res.data.conference);
+      })
+      .catch((error) => {
+        setError(error.toString());
+      })
+      .finally(() => setLoading(false));
+  }
+
+  // Poll for Conference state every second
+  useInterval(loadConference, 1000);
+
+  return { loading, error, conference };
+}
+
 function ActiveCall({
   sipUsername,
   callDirection,
@@ -34,6 +61,11 @@ function ActiveCall({
 }: IActiveCall) {
   console.log('callState:', callState);
   const [isMuted, setIsMuted] = useState(false);
+  const {
+    loading: conferenceLoading,
+    error: conferenceError,
+    conference,
+  } = useActiveConference(sipUsername);
   const handleAnswerClick = () => answer();
   const handleRejectClick = () => hangup();
   const handleHangupClick = () => hangup();
@@ -116,6 +148,11 @@ function ActiveCall({
           <div className="ActiveCall-callerId">
             {isIncoming ? callerId : callDestination}
           </div>
+          <pre className="ActiveCall-conference">
+            Conference ID: {conference?.id}
+            Loading: {conferenceLoading ? 'true' : 'false'}
+            Error: {conferenceError ? conferenceError : ''}
+          </pre>
           <div className="ActiveCall-actions">
             <button
               type="button"

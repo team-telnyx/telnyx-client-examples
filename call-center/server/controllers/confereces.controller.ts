@@ -10,8 +10,8 @@ class ConferenceController {
     try {
       let isSipAddress = idOrSipAddress.startsWith('sip:');
       let appConference = isSipAddress
-        ? ConferenceController.getConferenceBySipAddress(idOrSipAddress)
-        : ConferenceController.getConferenceByID(idOrSipAddress);
+        ? await ConferenceController.getConferenceBySipAddress(idOrSipAddress)
+        : await ConferenceController.getConferenceByID(idOrSipAddress);
 
       res.json({
         conference: appConference,
@@ -37,7 +37,7 @@ class ConferenceController {
         status: CallLegStatus.ACTIVE,
         to: sipAddress,
       },
-      relations: ['conference'],
+      relations: ['conference', 'conference.callLegs'],
     });
 
     return appTransfererCallLeg.conference;
