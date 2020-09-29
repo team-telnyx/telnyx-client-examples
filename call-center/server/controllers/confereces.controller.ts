@@ -14,7 +14,7 @@ class ConferenceController {
         : ConferenceController.getConferenceByID(idOrSipAddress);
 
       res.json({
-        data: appConference,
+        conference: appConference,
       });
     } catch (e) {
       console.error(e);
