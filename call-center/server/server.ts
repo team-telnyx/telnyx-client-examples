@@ -9,6 +9,7 @@ import { createConnection } from 'typeorm';
 
 import calls from './routes/calls';
 import agents from './routes/agents';
+import conferences from './routes/conferences';
 
 createConnection().then(function () {
   let app = express();
@@ -21,6 +22,7 @@ createConnection().then(function () {
 
   app.use('/calls', calls);
   app.use('/agents', agents);
+  app.use('/conferences', conferences);
 
   app.listen(process.env.TELNYX_SERVER_APP_PORT, function () {
     console.log(
