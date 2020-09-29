@@ -42,10 +42,12 @@ class CallsController {
 
     try {
       // Find the correct call leg and conference by inviter's SIP username
+      // TODO Once INIT-1896 is done, the WebRTC SDK will expose the Call Control
+      // ID. We will be able to ask for the conference related to the Call
+      // Control ID directly instead of infering from its participant SIP address
       let callLegRepository = getManager().getRepository(CallLeg);
       let appInviterCallLeg = await callLegRepository.findOneOrFail({
         where: {
-          // TODO More robust way of identifying current call leg
           status: CallLegStatus.ACTIVE,
           to: `sip:${inviterSipUsername}@sip.telnyx.com`,
         },
@@ -81,10 +83,12 @@ class CallsController {
 
     try {
       // Find the correct call leg and conference by transferer's SIP username
+      // TODO Once INIT-1896 is done, the WebRTC SDK will expose the Call Control
+      // ID. We will be able to ask for the conference related to the Call
+      // Control ID directly instead of infering from its participant SIP address
       let callLegRepository = getManager().getRepository(CallLeg);
       let appTransfererCallLeg = await callLegRepository.findOneOrFail({
         where: {
-          // TODO More robust way of identifying current call leg
           status: CallLegStatus.ACTIVE,
           to: `sip:${transfererSipUsername}@sip.telnyx.com`,
         },
