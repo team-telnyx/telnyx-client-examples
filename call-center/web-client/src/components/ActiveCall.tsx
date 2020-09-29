@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 // import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
 import { invite, transfer } from '../services/callsService';
 import IAgent from '../interfaces/IAgent';
@@ -7,6 +7,7 @@ import './ActiveCall.css';
 import useInterval from '../hooks/useInterval';
 import { getConference } from '../services/conferencesService';
 import IConference from '../interfaces/IConference';
+import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
 
 interface IActiveCall {
   sipUsername: string;
@@ -20,6 +21,14 @@ interface IActiveCall {
   hangup: Function;
   muteAudio: Function;
   unmuteAudio: Function;
+  agents?: IAgent[];
+}
+
+interface IActiveCallConference {
+  sipUsername: string;
+  isIncoming: boolean;
+  callDestination: string;
+  callerId: string;
   agents?: IAgent[];
 }
 
@@ -47,6 +56,55 @@ function useActiveConference(sipUsername: string) {
   return { loading, error, conference };
 }
 
+function ActiveCallConference({
+  sipUsername,
+  callDestination,
+  isIncoming,
+  callerId,
+  agents,
+}: IActiveCallConference) {
+  let {
+    loading: conferenceLoading,
+    error: conferenceError,
+    conference,
+  } = useActiveConference(sipUsername);
+
+  let conferenceParticipants = useMemo(() => {
+    if (conference) {
+      let otherParticipants = conference.callLegs
+        .filter((callLeg) => callLeg.status === CallLegStatus.ACTIVE)
+        .map((callLeg) =>
+          callLeg.direction === CallLegDirection.INCOMING
+            ? callLeg.from
+            : callLeg.to
+        )
+        .filter(
+          (participant) => participant !== `sip:${sipUsername}@sip.telnyx.com`
+        )
+        .map(
+          (participant) =>
+            agents?.find((agent) => participant.includes(agent.sipUsername))
+              ?.name || participant
+        );
+
+      return otherParticipants;
+    }
+
+    return [callerId];
+  }, [conference, sipUsername]);
+
+  return (
+    <div className="ActiveCall-conference">
+      {conferenceParticipants.map((participant, index) => (
+        <div className="ActiveCall-participant">
+          {index !== 0 ? <span className="ActiveCall-ampersand">&</span> : null}
+          <span className="ActiveCall-participant-name">{participant}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ActiveCall({
   sipUsername,
   callDirection,
@@ -61,11 +119,6 @@ function ActiveCall({
 }: IActiveCall) {
   console.log('callState:', callState);
   const [isMuted, setIsMuted] = useState(false);
-  const {
-    loading: conferenceLoading,
-    error: conferenceError,
-    conference,
-  } = useActiveConference(sipUsername);
   const handleAnswerClick = () => answer();
   const handleRejectClick = () => hangup();
   const handleHangupClick = () => hangup();
@@ -145,14 +198,13 @@ function ActiveCall({
       {isActive && (
         <div className="App-section">
           <div>Call in progress</div>
-          <div className="ActiveCall-callerId">
-            {isIncoming ? callerId : callDestination}
-          </div>
-          <pre className="ActiveCall-conference">
-            Conference ID: {conference?.id}
-            Loading: {conferenceLoading ? 'true' : 'false'}
-            Error: {conferenceError ? conferenceError : ''}
-          </pre>
+          <ActiveCallConference
+            sipUsername={sipUsername}
+            isIncoming={isIncoming}
+            callDestination={callDestination}
+            callerId={callerId}
+            agents={agents}
+          />
           <div className="ActiveCall-actions">
             <button
               type="button"

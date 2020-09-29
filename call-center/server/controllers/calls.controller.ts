@@ -1,6 +1,10 @@
 import { Request, Response } from 'express';
 import { getManager } from 'typeorm';
-import { CallLeg, CallLegStatus } from '../entities/callLeg.entity';
+import {
+  CallLeg,
+  CallLegStatus,
+  CallLegDirection,
+} from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import { Agent } from '../entities/agent.entity';
 import { format } from 'path';
@@ -174,6 +178,7 @@ class CallsController {
             let appIncomingCallLeg = new CallLeg();
             appIncomingCallLeg.from = from;
             appIncomingCallLeg.to = to;
+            appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
 
@@ -214,12 +219,16 @@ class CallsController {
                 start_conference_on_create: false,
               });
 
-              // Save the conference and incoming call in our database so that we can
-              // retrieve call control IDs later on user interaction
-              let appConference = new Conference();
+              // Save incoming call leg status as active
               let appIncomingCallLeg = await callLegRepository.findOneOrFail({
                 telnyxCallControlId: call_control_id,
               });
+              appIncomingCallLeg.status = CallLegStatus.ACTIVE;
+              await callLegRepository.save(appIncomingCallLeg);
+
+              // Save the conference and incoming call in our database so that we can
+              // retrieve call control IDs later on user interaction
+              let appConference = new Conference();
               appConference.telnyxConferenceId = telnyxConference.id;
               appConference.from = from;
               appConference.callLegs = [appIncomingCallLeg];
@@ -287,18 +296,16 @@ class CallsController {
         }
 
         case 'call.hangup': {
-          let appCallLegs = await callLegRepository.find({
-            to,
-            status: CallLegStatus.ACTIVE,
-          });
-
-          callLegRepository.save(
-            appCallLegs.map((callLeg) => {
-              callLeg.status = CallLegStatus.INACTIVE;
-
-              return callLeg;
-            })
-          );
+          try {
+            // Find the leg that hung up, and save it as inactive
+            let appCallLeg = await callLegRepository.findOneOrFail({
+              telnyxCallControlId: call_control_id?.toString(),
+            });
+            appCallLeg.status = CallLegStatus.INACTIVE;
+            callLegRepository.save(appCallLeg);
+          } catch (e) {
+            console.error(e);
+          }
 
           break;
         }
@@ -345,6 +352,7 @@ class CallsController {
     let appAgentCallLeg = new CallLeg();
     appAgentCallLeg.to = to;
     appAgentCallLeg.from = from;
+    appAgentCallLeg.direction = CallLegDirection.OUTGOING;
     appAgentCallLeg.status = CallLegStatus.ACTIVE;
     appAgentCallLeg.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appAgentCallLeg.telnyxConnectionId = connectionId;

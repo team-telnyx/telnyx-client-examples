@@ -26,3 +26,19 @@
   margin-bottom: 0.5rem;
   padding: 0.5rem;
 }
+
+.ActiveCall-conference {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.ActiveCall-participant {
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.ActiveCall-ampersand {
+  display: inline-block;
+  margin-right: 1rem;
+  color: #62cbff;
+}
