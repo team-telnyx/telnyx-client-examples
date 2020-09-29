@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
-import { updateAgent } from '../services/agentsService';
+import { updateAgent, getLoggedInAgents } from '../services/agentsService';
+import IAgent from '../interfaces/IAgent';
+import useInterval from '../hooks/useInterval';
 import ActiveCall from './ActiveCall';
 import Agents from './Agents';
 import Dialer from './Dialer';
+import LoadingIcon from './LoadingIcon';
 import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 
 interface ICommon {
@@ -30,6 +33,33 @@ interface IPartialWebRTCCall {
   unmuteAudio: Function;
 }
 
+function useAgents(sipUsername: string) {
+  let [loading, setLoading] = useState<boolean>(true);
+  let [error, setError] = useState<string | undefined>();
+  let [agents, setAgents] = useState<IAgent[] | undefined>();
+
+  function loadLoggedInAgents() {
+    setLoading(true);
+
+    return getLoggedInAgents()
+      .then((res) => {
+        let otherAgents = res.data.agents.filter(
+          (agent) => agent.sipUsername !== sipUsername
+        );
+
+        setAgents(otherAgents);
+      })
+      .catch((error) => {
+        setError(error.toString());
+      })
+      .finally(() => setLoading(false));
+  }
+
+  useInterval(loadLoggedInAgents, 5000);
+
+  return { loading, error, agents };
+}
+
 function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Save the Telnyx WebRTC client as a ref as to persist
   // the client object through component updates
@@ -40,6 +70,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   let isMountedRef = useRef<boolean>(false);
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
   let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
+  let agentsState = useAgents(agentSipUsername);
 
   const updateWebRTCState = (state: string) => {
     if (isMountedRef.current) {
@@ -180,6 +211,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
           hangup={webRTCall.hangup}
           muteAudio={webRTCall.muteAudio}
           unmuteAudio={webRTCall.unmuteAudio}
+          agents={agentsState.agents}
         />
       )}
 
@@ -190,7 +222,15 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
           </section>
 
           <section className="App-section">
-            <Agents sipUsername={agentSipUsername} />
+            <h2 className="App-headline">
+              Other agents {agentsState.loading && <LoadingIcon />}
+            </h2>
+
+            {agentsState.error && (
+              <p className="App-error">Error: {agentsState.error}</p>
+            )}
+
+            <Agents agents={agentsState.agents} />
           </section>
         </div>
       )}
