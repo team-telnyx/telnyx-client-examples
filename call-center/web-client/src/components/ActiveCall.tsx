@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 // import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
 import { invite, transfer } from '../services/callsService';
+import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
 import './ActiveCall.css';
 
@@ -16,6 +17,7 @@ interface IActiveCall {
   hangup: Function;
   muteAudio: Function;
   unmuteAudio: Function;
+  agents?: IAgent[];
 }
 
 function ActiveCall({
@@ -28,6 +30,7 @@ function ActiveCall({
   hangup,
   muteAudio,
   unmuteAudio,
+  agents,
 }: IActiveCall) {
   console.log('callState:', callState);
   const [isMuted, setIsMuted] = useState(false);
@@ -45,16 +48,16 @@ function ActiveCall({
     setIsMuted(false);
   };
 
-  const addAgent = (agentToAdd: any) =>
+  const addToCall = (destination: string) =>
     invite({
       inviterSipUsername: sipUsername,
-      to: `sip:${agentToAdd.sipUsername}@sip.telnyx.com`,
+      to: destination,
     });
 
-  const transferToAgent = (agentToTransfer: any) =>
+  const transferCall = (destination: string) =>
     transfer({
       transfererSipUsername: sipUsername,
-      to: `sip:${agentToTransfer.sipUsername}@sip.telnyx.com`,
+      to: destination,
     });
 
   const isIncoming = callDirection === 'inbound';
@@ -141,9 +144,9 @@ function ActiveCall({
       )}
       <section className="App-section">
         <Agents
-          sipUsername={sipUsername}
-          addAgent={addAgent}
-          transferToAgent={transferToAgent}
+          agents={agents}
+          addToCall={addToCall}
+          transferCall={transferCall}
         />
       </section>
       {/* TODO Conference calls with multiple agents */}
