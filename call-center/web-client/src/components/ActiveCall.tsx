@@ -88,9 +88,11 @@ function ActiveCallConference({
         );
 
       return otherParticipants;
+    } else if (isIncoming) {
+      return [callerId];
+    } else {
+      return [callDestination];
     }
-
-    return [callerId];
   }, [conference, sipUsername]);
 
   return (
