@@ -34,6 +34,11 @@
   margin: 1rem 0;
 }
 
+.ActiveCall-participant-row {
+  display: grid;
+  grid-template-columns: 1fr max-content;
+}
+
 .ActiveCall-participant {
   font-size: 30px;
   font-weight: bold;

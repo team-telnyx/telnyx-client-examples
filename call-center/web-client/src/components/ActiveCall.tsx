@@ -95,12 +95,35 @@ function ActiveCallConference({
     }
   }, [conference, sipUsername]);
 
+  const confirmRemove = (participant: string) => {
+    let result = window.confirm(
+      `Are you sure you want to remove ${participant} from this call?`
+    );
+
+    if (result) {
+      // TODO
+    }
+  };
+
   return (
     <div className="ActiveCall-conference">
       {conferenceParticipants.map((participant, index) => (
-        <div className="ActiveCall-participant">
-          {index !== 0 ? <span className="ActiveCall-ampersand">&</span> : null}
-          <span className="ActiveCall-participant-name">{participant}</span>
+        <div className="ActiveCall-participant-row">
+          <div className="ActiveCall-participant">
+            {index !== 0 ? (
+              <span className="ActiveCall-ampersand">&</span>
+            ) : null}
+            <span className="ActiveCall-participant-name">{participant}</span>
+          </div>
+          <div>
+            <button
+              type="button"
+              className="App-button App-button--small App-button--danger"
+              onClick={() => confirmRemove(participant)}
+            >
+              Remove
+            </button>
+          </div>
         </div>
       ))}
     </div>
