@@ -35,6 +35,11 @@ interface IActiveCallConference {
   agents?: IAgent[];
 }
 
+interface IConferenceParticipant {
+  displayName?: string;
+  participant: string;
+}
+
 function useActiveConference(sipUsername: string) {
   let [loading, setLoading] = useState<boolean>(true);
   let [error, setError] = useState<string | undefined>();
@@ -71,12 +76,12 @@ function ActiveCallConference({
     error: conferenceError,
     conference,
   } = useActiveConference(sipUsername);
-  let [destination, setDestination] = useState('');
+  let [participant, setParticipant] = useState('');
 
   const handleChangeDestination = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setDestination(event.target.value);
+    setParticipant(event.target.value);
   };
 
   const addToCall = (destination: string) =>
@@ -94,13 +99,23 @@ function ActiveCallConference({
   const removeFromCall = (participant: string) =>
     removeFromConference(participant);
 
+  const confirmRemove = (participant: string) => {
+    let result = window.confirm(
+      `Are you sure you want to remove ${participant} from this call?`
+    );
+
+    if (result) {
+      removeFromCall(participant);
+    }
+  };
+
   const handleAddDestination = (e: any) => {
     e.preventDefault();
 
-    addToCall(destination);
+    addToCall(participant);
   };
 
-  let conferenceParticipants = useMemo(() => {
+  let conferenceParticipants: IConferenceParticipant[] = useMemo(() => {
     if (conference) {
       let otherParticipants = conference.callLegs
         .filter((callLeg) => callLeg.status === CallLegStatus.ACTIVE)
@@ -125,42 +140,49 @@ function ActiveCallConference({
           }
 
           return {
-            displayName: participant,
             participant,
           };
         });
 
       return otherParticipants;
     } else if (isIncoming) {
-      return [callerId];
-    } else {
-      return [callDestination];
+      return [
+        {
+          participant: callerId,
+        },
+      ];
     }
+
+    return [
+      {
+        participant: callDestination,
+      },
+    ];
   }, [conference, sipUsername]);
 
-  const confirmRemove = (participant: string) => {
-    let result = window.confirm(
-      `Are you sure you want to remove ${participant} from this call?`
-    );
-
-    if (result) {
-      removeFromCall(participant);
+  useEffect(() => {
+    if (
+      participant &&
+      conferenceParticipants
+        .map(({ participant }) => participant)
+        .includes(participant)
+    ) {
+      setParticipant('');
     }
-  };
+  }, [conferenceParticipants]);
 
   return (
     <div className="ActiveCall-conference">
       <div>
-        {(conferenceParticipants as {
-          displayName: string;
-          participant: string;
-        }[]).map(({ displayName, participant }, index) => (
+        {conferenceParticipants.map(({ displayName, participant }, index) => (
           <div className="ActiveCall-participant-row">
             <div className="ActiveCall-participant">
               {index !== 0 ? (
                 <span className="ActiveCall-ampersand">&</span>
               ) : null}
-              <span className="ActiveCall-participant-name">{displayName}</span>
+              <span className="ActiveCall-participant-name">
+                {displayName || participant}
+              </span>
             </div>
             {index !== 0 && (
               <div>
@@ -192,7 +214,7 @@ function ActiveCallConference({
             className="App-input"
             name="destination"
             type="text"
-            value={destination}
+            value={participant}
             placeholder="Phone number or SIP URI"
             required
             onChange={handleChangeDestination}
@@ -202,7 +224,7 @@ function ActiveCallConference({
             className="App-button App-button--small App-button--primary"
             onClick={handleAddDestination}
           >
-            Add
+            Invite
           </button>
         </div>
       </div>
