@@ -135,15 +135,17 @@ function ActiveCallConference({
             ) : null}
             <span className="ActiveCall-participant-name">{displayName}</span>
           </div>
-          <div>
-            <button
-              type="button"
-              className="App-button App-button--small App-button--danger"
-              onClick={() => confirmRemove(participant)}
-            >
-              Remove
-            </button>
-          </div>
+          {index !== 0 && (
+            <div>
+              <button
+                type="button"
+                className="App-button App-button--small App-button--danger"
+                onClick={() => confirmRemove(participant)}
+              >
+                Remove
+              </button>
+            </div>
+          )}
         </div>
       ))}
     </div>
