@@ -30,6 +30,7 @@ interface IActiveCallConference {
   callDestination: string;
   callerId: string;
   agents?: IAgent[];
+  removeFromCall: Function;
 }
 
 function useActiveConference(sipUsername: string) {
@@ -62,6 +63,7 @@ function ActiveCallConference({
   isIncoming,
   callerId,
   agents,
+  removeFromCall,
 }: IActiveCallConference) {
   let {
     loading: conferenceLoading,
@@ -81,11 +83,23 @@ function ActiveCallConference({
         .filter(
           (participant) => participant !== `sip:${sipUsername}@sip.telnyx.com`
         )
-        .map(
-          (participant) =>
-            agents?.find((agent) => participant.includes(agent.sipUsername))
-              ?.name || participant
-        );
+        .map((participant) => {
+          let agent = agents?.find((agent) =>
+            participant.includes(agent.sipUsername)
+          );
+
+          if (agent) {
+            return {
+              displayName: agent.name || agent.sipUsername,
+              participant: `sip:${agent.sipUsername}@sip.telnyx.com`,
+            };
+          }
+
+          return {
+            displayName: participant,
+            participant,
+          };
+        });
 
       return otherParticipants;
     } else if (isIncoming) {
@@ -101,19 +115,22 @@ function ActiveCallConference({
     );
 
     if (result) {
-      // TODO
+      removeFromCall(participant);
     }
   };
 
   return (
     <div className="ActiveCall-conference">
-      {conferenceParticipants.map((participant, index) => (
+      {(conferenceParticipants as {
+        displayName: string;
+        participant: string;
+      }[]).map(({ displayName, participant }, index) => (
         <div className="ActiveCall-participant-row">
           <div className="ActiveCall-participant">
             {index !== 0 ? (
               <span className="ActiveCall-ampersand">&</span>
             ) : null}
-            <span className="ActiveCall-participant-name">{participant}</span>
+            <span className="ActiveCall-participant-name">{displayName}</span>
           </div>
           <div>
             <button
@@ -169,6 +186,10 @@ function ActiveCall({
       transfererSipUsername: sipUsername,
       to: destination,
     });
+
+  const removeFromCall = (participant: string) => {
+    console.log('TODO remove:', participant);
+  };
 
   const isIncoming = callDirection === 'inbound';
   const isRinging = callState === 'ringing';
@@ -229,6 +250,7 @@ function ActiveCall({
             callDestination={callDestination}
             callerId={callerId}
             agents={agents}
+            removeFromCall={removeFromCall}
           />
           <div className="ActiveCall-actions">
             <button
