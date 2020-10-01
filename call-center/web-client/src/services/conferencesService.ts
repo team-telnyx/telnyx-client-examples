@@ -1,6 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import IConference from '../interfaces/IConference';
 import { BASE_URL } from '../configs/constants';
+import { hangup } from './callsService';
 
 export const getConference = async (
   id: string
@@ -10,4 +11,9 @@ export const getConference = async (
       'Content-Type': 'application/json',
     },
   });
+};
+
+export const removeFromConference = async (participant: string) => {
+  // Hanging up the call leg is the same removing from the conference
+  return hangup({ participant });
 };

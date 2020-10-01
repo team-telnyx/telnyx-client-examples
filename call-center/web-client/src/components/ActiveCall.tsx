@@ -5,7 +5,10 @@ import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
 import './ActiveCall.css';
 import useInterval from '../hooks/useInterval';
-import { getConference } from '../services/conferencesService';
+import {
+  getConference,
+  removeFromConference,
+} from '../services/conferencesService';
 import IConference from '../interfaces/IConference';
 import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
 
@@ -187,9 +190,8 @@ function ActiveCall({
       to: destination,
     });
 
-  const removeFromCall = (participant: string) => {
-    console.log('TODO remove:', participant);
-  };
+  const removeFromCall = (participant: string) =>
+    removeFromConference(participant);
 
   const isIncoming = callDirection === 'inbound';
   const isRinging = callState === 'ringing';
