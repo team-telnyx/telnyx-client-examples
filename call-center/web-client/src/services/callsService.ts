@@ -11,6 +11,10 @@ interface ITransferAgentParams {
   to: string;
 }
 
+interface IHangupParams {
+  participant: string;
+}
+
 export const invite = async (
   params: IInviteAgentParams
 ): Promise<AxiosResponse | AxiosError> => {
@@ -29,6 +33,19 @@ export const transfer = async (
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/transfer`, params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then((resp: AxiosResponse) => resp)
+    .catch((error: AxiosError) => error);
+};
+
+export const hangup = async (
+  params: IHangupParams
+): Promise<AxiosResponse | AxiosError> => {
+  return await axios
+    .post(`${BASE_URL}/calls/actions/conferences/hangup`, params, {
       headers: {
         'Content-Type': 'application/json',
       },

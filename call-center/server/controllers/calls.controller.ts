@@ -132,6 +132,40 @@ class CallsController {
         .send({ error: e });
     }
   };
+  // Hang up a call by the specified destination, e.g. to remove a number
+  // from a conference call
+  public static hangup = async function (req: Request, res: Response) {
+    let { participant } = req.body;
+
+    try {
+      let callLegRepository = getManager().getRepository(CallLeg);
+      let appCallLegToHangUp = await callLegRepository.findOneOrFail({
+        where: {
+          status: CallLegStatus.ACTIVE,
+          to: participant,
+        },
+      });
+
+      // Create a new Telnyx Call in order to issue call control commands
+      // to the call leg to hang up
+      let transfererCall = new telnyx.Call({
+        call_control_id: appCallLegToHangUp.telnyxCallControlId,
+      });
+
+      // Hang up the call
+      await transfererCall.hangup();
+
+      res.json({
+        data: appCallLegToHangUp,
+      });
+    } catch (e) {
+      console.error(e);
+
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
 
   /*
    * Directs the call flow based on the Call Control event type
