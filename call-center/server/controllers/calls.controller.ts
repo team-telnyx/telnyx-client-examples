@@ -1,6 +1,10 @@
 import { Request, Response } from 'express';
 import { getManager } from 'typeorm';
-import { CallLeg, CallLegStatus } from '../entities/callLeg.entity';
+import {
+  CallLeg,
+  CallLegStatus,
+  CallLegDirection,
+} from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import { Agent } from '../entities/agent.entity';
 import { format } from 'path';
@@ -42,10 +46,12 @@ class CallsController {
 
     try {
       // Find the correct call leg and conference by inviter's SIP username
+      // TODO Once INIT-1896 is done, the WebRTC SDK will expose the Call Control
+      // ID. We will be able to ask for the conference related to the Call
+      // Control ID directly instead of infering from its participant SIP address
       let callLegRepository = getManager().getRepository(CallLeg);
       let appInviterCallLeg = await callLegRepository.findOneOrFail({
         where: {
-          // TODO More robust way of identifying current call leg
           status: CallLegStatus.ACTIVE,
           to: `sip:${inviterSipUsername}@sip.telnyx.com`,
         },
@@ -81,10 +87,12 @@ class CallsController {
 
     try {
       // Find the correct call leg and conference by transferer's SIP username
+      // TODO Once INIT-1896 is done, the WebRTC SDK will expose the Call Control
+      // ID. We will be able to ask for the conference related to the Call
+      // Control ID directly instead of infering from its participant SIP address
       let callLegRepository = getManager().getRepository(CallLeg);
       let appTransfererCallLeg = await callLegRepository.findOneOrFail({
         where: {
-          // TODO More robust way of identifying current call leg
           status: CallLegStatus.ACTIVE,
           to: `sip:${transfererSipUsername}@sip.telnyx.com`,
         },
@@ -170,6 +178,7 @@ class CallsController {
             let appIncomingCallLeg = new CallLeg();
             appIncomingCallLeg.from = from;
             appIncomingCallLeg.to = to;
+            appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
 
@@ -210,12 +219,16 @@ class CallsController {
                 start_conference_on_create: false,
               });
 
-              // Save the conference and incoming call in our database so that we can
-              // retrieve call control IDs later on user interaction
-              let appConference = new Conference();
+              // Save incoming call leg status as active
               let appIncomingCallLeg = await callLegRepository.findOneOrFail({
                 telnyxCallControlId: call_control_id,
               });
+              appIncomingCallLeg.status = CallLegStatus.ACTIVE;
+              await callLegRepository.save(appIncomingCallLeg);
+
+              // Save the conference and incoming call in our database so that we can
+              // retrieve call control IDs later on user interaction
+              let appConference = new Conference();
               appConference.telnyxConferenceId = telnyxConference.id;
               appConference.from = from;
               appConference.callLegs = [appIncomingCallLeg];
@@ -283,18 +296,16 @@ class CallsController {
         }
 
         case 'call.hangup': {
-          let appCallLegs = await callLegRepository.find({
-            to,
-            status: CallLegStatus.ACTIVE,
-          });
-
-          callLegRepository.save(
-            appCallLegs.map((callLeg) => {
-              callLeg.status = CallLegStatus.INACTIVE;
-
-              return callLeg;
-            })
-          );
+          try {
+            // Find the leg that hung up, and save it as inactive
+            let appCallLeg = await callLegRepository.findOneOrFail({
+              telnyxCallControlId: call_control_id?.toString(),
+            });
+            appCallLeg.status = CallLegStatus.INACTIVE;
+            callLegRepository.save(appCallLeg);
+          } catch (e) {
+            console.error(e);
+          }
 
           break;
         }
@@ -341,6 +352,7 @@ class CallsController {
     let appAgentCallLeg = new CallLeg();
     appAgentCallLeg.to = to;
     appAgentCallLeg.from = from;
+    appAgentCallLeg.direction = CallLegDirection.OUTGOING;
     appAgentCallLeg.status = CallLegStatus.ACTIVE;
     appAgentCallLeg.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appAgentCallLeg.telnyxConnectionId = connectionId;

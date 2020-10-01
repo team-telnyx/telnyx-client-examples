@@ -1,9 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 // import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
 import { invite, transfer } from '../services/callsService';
 import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
 import './ActiveCall.css';
+import useInterval from '../hooks/useInterval';
+import { getConference } from '../services/conferencesService';
+import IConference from '../interfaces/IConference';
+import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
 
 interface IActiveCall {
   sipUsername: string;
@@ -18,6 +22,89 @@ interface IActiveCall {
   muteAudio: Function;
   unmuteAudio: Function;
   agents?: IAgent[];
+}
+
+interface IActiveCallConference {
+  sipUsername: string;
+  isIncoming: boolean;
+  callDestination: string;
+  callerId: string;
+  agents?: IAgent[];
+}
+
+function useActiveConference(sipUsername: string) {
+  let [loading, setLoading] = useState<boolean>(true);
+  let [error, setError] = useState<string | undefined>();
+  let [conference, setConference] = useState<IConference | undefined>();
+
+  function loadConference() {
+    setLoading(true);
+
+    return getConference(`sip:${sipUsername}@sip.telnyx.com`)
+      .then((res) => {
+        setConference(res.data.conference);
+      })
+      .catch((error) => {
+        setError(error.toString());
+      })
+      .finally(() => setLoading(false));
+  }
+
+  // Poll for Conference state every second
+  useInterval(loadConference, 1000);
+
+  return { loading, error, conference };
+}
+
+function ActiveCallConference({
+  sipUsername,
+  callDestination,
+  isIncoming,
+  callerId,
+  agents,
+}: IActiveCallConference) {
+  let {
+    loading: conferenceLoading,
+    error: conferenceError,
+    conference,
+  } = useActiveConference(sipUsername);
+
+  let conferenceParticipants = useMemo(() => {
+    if (conference) {
+      let otherParticipants = conference.callLegs
+        .filter((callLeg) => callLeg.status === CallLegStatus.ACTIVE)
+        .map((callLeg) =>
+          callLeg.direction === CallLegDirection.INCOMING
+            ? callLeg.from
+            : callLeg.to
+        )
+        .filter(
+          (participant) => participant !== `sip:${sipUsername}@sip.telnyx.com`
+        )
+        .map(
+          (participant) =>
+            agents?.find((agent) => participant.includes(agent.sipUsername))
+              ?.name || participant
+        );
+
+      return otherParticipants;
+    } else if (isIncoming) {
+      return [callerId];
+    } else {
+      return [callDestination];
+    }
+  }, [conference, sipUsername]);
+
+  return (
+    <div className="ActiveCall-conference">
+      {conferenceParticipants.map((participant, index) => (
+        <div className="ActiveCall-participant">
+          {index !== 0 ? <span className="ActiveCall-ampersand">&</span> : null}
+          <span className="ActiveCall-participant-name">{participant}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function ActiveCall({
@@ -113,9 +200,13 @@ function ActiveCall({
       {isActive && (
         <div className="App-section">
           <div>Call in progress</div>
-          <div className="ActiveCall-callerId">
-            {isIncoming ? callerId : callDestination}
-          </div>
+          <ActiveCallConference
+            sipUsername={sipUsername}
+            isIncoming={isIncoming}
+            callDestination={callDestination}
+            callerId={callerId}
+            agents={agents}
+          />
           <div className="ActiveCall-actions">
             <button
               type="button"

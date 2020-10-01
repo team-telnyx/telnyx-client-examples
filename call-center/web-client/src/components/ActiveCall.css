@@ -1,5 +1,6 @@
 .ActiveCall-callerId {
-  font-size: 1.5rem;
+  font-size: 30px;
+  font-weight: bold;
   line-height: 1;
   margin: 1rem 0;
 }
@@ -25,4 +26,21 @@
   background-color: rgba(255, 255, 255, 0.05);
   margin-bottom: 0.5rem;
   padding: 0.5rem;
+}
+
+.ActiveCall-conference {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.ActiveCall-participant {
+  font-size: 30px;
+  font-weight: bold;
+}
+
+.ActiveCall-ampersand {
+  display: inline-block;
+  margin-right: 1rem;
+  color: #62cbff;
 }

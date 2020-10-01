@@ -6,6 +6,11 @@ export enum CallLegStatus {
   ACTIVE = 'active',
 }
 
+export enum CallLegDirection {
+  INCOMING = 'incoming',
+  OUTGOING = 'outgoing',
+}
+
 @Entity()
 export class CallLeg {
   @PrimaryGeneratedColumn('uuid')
@@ -23,6 +28,13 @@ export class CallLeg {
 
   @Column()
   to!: string;
+
+  @Column({
+    type: 'simple-enum',
+    enum: CallLegDirection,
+    default: CallLegDirection.INCOMING,
+  })
+  direction!: string;
 
   @Column()
   telnyxCallControlId!: string;
