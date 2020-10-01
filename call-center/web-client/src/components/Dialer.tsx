@@ -27,14 +27,14 @@ function Dialer({ dial }: IDialer) {
   return (
     <section className="App-section">
       <form className="App-form" onSubmit={handleSubmit}>
-        <label className="App-input-label" htmlFor="dial_destination_input">
+        <label className="App-input-label" htmlFor="destination_input">
           Destination
         </label>
         <div className="App-form-row">
           <input
-            id="dial_destination_input"
+            id="destination_input"
             className="App-input"
-            name="dial_destination"
+            name="destination"
             type="text"
             value={destination}
             placeholder="Phone number or SIP URI"

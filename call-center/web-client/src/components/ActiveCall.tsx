@@ -4,6 +4,7 @@ import { invite, transfer } from '../services/callsService';
 import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
 import './ActiveCall.css';
+import useAgents from '../hooks/useAgents';
 import useInterval from '../hooks/useInterval';
 import {
   getConference,
@@ -24,7 +25,6 @@ interface IActiveCall {
   hangup: Function;
   muteAudio: Function;
   unmuteAudio: Function;
-  agents?: IAgent[];
 }
 
 interface IActiveCallConference {
@@ -33,7 +33,6 @@ interface IActiveCallConference {
   callDestination: string;
   callerId: string;
   agents?: IAgent[];
-  removeFromCall: Function;
 }
 
 function useActiveConference(sipUsername: string) {
@@ -65,14 +64,41 @@ function ActiveCallConference({
   callDestination,
   isIncoming,
   callerId,
-  agents,
-  removeFromCall,
 }: IActiveCallConference) {
+  let { agents } = useAgents(sipUsername);
   let {
     loading: conferenceLoading,
     error: conferenceError,
     conference,
   } = useActiveConference(sipUsername);
+  let [destination, setDestination] = useState('');
+
+  const handleChangeDestination = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setDestination(event.target.value);
+  };
+
+  const addToCall = (destination: string) =>
+    invite({
+      inviterSipUsername: sipUsername,
+      to: destination,
+    });
+
+  const transferCall = (destination: string) =>
+    transfer({
+      transfererSipUsername: sipUsername,
+      to: destination,
+    });
+
+  const removeFromCall = (participant: string) =>
+    removeFromConference(participant);
+
+  const handleAddDestination = (e: any) => {
+    e.preventDefault();
+
+    addToCall(destination);
+  };
 
   let conferenceParticipants = useMemo(() => {
     if (conference) {
@@ -124,30 +150,62 @@ function ActiveCallConference({
 
   return (
     <div className="ActiveCall-conference">
-      {(conferenceParticipants as {
-        displayName: string;
-        participant: string;
-      }[]).map(({ displayName, participant }, index) => (
-        <div className="ActiveCall-participant-row">
-          <div className="ActiveCall-participant">
-            {index !== 0 ? (
-              <span className="ActiveCall-ampersand">&</span>
-            ) : null}
-            <span className="ActiveCall-participant-name">{displayName}</span>
-          </div>
-          {index !== 0 && (
-            <div>
-              <button
-                type="button"
-                className="App-button App-button--small App-button--danger"
-                onClick={() => confirmRemove(participant)}
-              >
-                Remove
-              </button>
+      <div>
+        {(conferenceParticipants as {
+          displayName: string;
+          participant: string;
+        }[]).map(({ displayName, participant }, index) => (
+          <div className="ActiveCall-participant-row">
+            <div className="ActiveCall-participant">
+              {index !== 0 ? (
+                <span className="ActiveCall-ampersand">&</span>
+              ) : null}
+              <span className="ActiveCall-participant-name">{displayName}</span>
             </div>
-          )}
+            {index !== 0 && (
+              <div>
+                <button
+                  type="button"
+                  className="App-button App-button--small App-button--danger"
+                  onClick={() => confirmRemove(participant)}
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+            <span className="ActiveCall-participant-name">{participant}</span>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <div>Invite to conference</div>
+        <Agents
+          agents={agents}
+          addToCall={addToCall}
+          transferCall={transferCall}
+        />
+
+        <div className="App-form-row">
+          <input
+            id="destination_input"
+            className="App-input"
+            name="destination"
+            type="text"
+            value={destination}
+            placeholder="Phone number or SIP URI"
+            required
+            onChange={handleChangeDestination}
+          />
+          <button
+            type="submit"
+            className="App-button App-button--small App-button--primary"
+            onClick={handleAddDestination}
+          >
+            Add
+          </button>
         </div>
-      ))}
+      </div>
     </div>
   );
 }
@@ -162,10 +220,10 @@ function ActiveCall({
   hangup,
   muteAudio,
   unmuteAudio,
-  agents,
 }: IActiveCall) {
   console.log('callState:', callState);
   const [isMuted, setIsMuted] = useState(false);
+
   const handleAnswerClick = () => answer();
   const handleRejectClick = () => hangup();
   const handleHangupClick = () => hangup();
@@ -179,21 +237,6 @@ function ActiveCall({
     unmuteAudio();
     setIsMuted(false);
   };
-
-  const addToCall = (destination: string) =>
-    invite({
-      inviterSipUsername: sipUsername,
-      to: destination,
-    });
-
-  const transferCall = (destination: string) =>
-    transfer({
-      transfererSipUsername: sipUsername,
-      to: destination,
-    });
-
-  const removeFromCall = (participant: string) =>
-    removeFromConference(participant);
 
   const isIncoming = callDirection === 'inbound';
   const isRinging = callState === 'ringing';
@@ -253,8 +296,6 @@ function ActiveCall({
             isIncoming={isIncoming}
             callDestination={callDestination}
             callerId={callerId}
-            agents={agents}
-            removeFromCall={removeFromCall}
           />
           <div className="ActiveCall-actions">
             <button
@@ -282,35 +323,6 @@ function ActiveCall({
           </div>
         </div>
       )}
-      <section className="App-section">
-        <Agents
-          agents={agents}
-          addToCall={addToCall}
-          transferCall={transferCall}
-        />
-      </section>
-      {/* TODO Conference calls with multiple agents */}
-      {/* <div className="App-section">
-        <div>Conference call in progress</div>
-        <div className="ActiveCall-callerId">+13125551111</div>
-        <div>
-          <div className="App-heading ActiveCall-agentsList-heading">
-            Agents on call
-          </div>
-          <ul className="ActiveCall-agentList">
-            <li className="ActiveCall-agentList-item">Agent Name</li>
-            <li className="ActiveCall-agentList-item">Agent Name</li>
-          </ul>
-        </div>
-        <div className="ActiveCall-actions">
-          <button type="button" className="App-button App-button--danger">
-            Hangup
-          </button>
-          <button type="button" className="App-button App-button--tertiary">
-            Mute
-          </button>
-        </div>
-      </div> */}
     </section>
   );
 }

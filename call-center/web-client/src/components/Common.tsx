@@ -184,7 +184,6 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
           hangup={webRTCall.hangup}
           muteAudio={webRTCall.muteAudio}
           unmuteAudio={webRTCall.unmuteAudio}
-          agents={agentsState.agents}
         />
       )}
 
