@@ -39,7 +39,14 @@ interface IActiveCallConference {
 
 interface IConferenceParticipant {
   displayName?: string;
+  muted?: boolean;
   participant: string;
+}
+
+interface IMuteUnmuteButton {
+  isMuted?: boolean;
+  mute: () => void;
+  unmute: () => void;
 }
 
 function useActiveConference(sipUsername: string) {
@@ -64,6 +71,26 @@ function useActiveConference(sipUsername: string) {
   useInterval(loadConference, 1000);
 
   return { loading, error, conference };
+}
+
+function MuteUnmuteButton({ isMuted, mute, unmute }: IMuteUnmuteButton) {
+  return (
+    <button
+      type="button"
+      className="App-button App-button--tertiary"
+      onClick={isMuted ? unmute : mute}
+    >
+      {isMuted ? (
+        <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
+          🔇
+        </span>
+      ) : (
+        <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
+          🔈
+        </span>
+      )}
+    </button>
+  );
 }
 
 function ActiveCallConference({
@@ -98,11 +125,16 @@ function ActiveCallConference({
       to: destination,
     });
 
-  const removeFromCall = (participant: string) => {
+  const removeParticipant = (participant: string) => {
     appHangup({ participant });
   };
 
-  const muteCall = (participant: string) => appHangup({ participant });
+  const muteParticipant = (participant: string) => {
+    appMute({ participant });
+  };
+  const unmuteParticipant = (participant: string) => {
+    appUnmute({ participant });
+  };
 
   const confirmRemove = (participant: string) => {
     let result = window.confirm(
@@ -110,7 +142,7 @@ function ActiveCallConference({
     );
 
     if (result) {
-      removeFromCall(participant);
+      removeParticipant(participant);
     }
   };
 
@@ -124,27 +156,32 @@ function ActiveCallConference({
     if (conference) {
       let otherParticipants = conference.callLegs
         .filter((callLeg) => callLeg.status === CallLegStatus.ACTIVE)
-        .map((callLeg) =>
-          callLeg.direction === CallLegDirection.INCOMING
-            ? callLeg.from
-            : callLeg.to
-        )
+        .map((callLeg) => ({
+          muted: callLeg.muted,
+          participant:
+            callLeg.direction === CallLegDirection.INCOMING
+              ? callLeg.from
+              : callLeg.to,
+        }))
         .filter(
-          (participant) => participant !== `sip:${sipUsername}@sip.telnyx.com`
+          ({ participant }) =>
+            participant !== `sip:${sipUsername}@sip.telnyx.com`
         )
-        .map((participant) => {
+        .map(({ muted, participant }) => {
           let agent = agents?.find((agent) =>
             participant.includes(agent.sipUsername)
           );
 
           if (agent) {
             return {
+              muted,
               displayName: agent.name || agent.sipUsername,
               participant: `sip:${agent.sipUsername}@sip.telnyx.com`,
             };
           }
 
           return {
+            muted,
             participant,
           };
         });
@@ -179,38 +216,38 @@ function ActiveCallConference({
   return (
     <div className="ActiveCall-conference">
       <div>
-        {conferenceParticipants.map(({ displayName, participant }, index) => (
-          <div className="ActiveCall-participant-row">
-            <div className="ActiveCall-participant">
-              {index !== 0 ? (
-                <span className="ActiveCall-ampersand">&</span>
-              ) : null}
-              <span className="ActiveCall-participant-name">
-                {displayName || participant}
-              </span>
-            </div>
-            {index !== 0 && (
-              <div>
-                <button
-                  type="button"
-                  className="App-button App-button--small App-button--danger"
-                  onClick={() => muteCall(participant)}
-                >
-                  Mute
-                </button>
-
-                <button
-                  type="button"
-                  className="App-button App-button--small App-button--danger"
-                  onClick={() => confirmRemove(participant)}
-                >
-                  Remove
-                </button>
+        {conferenceParticipants.map(
+          ({ muted, displayName, participant }, index) => (
+            <div className="ActiveCall-participant-row">
+              <div className="ActiveCall-participant">
+                {index !== 0 ? (
+                  <span className="ActiveCall-ampersand">&</span>
+                ) : null}
+                <span className="ActiveCall-participant-name">
+                  {displayName || participant}
+                </span>
               </div>
-            )}
-            <span className="ActiveCall-participant-name">{participant}</span>
-          </div>
-        ))}
+              {index !== 0 && (
+                <div>
+                  <MuteUnmuteButton
+                    isMuted={muted}
+                    mute={() => muteParticipant(participant)}
+                    unmute={() => unmuteParticipant(participant)}
+                  />
+
+                  <button
+                    type="button"
+                    className="App-button App-button--small App-button--danger"
+                    onClick={() => confirmRemove(participant)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+              <span className="ActiveCall-participant-name">{participant}</span>
+            </div>
+          )
+        )}
       </div>
 
       <div>
@@ -263,12 +300,12 @@ function ActiveCall({
   const handleRejectClick = () => hangup();
   const handleHangupClick = () => hangup();
 
-  const handleMuteClick = () => {
+  const muteSelf = () => {
     setIsMuted(true);
     muteAudio();
   };
 
-  const handleUnmuteClick = () => {
+  const unmuteSelf = () => {
     unmuteAudio();
     setIsMuted(false);
   };
@@ -340,21 +377,12 @@ function ActiveCall({
             >
               Hangup
             </button>
-            <button
-              type="button"
-              className="App-button App-button--tertiary"
-              onClick={isMuted ? handleUnmuteClick : handleMuteClick}
-            >
-              {isMuted ? (
-                <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
-                  🔇
-                </span>
-              ) : (
-                <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
-                  🔈
-                </span>
-              )}
-            </button>
+
+            <MuteUnmuteButton
+              isMuted={isMuted}
+              mute={muteSelf}
+              unmute={unmuteSelf}
+            />
           </div>
         </div>
       )}
