@@ -6,7 +6,11 @@ import Agents from './Agents';
 import './ActiveCall.css';
 import useAgents from '../hooks/useAgents';
 import useInterval from '../hooks/useInterval';
-import { hangup as appHangup } from '../services/callsService';
+import {
+  hangup as appHangup,
+  mute as appMute,
+  unmute as appUnmute,
+} from '../services/callsService';
 import { getConference } from '../services/conferencesService';
 import IConference from '../interfaces/IConference';
 import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
@@ -98,6 +102,8 @@ function ActiveCallConference({
     appHangup({ participant });
   };
 
+  const muteCall = (participant: string) => appHangup({ participant });
+
   const confirmRemove = (participant: string) => {
     let result = window.confirm(
       `Are you sure you want to remove ${participant} from this call?`
@@ -185,6 +191,14 @@ function ActiveCallConference({
             </div>
             {index !== 0 && (
               <div>
+                <button
+                  type="button"
+                  className="App-button App-button--small App-button--danger"
+                  onClick={() => muteCall(participant)}
+                >
+                  Mute
+                </button>
+
                 <button
                   type="button"
                   className="App-button App-button--small App-button--danger"
