@@ -292,6 +292,7 @@ class CallsController {
             appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
+            appIncomingCallLeg.muted = false;
 
             await callLegRepository.save(appIncomingCallLeg);
 
@@ -467,6 +468,7 @@ class CallsController {
     appAgentCallLeg.status = CallLegStatus.ACTIVE;
     appAgentCallLeg.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appAgentCallLeg.telnyxConnectionId = connectionId;
+    appAgentCallLeg.muted = false;
     appAgentCallLeg.conference = await conferenceRepository.findOneOrFail(
       appConferenceId
     );
