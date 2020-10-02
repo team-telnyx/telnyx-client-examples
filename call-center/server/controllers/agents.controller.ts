@@ -6,8 +6,6 @@ import {
 import { getManager } from 'typeorm';
 import { Agent } from '../entities/agent.entity';
 
-let telnyxPackage: any = require('telnyx');
-
 class AgentsController {
   public static getLoggedIn = async function (req: Request, res: Response) {
     try {
