@@ -18,6 +18,7 @@ export interface ICallLeg {
   direction: string;
   telnyxCallControlId: string;
   telnyxConnectionId: string;
+  muted: boolean;
   conference: IConference;
 }
 
