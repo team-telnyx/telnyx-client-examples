@@ -77,7 +77,7 @@ function MuteUnmuteButton({ isMuted, mute, unmute }: IMuteUnmuteButton) {
   return (
     <button
       type="button"
-      className="App-button App-button--tertiary"
+      className="App-button App-button--small App-button--tertiary"
       onClick={isMuted ? unmute : mute}
     >
       {isMuted ? (
@@ -105,12 +105,12 @@ function ActiveCallConference({
     error: conferenceError,
     conference,
   } = useActiveConference(sipUsername);
-  let [participant, setParticipant] = useState('');
+  let [newParticipant, setNewParticipant] = useState('');
 
   const handleChangeDestination = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setParticipant(event.target.value);
+    setNewParticipant(event.target.value);
   };
 
   const addToCall = (destination: string) =>
@@ -149,7 +149,7 @@ function ActiveCallConference({
   const handleAddDestination = (e: any) => {
     e.preventDefault();
 
-    addToCall(participant);
+    addToCall(newParticipant);
   };
 
   let conferenceParticipants: IConferenceParticipant[] = useMemo(() => {
@@ -204,12 +204,12 @@ function ActiveCallConference({
 
   useEffect(() => {
     if (
-      participant &&
+      newParticipant &&
       conferenceParticipants
         .map(({ participant }) => participant)
-        .includes(participant)
+        .includes(newParticipant)
     ) {
-      setParticipant('');
+      setNewParticipant('');
     }
   }, [conferenceParticipants]);
 
@@ -244,7 +244,6 @@ function ActiveCallConference({
                   </button>
                 </div>
               )}
-              <span className="ActiveCall-participant-name">{participant}</span>
             </div>
           )
         )}
@@ -264,7 +263,7 @@ function ActiveCallConference({
             className="App-input"
             name="destination"
             type="text"
-            value={participant}
+            value={newParticipant}
             placeholder="Phone number or SIP URI"
             required
             onChange={handleChangeDestination}
