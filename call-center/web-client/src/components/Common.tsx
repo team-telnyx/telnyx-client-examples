@@ -3,7 +3,7 @@ import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
 import { updateAgent, getLoggedInAgents } from '../services/agentsService';
 import IAgent from '../interfaces/IAgent';
-import useInterval from '../hooks/useInterval';
+import useAgents from '../hooks/useAgents';
 import ActiveCall from './ActiveCall';
 import Agents from './Agents';
 import Dialer from './Dialer';
@@ -31,33 +31,6 @@ interface IPartialWebRTCCall {
   remoteStream?: MediaStream;
   muteAudio: Function;
   unmuteAudio: Function;
-}
-
-function useAgents(sipUsername: string) {
-  let [loading, setLoading] = useState<boolean>(true);
-  let [error, setError] = useState<string | undefined>();
-  let [agents, setAgents] = useState<IAgent[] | undefined>();
-
-  function loadLoggedInAgents() {
-    setLoading(true);
-
-    return getLoggedInAgents()
-      .then((res) => {
-        let otherAgents = res.data.agents.filter(
-          (agent) => agent.sipUsername !== sipUsername
-        );
-
-        setAgents(otherAgents);
-      })
-      .catch((error) => {
-        setError(error.toString());
-      })
-      .finally(() => setLoading(false));
-  }
-
-  useInterval(loadLoggedInAgents, 5000);
-
-  return { loading, error, agents };
 }
 
 function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
@@ -211,7 +184,6 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
           hangup={webRTCall.hangup}
           muteAudio={webRTCall.muteAudio}
           unmuteAudio={webRTCall.unmuteAudio}
-          agents={agentsState.agents}
         />
       )}
 
