@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
+import ICallLeg from '../interfaces/ICallLeg';
 import { BASE_URL } from '../configs/constants';
 
 interface IInviteAgentParams {
@@ -13,6 +14,10 @@ interface ITransferAgentParams {
 
 interface IConferenceActionsParams {
   participant: string;
+}
+
+interface IConferenceActionsResponse {
+  data: ICallLeg;
 }
 
 export const invite = async (
@@ -50,7 +55,7 @@ export const hangup = async (
         'Content-Type': 'application/json',
       },
     })
-    .then((resp: AxiosResponse) => resp)
+    .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
     .catch((error: AxiosError) => error);
 };
 
@@ -63,7 +68,7 @@ export const mute = async (
         'Content-Type': 'application/json',
       },
     })
-    .then((resp: AxiosResponse) => resp)
+    .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
     .catch((error: AxiosError) => error);
 };
 
@@ -76,7 +81,7 @@ export const unmute = async (
         'Content-Type': 'application/json',
       },
     })
-    .then((resp: AxiosResponse) => resp)
+    .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
     .catch((error: AxiosError) => error);
 };
 
