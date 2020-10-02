@@ -1,9 +1,9 @@
 import express from 'express';
-import ConferenceController from '../controllers/conferences.controller';
+import ConferencesController from '../controllers/conferences.controller';
 
 let router = express.Router();
 
 // Actions
-router.get('/:id_or_sip_address', ConferenceController.get);
+router.get('/:id_or_sip_address', ConferencesController.get);
 
 export default router;

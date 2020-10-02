@@ -3,15 +3,15 @@ import { Request, Response } from 'express';
 import { getManager } from 'typeorm';
 import { CallLeg, CallLegStatus } from '../entities/callLeg.entity';
 
-class ConferenceController {
+class ConferencesController {
   public static get = async function (req: Request, res: Response) {
     let idOrSipAddress = req.params.id_or_sip_address;
 
     try {
       let isSipAddress = idOrSipAddress.startsWith('sip:');
       let appConference = isSipAddress
-        ? await ConferenceController.getConferenceBySipAddress(idOrSipAddress)
-        : await ConferenceController.getConferenceByID(idOrSipAddress);
+        ? await ConferencesController.getConferenceBySipAddress(idOrSipAddress)
+        : await ConferencesController.getConferenceByID(idOrSipAddress);
 
       res.json({
         conference: appConference,
@@ -59,4 +59,4 @@ class ConferenceController {
   };
 }
 
-export default ConferenceController;
+export default ConferencesController;
