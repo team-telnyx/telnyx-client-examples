@@ -159,6 +159,10 @@ class CallsController {
         call_control_ids: [appCall.telnyxCallControlId],
       });
 
+      // Mark call as muted in app db
+      appCall.muted = true;
+      await callLegRepository.save(appCall);
+
       res.json({
         data: appCall,
       });
@@ -196,6 +200,10 @@ class CallsController {
       await telnyxConference.unmute({
         call_control_ids: [appCall.telnyxCallControlId],
       });
+
+      // Mark call as unmuted in app db
+      appCall.muted = false;
+      await callLegRepository.save(appCall);
 
       res.json({
         data: appCall,
