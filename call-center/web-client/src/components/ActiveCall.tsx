@@ -5,7 +5,10 @@ import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
 import './ActiveCall.css';
 import useInterval from '../hooks/useInterval';
-import { getConference } from '../services/conferencesService';
+import {
+  getConference,
+  removeFromConference,
+} from '../services/conferencesService';
 import IConference from '../interfaces/IConference';
 import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
 
@@ -30,6 +33,7 @@ interface IActiveCallConference {
   callDestination: string;
   callerId: string;
   agents?: IAgent[];
+  removeFromCall: Function;
 }
 
 function useActiveConference(sipUsername: string) {
@@ -62,6 +66,7 @@ function ActiveCallConference({
   isIncoming,
   callerId,
   agents,
+  removeFromCall,
 }: IActiveCallConference) {
   let {
     loading: conferenceLoading,
@@ -81,11 +86,23 @@ function ActiveCallConference({
         .filter(
           (participant) => participant !== `sip:${sipUsername}@sip.telnyx.com`
         )
-        .map(
-          (participant) =>
-            agents?.find((agent) => participant.includes(agent.sipUsername))
-              ?.name || participant
-        );
+        .map((participant) => {
+          let agent = agents?.find((agent) =>
+            participant.includes(agent.sipUsername)
+          );
+
+          if (agent) {
+            return {
+              displayName: agent.name || agent.sipUsername,
+              participant: `sip:${agent.sipUsername}@sip.telnyx.com`,
+            };
+          }
+
+          return {
+            displayName: participant,
+            participant,
+          };
+        });
 
       return otherParticipants;
     } else if (isIncoming) {
@@ -95,12 +112,40 @@ function ActiveCallConference({
     }
   }, [conference, sipUsername]);
 
+  const confirmRemove = (participant: string) => {
+    let result = window.confirm(
+      `Are you sure you want to remove ${participant} from this call?`
+    );
+
+    if (result) {
+      removeFromCall(participant);
+    }
+  };
+
   return (
     <div className="ActiveCall-conference">
-      {conferenceParticipants.map((participant, index) => (
-        <div className="ActiveCall-participant">
-          {index !== 0 ? <span className="ActiveCall-ampersand">&</span> : null}
-          <span className="ActiveCall-participant-name">{participant}</span>
+      {(conferenceParticipants as {
+        displayName: string;
+        participant: string;
+      }[]).map(({ displayName, participant }, index) => (
+        <div className="ActiveCall-participant-row">
+          <div className="ActiveCall-participant">
+            {index !== 0 ? (
+              <span className="ActiveCall-ampersand">&</span>
+            ) : null}
+            <span className="ActiveCall-participant-name">{displayName}</span>
+          </div>
+          {index !== 0 && (
+            <div>
+              <button
+                type="button"
+                className="App-button App-button--small App-button--danger"
+                onClick={() => confirmRemove(participant)}
+              >
+                Remove
+              </button>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -146,6 +191,9 @@ function ActiveCall({
       transfererSipUsername: sipUsername,
       to: destination,
     });
+
+  const removeFromCall = (participant: string) =>
+    removeFromConference(participant);
 
   const isIncoming = callDirection === 'inbound';
   const isRinging = callState === 'ringing';
@@ -206,6 +254,7 @@ function ActiveCall({
             callDestination={callDestination}
             callerId={callerId}
             agents={agents}
+            removeFromCall={removeFromCall}
           />
           <div className="ActiveCall-actions">
             <button
