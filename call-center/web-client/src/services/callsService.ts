@@ -84,8 +84,3 @@ export const unmute = async (
     .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
     .catch((error: AxiosError) => error);
 };
-
-export const removeFromConference = async (participant: string) => {
-  // Hanging up the call leg is the same removing from the conference
-  return hangup({ participant });
-};

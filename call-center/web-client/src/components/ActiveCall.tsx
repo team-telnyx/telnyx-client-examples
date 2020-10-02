@@ -6,10 +6,8 @@ import Agents from './Agents';
 import './ActiveCall.css';
 import useAgents from '../hooks/useAgents';
 import useInterval from '../hooks/useInterval';
-import {
-  getConference,
-  removeFromConference,
-} from '../services/conferencesService';
+import { hangup as appHangup } from '../services/callsService';
+import { getConference } from '../services/conferencesService';
 import IConference from '../interfaces/IConference';
 import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
 
@@ -96,8 +94,9 @@ function ActiveCallConference({
       to: destination,
     });
 
-  const removeFromCall = (participant: string) =>
-    removeFromConference(participant);
+  const removeFromCall = (participant: string) => {
+    appHangup({ participant });
+  };
 
   const confirmRemove = (participant: string) => {
     let result = window.confirm(
