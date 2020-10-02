@@ -1,5 +1,5 @@
 import express from 'express';
-import ConferenceController from '../controllers/confereces.controller';
+import ConferenceController from '../controllers/conferences.controller';
 
 let router = express.Router();
 
