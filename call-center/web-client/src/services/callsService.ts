@@ -11,7 +11,7 @@ interface ITransferAgentParams {
   to: string;
 }
 
-interface IHangupParams {
+interface IConferenceActionsParams {
   participant: string;
 }
 
@@ -42,7 +42,7 @@ export const transfer = async (
 };
 
 export const hangup = async (
-  params: IHangupParams
+  params: IConferenceActionsParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/hangup`, params, {
@@ -52,4 +52,35 @@ export const hangup = async (
     })
     .then((resp: AxiosResponse) => resp)
     .catch((error: AxiosError) => error);
+};
+
+export const mute = async (
+  params: IConferenceActionsParams
+): Promise<AxiosResponse | AxiosError> => {
+  return await axios
+    .post(`${BASE_URL}/calls/actions/conferences/mute`, params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then((resp: AxiosResponse) => resp)
+    .catch((error: AxiosError) => error);
+};
+
+export const unmute = async (
+  params: IConferenceActionsParams
+): Promise<AxiosResponse | AxiosError> => {
+  return await axios
+    .post(`${BASE_URL}/calls/actions/conferences/unmute`, params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then((resp: AxiosResponse) => resp)
+    .catch((error: AxiosError) => error);
+};
+
+export const removeFromConference = async (participant: string) => {
+  // Hanging up the call leg is the same removing from the conference
+  return hangup({ participant });
 };
