@@ -139,7 +139,7 @@ class CallsController {
 
     try {
       let callLegRepository = getManager().getRepository(CallLeg);
-      let appCallLegToHangUp = await callLegRepository.findOneOrFail({
+      let appCall = await callLegRepository.findOneOrFail({
         where: {
           status: CallLegStatus.ACTIVE,
           to: participant,
@@ -148,15 +148,15 @@ class CallsController {
 
       // Create a new Telnyx Call in order to issue call control commands
       // to the call leg to hang up
-      let transfererCall = new telnyx.Call({
-        call_control_id: appCallLegToHangUp.telnyxCallControlId,
+      let telnyxCall = new telnyx.Call({
+        call_control_id: appCall.telnyxCallControlId,
       });
 
       // Hang up the call
-      await transfererCall.hangup();
+      await telnyxCall.hangup();
 
       res.json({
-        data: appCallLegToHangUp,
+        data: appCall,
       });
     } catch (e) {
       console.error(e);
