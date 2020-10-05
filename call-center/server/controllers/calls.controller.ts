@@ -159,6 +159,10 @@ class CallsController {
         call_control_ids: [appCall.telnyxCallControlId],
       });
 
+      // Mark call as muted in app db
+      appCall.muted = true;
+      await callLegRepository.save(appCall);
+
       res.json({
         data: appCall,
       });
@@ -196,6 +200,10 @@ class CallsController {
       await telnyxConference.unmute({
         call_control_ids: [appCall.telnyxCallControlId],
       });
+
+      // Mark call as unmuted in app db
+      appCall.muted = false;
+      await callLegRepository.save(appCall);
 
       res.json({
         data: appCall,
@@ -292,6 +300,7 @@ class CallsController {
             appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
+            appIncomingCallLeg.muted = false;
 
             await callLegRepository.save(appIncomingCallLeg);
 
@@ -467,6 +476,7 @@ class CallsController {
     appAgentCallLeg.status = CallLegStatus.ACTIVE;
     appAgentCallLeg.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appAgentCallLeg.telnyxConnectionId = connectionId;
+    appAgentCallLeg.muted = false;
     appAgentCallLeg.conference = await conferenceRepository.findOneOrFail(
       appConferenceId
     );

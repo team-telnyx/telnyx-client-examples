@@ -42,6 +42,9 @@ export class CallLeg {
   @Column()
   telnyxConnectionId!: string;
 
+  @Column()
+  muted!: boolean;
+
   @ManyToOne((type) => Conference, (conference) => conference.callLegs, {
     cascade: ['update'],
   })

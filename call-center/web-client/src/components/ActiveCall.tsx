@@ -6,7 +6,11 @@ import Agents from './Agents';
 import './ActiveCall.css';
 import useAgents from '../hooks/useAgents';
 import useInterval from '../hooks/useInterval';
-import { hangup as appHangup } from '../services/callsService';
+import {
+  hangup as appHangup,
+  mute as appMute,
+  unmute as appUnmute,
+} from '../services/callsService';
 import { getConference } from '../services/conferencesService';
 import IConference from '../interfaces/IConference';
 import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
@@ -35,7 +39,14 @@ interface IActiveCallConference {
 
 interface IConferenceParticipant {
   displayName?: string;
+  muted?: boolean;
   participant: string;
+}
+
+interface IMuteUnmuteButton {
+  isMuted?: boolean;
+  mute: () => void;
+  unmute: () => void;
 }
 
 function useActiveConference(sipUsername: string) {
@@ -62,6 +73,26 @@ function useActiveConference(sipUsername: string) {
   return { loading, error, conference };
 }
 
+function MuteUnmuteButton({ isMuted, mute, unmute }: IMuteUnmuteButton) {
+  return (
+    <button
+      type="button"
+      className="App-button App-button--small App-button--tertiary"
+      onClick={isMuted ? unmute : mute}
+    >
+      {isMuted ? (
+        <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
+          🔇
+        </span>
+      ) : (
+        <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
+          🔈
+        </span>
+      )}
+    </button>
+  );
+}
+
 function ActiveCallConference({
   sipUsername,
   callDestination,
@@ -74,12 +105,12 @@ function ActiveCallConference({
     error: conferenceError,
     conference,
   } = useActiveConference(sipUsername);
-  let [participant, setParticipant] = useState('');
+  let [newParticipant, setNewParticipant] = useState('');
 
   const handleChangeDestination = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setParticipant(event.target.value);
+    setNewParticipant(event.target.value);
   };
 
   const addToCall = (destination: string) =>
@@ -94,8 +125,15 @@ function ActiveCallConference({
       to: destination,
     });
 
-  const removeFromCall = (participant: string) => {
+  const removeParticipant = (participant: string) => {
     appHangup({ participant });
+  };
+
+  const muteParticipant = (participant: string) => {
+    appMute({ participant });
+  };
+  const unmuteParticipant = (participant: string) => {
+    appUnmute({ participant });
   };
 
   const confirmRemove = (participant: string) => {
@@ -104,41 +142,46 @@ function ActiveCallConference({
     );
 
     if (result) {
-      removeFromCall(participant);
+      removeParticipant(participant);
     }
   };
 
   const handleAddDestination = (e: any) => {
     e.preventDefault();
 
-    addToCall(participant);
+    addToCall(newParticipant);
   };
 
   let conferenceParticipants: IConferenceParticipant[] = useMemo(() => {
     if (conference) {
       let otherParticipants = conference.callLegs
         .filter((callLeg) => callLeg.status === CallLegStatus.ACTIVE)
-        .map((callLeg) =>
-          callLeg.direction === CallLegDirection.INCOMING
-            ? callLeg.from
-            : callLeg.to
-        )
+        .map((callLeg) => ({
+          muted: callLeg.muted,
+          participant:
+            callLeg.direction === CallLegDirection.INCOMING
+              ? callLeg.from
+              : callLeg.to,
+        }))
         .filter(
-          (participant) => participant !== `sip:${sipUsername}@sip.telnyx.com`
+          ({ participant }) =>
+            participant !== `sip:${sipUsername}@sip.telnyx.com`
         )
-        .map((participant) => {
+        .map(({ muted, participant }) => {
           let agent = agents?.find((agent) =>
             participant.includes(agent.sipUsername)
           );
 
           if (agent) {
             return {
+              muted,
               displayName: agent.name || agent.sipUsername,
               participant: `sip:${agent.sipUsername}@sip.telnyx.com`,
             };
           }
 
           return {
+            muted,
             participant,
           };
         });
@@ -161,42 +204,49 @@ function ActiveCallConference({
 
   useEffect(() => {
     if (
-      participant &&
+      newParticipant &&
       conferenceParticipants
         .map(({ participant }) => participant)
-        .includes(participant)
+        .includes(newParticipant)
     ) {
-      setParticipant('');
+      setNewParticipant('');
     }
   }, [conferenceParticipants]);
 
   return (
     <div className="ActiveCall-conference">
       <div>
-        {conferenceParticipants.map(({ displayName, participant }, index) => (
-          <div className="ActiveCall-participant-row">
-            <div className="ActiveCall-participant">
-              {index !== 0 ? (
-                <span className="ActiveCall-ampersand">&</span>
-              ) : null}
-              <span className="ActiveCall-participant-name">
-                {displayName || participant}
-              </span>
-            </div>
-            {index !== 0 && (
-              <div>
-                <button
-                  type="button"
-                  className="App-button App-button--small App-button--danger"
-                  onClick={() => confirmRemove(participant)}
-                >
-                  Remove
-                </button>
+        {conferenceParticipants.map(
+          ({ muted, displayName, participant }, index) => (
+            <div className="ActiveCall-participant-row">
+              <div className="ActiveCall-participant">
+                {index !== 0 ? (
+                  <span className="ActiveCall-ampersand">&</span>
+                ) : null}
+                <span className="ActiveCall-participant-name">
+                  {displayName || participant}
+                </span>
               </div>
-            )}
-            <span className="ActiveCall-participant-name">{participant}</span>
-          </div>
-        ))}
+              {index !== 0 && (
+                <div>
+                  <MuteUnmuteButton
+                    isMuted={muted}
+                    mute={() => muteParticipant(participant)}
+                    unmute={() => unmuteParticipant(participant)}
+                  />
+
+                  <button
+                    type="button"
+                    className="App-button App-button--small App-button--danger"
+                    onClick={() => confirmRemove(participant)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        )}
       </div>
 
       <div>
@@ -213,7 +263,7 @@ function ActiveCallConference({
             className="App-input"
             name="destination"
             type="text"
-            value={participant}
+            value={newParticipant}
             placeholder="Phone number or SIP URI"
             required
             onChange={handleChangeDestination}
@@ -249,12 +299,12 @@ function ActiveCall({
   const handleRejectClick = () => hangup();
   const handleHangupClick = () => hangup();
 
-  const handleMuteClick = () => {
+  const muteSelf = () => {
     setIsMuted(true);
     muteAudio();
   };
 
-  const handleUnmuteClick = () => {
+  const unmuteSelf = () => {
     unmuteAudio();
     setIsMuted(false);
   };
@@ -326,21 +376,12 @@ function ActiveCall({
             >
               Hangup
             </button>
-            <button
-              type="button"
-              className="App-button App-button--tertiary"
-              onClick={isMuted ? handleUnmuteClick : handleMuteClick}
-            >
-              {isMuted ? (
-                <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
-                  🔇
-                </span>
-              ) : (
-                <span role="img" aria-label={isMuted ? 'Unmute' : 'Mute'}>
-                  🔈
-                </span>
-              )}
-            </button>
+
+            <MuteUnmuteButton
+              isMuted={isMuted}
+              mute={muteSelf}
+              unmute={unmuteSelf}
+            />
           </div>
         </div>
       )}
