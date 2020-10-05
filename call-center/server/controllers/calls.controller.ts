@@ -132,6 +132,83 @@ class CallsController {
         .send({ error: e });
     }
   };
+
+  // Mute a call
+  // NOTE call must be active participant in a conference
+  public static mute = async function (req: Request, res: Response) {
+    let { participant } = req.body;
+
+    try {
+      let callLegRepository = getManager().getRepository(CallLeg);
+      let appCall = await callLegRepository.findOneOrFail({
+        where: {
+          status: CallLegStatus.ACTIVE,
+          to: participant,
+        },
+        relations: ['conference'],
+      });
+      let appConference = appCall.conference;
+
+      // Create a new Telnyx Conference in order to issue call control
+      // commands to the participating call leg
+      let telnyxConference = new telnyx.Conference({
+        id: appConference.telnyxConferenceId,
+      });
+
+      await telnyxConference.mute({
+        call_control_ids: [appCall.telnyxCallControlId],
+      });
+
+      res.json({
+        data: appCall,
+      });
+    } catch (e) {
+      console.error(e);
+
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
+
+  // Unmute a call
+  // NOTE call must be active participant in a conference
+  public static unmute = async function (req: Request, res: Response) {
+    let { participant } = req.body;
+
+    try {
+      let callLegRepository = getManager().getRepository(CallLeg);
+      let appCall = await callLegRepository.findOneOrFail({
+        where: {
+          status: CallLegStatus.ACTIVE,
+          to: participant,
+        },
+        relations: ['conference'],
+      });
+      let appConference = appCall.conference;
+
+      // Create a new Telnyx Conference in order to issue call control
+      // commands to the participating call leg
+      let telnyxConference = new telnyx.Conference({
+        id: appConference.telnyxConferenceId,
+      });
+
+      await telnyxConference.unmute({
+        call_control_ids: [appCall.telnyxCallControlId],
+      });
+
+      res.json({
+        data: appCall,
+      });
+    } catch (e) {
+      console.error(e);
+
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
+
   // Hang up a call by the specified destination, e.g. to remove a number
   // from a conference call
   public static hangup = async function (req: Request, res: Response) {

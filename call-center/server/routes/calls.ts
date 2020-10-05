@@ -8,6 +8,8 @@ router.post('/actions/bridge', CallsController.bridge);
 router.post('/actions/conferences/invite', CallsController.invite);
 router.post('/actions/conferences/transfer', CallsController.transfer);
 router.post('/actions/conferences/hangup', CallsController.hangup);
+router.post('/actions/conferences/mute', CallsController.mute);
+router.post('/actions/conferences/unmute', CallsController.unmute);
 
 // Callbacks
 router.post('/callbacks/call-control-app', CallsController.callControl);

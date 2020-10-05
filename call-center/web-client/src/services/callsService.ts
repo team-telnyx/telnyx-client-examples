@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
+import ICallLeg from '../interfaces/ICallLeg';
 import { BASE_URL } from '../configs/constants';
 
 interface IInviteAgentParams {
@@ -11,8 +12,12 @@ interface ITransferAgentParams {
   to: string;
 }
 
-interface IHangupParams {
+interface IConferenceActionsParams {
   participant: string;
+}
+
+interface IConferenceActionsResponse {
+  data: ICallLeg;
 }
 
 export const invite = async (
@@ -42,7 +47,7 @@ export const transfer = async (
 };
 
 export const hangup = async (
-  params: IHangupParams
+  params: IConferenceActionsParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/hangup`, params, {
@@ -50,6 +55,32 @@ export const hangup = async (
         'Content-Type': 'application/json',
       },
     })
-    .then((resp: AxiosResponse) => resp)
+    .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
+    .catch((error: AxiosError) => error);
+};
+
+export const mute = async (
+  params: IConferenceActionsParams
+): Promise<AxiosResponse | AxiosError> => {
+  return await axios
+    .post(`${BASE_URL}/calls/actions/conferences/mute`, params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
+    .catch((error: AxiosError) => error);
+};
+
+export const unmute = async (
+  params: IConferenceActionsParams
+): Promise<AxiosResponse | AxiosError> => {
+  return await axios
+    .post(`${BASE_URL}/calls/actions/conferences/unmute`, params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
     .catch((error: AxiosError) => error);
 };
