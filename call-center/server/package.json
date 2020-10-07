@@ -39,6 +39,9 @@
     "typeorm": "^0.2.25"
   },
   "jest": {
-    "preset": "ts-jest"
+    "preset": "ts-jest",
+    "setupFiles": [
+      "dotenv/config"
+    ]
   }
 }
