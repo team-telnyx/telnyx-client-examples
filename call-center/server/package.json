@@ -6,6 +6,7 @@
   "scripts": {
     "setup": "cp .env.sample .env",
     "start": "nodemon server.ts",
+    "test": "jest",
     "tsc": "tsc"
   },
   "author": "",
