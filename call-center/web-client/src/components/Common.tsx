@@ -168,7 +168,12 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
         WebRTC status: {webRTCClientState}
       </section>
 
-      <audio ref={audioRef} autoPlay controls={false} />
+      <audio
+        ref={audioRef}
+        autoPlay
+        controls={false}
+        aria-label="Active call"
+      />
 
       {webRTCall && (
         <ActiveCall
