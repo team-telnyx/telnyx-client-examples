@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { Connection, createConnection } from 'typeorm';
-import createApp from './helpers/createApp';
+import createApp from './createApp';
 
 /* Set up and tear down server and db for tests */
 class TestFactory {
@@ -21,7 +21,7 @@ class TestFactory {
       type: 'sqljs',
       database: new Uint8Array(),
       location: 'database',
-      entities: [__dirname + './entities/*.ts'],
+      entities: ['**/entities/*.ts'],
       synchronize: true,
       logging: false,
     });

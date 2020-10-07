@@ -6,9 +6,9 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 
-import calls from '../routes/calls';
-import agents from '../routes/agents';
-import conferences from '../routes/conferences';
+import calls from './routes/calls';
+import agents from './routes/agents';
+import conferences from './routes/conferences';
 
 function createApp() {
   let app = express();

@@ -10,6 +10,11 @@ afterEach(async () => {
   await testFactory.destroy();
 });
 
-test('testing test', () => {
-  expect(true).toEqual(true);
-});
+test('GET /', () =>
+  testFactory.app
+    .get('/agents/')
+    .expect('Content-type', /json/)
+    .expect(200)
+    .then((resp) => {
+      expect(resp.body.agents).toEqual([]);
+    }));

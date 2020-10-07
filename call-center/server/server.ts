@@ -3,7 +3,7 @@ dotenv.config();
 
 import { createConnection } from 'typeorm';
 
-import createApp from './helpers/createApp';
+import createApp from './createApp';
 
 createConnection().then(function () {
   let app = createApp();
