@@ -26,7 +26,7 @@ async function setup() {
 
       await fs.appendFile(
         './.env',
-        `TELNYX_CC_APP_ID=${callControlApp.id}`,
+        `\nTELNYX_CC_APP_ID=${callControlApp.id}`,
         'utf8',
         (err) => {
           if (err) {
