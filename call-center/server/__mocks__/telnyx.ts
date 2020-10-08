@@ -1,24 +1,33 @@
-const mockAnswer = jest.fn();
-const mockHangup = jest.fn();
-const mockMute = jest.fn();
-const mockUnmute = jest.fn();
+const callMock = {
+  answer: jest.fn(),
+  hangup: jest.fn(),
+  bridge: jest.fn(),
+};
+
+const conferenceMock = {
+  mute: jest.fn(),
+  unmute: jest.fn(),
+};
 
 class Call {
-  answer = mockAnswer;
-  hangup = mockHangup;
+  answer = callMock.answer;
+  hangup = callMock.hangup;
 }
 
 class Conference {
-  mute = mockMute;
-  unmute = mockUnmute;
+  mute = conferenceMock.mute;
+  unmute = conferenceMock.unmute;
 }
 
 module.exports = jest.fn().mockImplementation(() => ({
   Call,
   Conference,
+  calls: {
+    create: () => ({
+      bridge: callMock.bridge,
+    }),
+  },
 }));
 
-module.exports.mockAnswer = mockAnswer;
-module.exports.mockHangup = mockHangup;
-module.exports.mockMute = mockMute;
-module.exports.mockUnmute = mockUnmute;
+module.exports.callMock = callMock;
+module.exports.conferenceMock = conferenceMock;

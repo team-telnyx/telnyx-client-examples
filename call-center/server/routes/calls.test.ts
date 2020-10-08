@@ -19,6 +19,21 @@ afterAll(async () => {
   await testFactory.close();
 });
 
+test('POST /actions/bridge', () =>
+  testFactory.app
+    .post('/calls/actions/bridge')
+    .send({
+      data: {
+        call_control_id: 'fake_call_control_id',
+        to: 'sip:agent3SipUsername@sip.telnyx.com',
+      },
+    })
+    .expect('Content-type', /json/)
+    .expect(200)
+    .then(() => {
+      expect(telnyxMock.callMock.bridge).toHaveBeenCalled();
+    }));
+
 test('POST /actions/conferences/hangup', () =>
   testFactory.app
     .post('/calls/actions/conferences/hangup')
@@ -28,7 +43,7 @@ test('POST /actions/conferences/hangup', () =>
     .expect('Content-type', /json/)
     .expect(200)
     .then(() => {
-      expect(telnyxMock.mockHangup).toHaveBeenCalled();
+      expect(telnyxMock.callMock.hangup).toHaveBeenCalled();
     }));
 
 test('POST /actions/conferences/mute', () =>
@@ -45,7 +60,7 @@ test('POST /actions/conferences/mute', () =>
         .findOne('callLeg2');
 
       expect(callLeg?.muted).toEqual(true);
-      expect(telnyxMock.mockMute).toHaveBeenCalled();
+      expect(telnyxMock.conferenceMock.mute).toHaveBeenCalled();
     }));
 
 test('POST /actions/conferences/unmute', () =>
@@ -62,7 +77,7 @@ test('POST /actions/conferences/unmute', () =>
         .findOne('callLeg2');
 
       expect(callLeg?.muted).toEqual(false);
-      expect(telnyxMock.mockUnmute).toHaveBeenCalled();
+      expect(telnyxMock.conferenceMock.unmute).toHaveBeenCalled();
     }));
 
 test('POST /callbacks/call-control-app', () =>
@@ -95,5 +110,5 @@ test('POST /callbacks/call-control-app', () =>
       });
 
       expect(callLeg).toBeDefined();
-      expect(telnyxMock.mockAnswer).toHaveBeenCalled();
+      expect(telnyxMock.callMock.answer).toHaveBeenCalled();
     }));

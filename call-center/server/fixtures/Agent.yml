@@ -3,18 +3,18 @@ items:
   agent1:
     id: agent1
     name: '{{name.firstName}} {{name.lastName}}'
-    sipUsername: '{{internet.userName}}'
+    sipUsername: 'agent1SipUsername'
     loggedIn: true
     available: true
   agent2:
     id: agent2
     name: '{{name.firstName}} {{name.lastName}}'
-    sipUsername: '{{internet.userName}}'
+    sipUsername: 'agent2SipUsername'
     loggedIn: true
     available: true
   agent3:
     id: agent3
     name: '{{name.firstName}} {{name.lastName}}'
-    sipUsername: '{{internet.userName}}'
+    sipUsername: 'agent3SipUsername'
     loggedIn: true
     available: false
