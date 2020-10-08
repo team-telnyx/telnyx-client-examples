@@ -19,7 +19,7 @@ afterAll(async () => {
   await testFactory.close();
 });
 
-test.only('POST /actions/bridge', () =>
+test('POST /actions/bridge', () =>
   testFactory.app
     .post('/calls/actions/bridge')
     .send({
@@ -41,7 +41,7 @@ test.only('POST /actions/bridge', () =>
       expect(telnyxMock.callMock.bridge).toHaveBeenCalled();
     }));
 
-test.only('POST /actions/invite', () =>
+test('POST /actions/invite', () =>
   testFactory.app
     .post('/calls/actions/conferences/invite')
     .send({
@@ -76,6 +76,45 @@ test.only('POST /actions/invite', () =>
           connection_id: 'telnyxConnectionId1',
         })
       );
+    }));
+
+test('POST /actions/transfer', () =>
+  testFactory.app
+    .post('/calls/actions/conferences/transfer')
+    .send({
+      transfererSipUsername: 'agent1SipUsername',
+      to: 'sip:agent2SipUsername@sip.telnyx.com',
+    })
+    .expect('Content-type', /json/)
+    .expect(200)
+    .then(async () => {
+      const callLeg = await getManager()
+        .getRepository(CallLeg)
+        .findOne({
+          where: {
+            from: process.env.TELNYX_SIP_OB_NUMBER,
+            to: 'sip:agent2SipUsername@sip.telnyx.com',
+            direction: 'outgoing',
+            telnyxCallControlId: 'fake_call_control_id',
+            telnyxConnectionId: 'telnyxConnectionId1',
+            muted: false,
+          },
+          relations: ['conference'],
+        });
+
+      console.log(callLeg);
+
+      expect(callLeg).toBeDefined();
+      expect(callLeg?.conference?.id).toEqual('conference1');
+      expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: process.env.TELNYX_SIP_OB_NUMBER,
+          to: 'sip:agent2SipUsername@sip.telnyx.com',
+          connection_id: 'telnyxConnectionId1',
+        })
+      );
+      // TODO Determine which call received hangup
+      expect(telnyxMock.callMock.hangup).toHaveBeenCalled();
     }));
 
 test('POST /actions/conferences/hangup', () =>
