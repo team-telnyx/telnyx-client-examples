@@ -39,29 +39,31 @@ You will need it to be able to receive websocket request from Call Control App
 ## Step 4: Create a Call Control App
 
 Create a [Call Control App](https://portal.telnyx.com/#/app/call-control/applications/new).\
-Set the required webhook URL to `https://your-ngrok-forwarding-id.ngrok.io/calls/callbacks/call-control-app`. Make note of the ID of your new Call Control App.
+Set the required webhook URL to `https://your-ngrok-forwarding-id.ngrok.io/calls/callbacks/call-control-app`.\
+Make note of the ID of your new Call Control App.
 
 ---
 ## Step 5: Update your phone number
 
-[Update your phone number](https://portal.telnyx.com/#/app/numbers/my-numbers) by selecting your Call Control App under "Connection or App".
+[Update your phone number](https://portal.telnyx.com/#/app/numbers/my-numbers) by selecting your Call Control App under "Connection or App" column.
 
 ---
 ## Step 6: Create a SIP connection
 
 [Create a SIP connection](https://portal.telnyx.com/#/app/connections), setting the "SIP Connection Type" to `Credentials`.\
-Enable "Receive SIP URI Calls" in the "Inbound" tab. Make note of your SIP Connection ID.
+Enable "Receive SIP URI Calls" in the "Inbound" tab.
+Make note of your SIP Connection ID.
 
 ---
 ## Step 7: Create an Outbound Voice Profile
 
-[Create an Outbound Voice Profile](https://portal.telnyx.com/#/app/outbound-profiles/new), associating it with your Call Control App.\ 
+[Create an Outbound Voice Profile](https://portal.telnyx.com/#/app/outbound-profiles/new), associating it with your Call Control App and your SIP connection.
 Make note of the Outbound Voice Profile ID.
 
 ---
 ## Step 8: Write some code
 
-1. (call-center) Run the command `npm run setup` to generate your `.env` file.\
+1. (call-center) Run the command `npm run setup` to generate your `.env` file.
 2. (server) Update your `.env` file with information noted from previous steps.
 
 ---
