@@ -46,7 +46,7 @@ test('POST /actions/invite', () =>
     .post('/calls/actions/conferences/invite')
     .send({
       inviterSipUsername: 'agent1SipUsername',
-      to: 'sip:agent2SipUsername@sip.telnyx.com',
+      to: 'sip:agent3SipUsername@sip.telnyx.com',
     })
     .expect('Content-type', /json/)
     .expect(200)
@@ -56,7 +56,7 @@ test('POST /actions/invite', () =>
         .findOne({
           where: {
             from: process.env.TELNYX_SIP_OB_NUMBER,
-            to: 'sip:agent2SipUsername@sip.telnyx.com',
+            to: 'sip:agent3SipUsername@sip.telnyx.com',
             direction: 'outgoing',
             telnyxCallControlId: 'fake_call_control_id',
             telnyxConnectionId: 'telnyxConnectionId1',
@@ -72,7 +72,7 @@ test('POST /actions/invite', () =>
       expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
         expect.objectContaining({
           from: process.env.TELNYX_SIP_OB_NUMBER,
-          to: 'sip:agent2SipUsername@sip.telnyx.com',
+          to: 'sip:agent3SipUsername@sip.telnyx.com',
           connection_id: 'telnyxConnectionId1',
         })
       );
@@ -83,7 +83,7 @@ test('POST /actions/transfer', () =>
     .post('/calls/actions/conferences/transfer')
     .send({
       transfererSipUsername: 'agent1SipUsername',
-      to: 'sip:agent2SipUsername@sip.telnyx.com',
+      to: 'sip:agent3SipUsername@sip.telnyx.com',
     })
     .expect('Content-type', /json/)
     .expect(200)
@@ -93,7 +93,7 @@ test('POST /actions/transfer', () =>
         .findOne({
           where: {
             from: process.env.TELNYX_SIP_OB_NUMBER,
-            to: 'sip:agent2SipUsername@sip.telnyx.com',
+            to: 'sip:agent3SipUsername@sip.telnyx.com',
             direction: 'outgoing',
             telnyxCallControlId: 'fake_call_control_id',
             telnyxConnectionId: 'telnyxConnectionId1',
@@ -109,7 +109,7 @@ test('POST /actions/transfer', () =>
       expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
         expect.objectContaining({
           from: process.env.TELNYX_SIP_OB_NUMBER,
-          to: 'sip:agent2SipUsername@sip.telnyx.com',
+          to: 'sip:agent3SipUsername@sip.telnyx.com',
           connection_id: 'telnyxConnectionId1',
         })
       );
@@ -121,7 +121,7 @@ test('POST /actions/conferences/hangup', () =>
   testFactory.app
     .post('/calls/actions/conferences/hangup')
     .send({
-      participant: 'sip:callLeg1@sip.telnyx.com',
+      participant: 'sip:agent1SipUsername@sip.telnyx.com',
     })
     .expect('Content-type', /json/)
     .expect(200)
@@ -133,7 +133,7 @@ test('POST /actions/conferences/mute', () =>
   testFactory.app
     .post('/calls/actions/conferences/mute')
     .send({
-      participant: 'sip:callLeg1@sip.telnyx.com',
+      participant: 'sip:agent1SipUsername@sip.telnyx.com',
     })
     .expect('Content-type', /json/)
     .expect(200)
@@ -150,7 +150,7 @@ test('POST /actions/conferences/unmute', () =>
   testFactory.app
     .post('/calls/actions/conferences/unmute')
     .send({
-      participant: 'sip:callLeg2@sip.telnyx.com',
+      participant: 'sip:agent2SipUsername@sip.telnyx.com',
     })
     .expect('Content-type', /json/)
     .expect(200)
