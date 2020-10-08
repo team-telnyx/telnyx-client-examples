@@ -58,7 +58,7 @@ test('PATCH /:id', () =>
       });
     }));
 
-test.only('POST /login', () => {
+test('POST /login', () => {
   const name = 'Agent 4';
 
   return testFactory.app
@@ -81,3 +81,17 @@ test.only('POST /login', () => {
       });
     });
 });
+
+test('POST /logout', () =>
+  testFactory.app
+    .post('/agents/logout')
+    .send({
+      id: 'agent1',
+    })
+    .expect('Content-type', /json/)
+    .expect(200)
+    .then((resp) => {
+      expect(resp.body.agent).toMatchObject({
+        loggedIn: false,
+      });
+    }));
