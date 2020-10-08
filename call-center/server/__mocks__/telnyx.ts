@@ -9,6 +9,13 @@ const conferenceMock = {
   unmute: jest.fn(),
 };
 
+const callsCreateMock = jest.fn().mockImplementation(() => ({
+  ...callMock,
+  data: {
+    call_control_id: 'fake_call_control_id',
+  },
+}));
+
 class Call {
   answer = callMock.answer;
   hangup = callMock.hangup;
@@ -23,11 +30,10 @@ module.exports = jest.fn().mockImplementation(() => ({
   Call,
   Conference,
   calls: {
-    create: () => ({
-      bridge: callMock.bridge,
-    }),
+    create: callsCreateMock,
   },
 }));
 
 module.exports.callMock = callMock;
 module.exports.conferenceMock = conferenceMock;
+module.exports.callsCreateMock = callsCreateMock;
