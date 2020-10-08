@@ -35,18 +35,18 @@ test('GET /', () =>
 
 test('GET /:id', () =>
   testFactory.app
-    .get('/agents/agent1')
+    .get('/agents/agent2')
     .expect('Content-type', /json/)
     .expect(200)
     .then((resp) => {
       expect(resp.body.agent).toMatchObject({
-        id: 'agent1',
+        id: 'agent2',
       });
     }));
 
 test('PATCH /:id', () =>
   testFactory.app
-    .patch('/agents/agent1')
+    .patch('/agents/agent2')
     .send({
       available: false,
     })
@@ -86,7 +86,7 @@ test('POST /logout', () =>
   testFactory.app
     .post('/agents/logout')
     .send({
-      id: 'agent1',
+      id: 'agent2',
     })
     .expect('Content-type', /json/)
     .expect(200)

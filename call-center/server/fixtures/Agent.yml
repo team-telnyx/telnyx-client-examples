@@ -1,11 +1,5 @@
 entity: Agent
 items:
-  agent0:
-    id: agent0
-    name: '{{name.firstName}} {{name.lastName}}'
-    sipUsername: '{{internet.userName}}'
-    loggedIn: true
-    available: true
   agent1:
     id: agent1
     name: '{{name.firstName}} {{name.lastName}}'
@@ -14,6 +8,12 @@ items:
     available: true
   agent2:
     id: agent2
+    name: '{{name.firstName}} {{name.lastName}}'
+    sipUsername: '{{internet.userName}}'
+    loggedIn: true
+    available: true
+  agent3:
+    id: agent3
     name: '{{name.firstName}} {{name.lastName}}'
     sipUsername: '{{internet.userName}}'
     loggedIn: true
