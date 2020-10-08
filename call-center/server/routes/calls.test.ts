@@ -5,6 +5,7 @@ import TestFactory from '../TestFactory';
 const telnyxPackage = require('telnyx');
 
 const mockAnswer = jest.fn();
+const mockHangup = jest.fn();
 const mockMute = jest.fn();
 const mockUnmute = jest.fn();
 
@@ -13,6 +14,7 @@ jest.mock('telnyx', () => {
     return {
       Call: function Call() {
         this.answer = mockAnswer;
+        this.hangup = mockHangup;
       },
       Conference: function Conference() {
         this.mute = mockMute;
@@ -67,14 +69,16 @@ test('POST /actions/conferences/transfer', () =>
       expect(resp.body).toBeDefined();
     }));
 
-test('POST /actions/conferences/hangup', () =>
+test.only('POST /actions/conferences/hangup', () =>
   testFactory.app
     .post('/calls/actions/conferences/hangup')
-    .send({})
+    .send({
+      participant: 'sip:callLeg1@sip.telnyx.com',
+    })
     .expect('Content-type', /json/)
     .expect(200)
-    .then((resp) => {
-      expect(resp.body).toBeDefined();
+    .then(() => {
+      expect(mockHangup).toHaveBeenCalled();
     }));
 
 test('POST /actions/conferences/mute', () =>
@@ -94,7 +98,7 @@ test('POST /actions/conferences/mute', () =>
       expect(mockMute).toHaveBeenCalled();
     }));
 
-test.only('POST /actions/conferences/unmute', () =>
+test('POST /actions/conferences/unmute', () =>
   testFactory.app
     .post('/calls/actions/conferences/unmute')
     .send({
@@ -111,7 +115,7 @@ test.only('POST /actions/conferences/unmute', () =>
       expect(mockUnmute).toHaveBeenCalled();
     }));
 
-test.only('POST /callbacks/call-control-app', () =>
+test('POST /callbacks/call-control-app', () =>
   testFactory.app
     .post('/calls/callbacks/call-control-app')
     .send({
