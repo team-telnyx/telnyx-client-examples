@@ -1,0 +1,10 @@
+entity: Conference
+items:
+  conference1:
+    id: conference1
+    from: '{{phone.phoneNumber}}'
+    telnyxConferenceId: 'telnyxConference1'
+  conference2:
+    id: conference2
+    from: '{{phone.phoneNumber}}'
+    telnyxConferenceId: 'telnyxConference2'
