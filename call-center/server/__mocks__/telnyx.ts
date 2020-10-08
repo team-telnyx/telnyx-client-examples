@@ -1,17 +1,24 @@
+const mockAnswer = jest.fn();
+const mockHangup = jest.fn();
+const mockMute = jest.fn();
+const mockUnmute = jest.fn();
+
 class Call {
-  answer = () => {};
+  answer = mockAnswer;
+  hangup = mockHangup;
 }
 
 class Conference {
-  unmute = () => {};
-  mute = () => {};
+  mute = mockMute;
+  unmute = mockUnmute;
 }
 
-const telnyx = {
+module.exports = jest.fn().mockImplementation(() => ({
   Call,
   Conference,
-};
+}));
 
-module.exports = function () {
-  return telnyx;
-};
+module.exports.mockAnswer = mockAnswer;
+module.exports.mockHangup = mockHangup;
+module.exports.mockMute = mockMute;
+module.exports.mockUnmute = mockUnmute;

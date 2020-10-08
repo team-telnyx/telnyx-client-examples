@@ -2,27 +2,7 @@ import { getManager } from 'typeorm';
 import { CallLeg } from '../entities/callLeg.entity';
 import TestFactory from '../TestFactory';
 
-const telnyxPackage = require('telnyx');
-
-const mockAnswer = jest.fn();
-const mockHangup = jest.fn();
-const mockMute = jest.fn();
-const mockUnmute = jest.fn();
-
-jest.mock('telnyx', () => {
-  return jest.fn().mockImplementation(() => {
-    return {
-      Call: function Call() {
-        this.answer = mockAnswer;
-        this.hangup = mockHangup;
-      },
-      Conference: function Conference() {
-        this.mute = mockMute;
-        this.unmute = mockUnmute;
-      },
-    };
-  });
-});
+const telnyxMock = require('telnyx');
 
 const testFactory = new TestFactory();
 
@@ -32,44 +12,14 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
-  telnyxPackage.mockClear();
+  telnyxMock.mockClear();
 });
 
 afterAll(async () => {
   await testFactory.close();
 });
 
-test('POST /actions/bridge', () =>
-  testFactory.app
-    .post('/calls/actions/bridge')
-    .send({})
-    .expect('Content-type', /json/)
-    .expect(200)
-    .then((resp) => {
-      expect(resp.body).toBeDefined();
-    }));
-
-test('POST /actions/conferences/invite', () =>
-  testFactory.app
-    .post('/calls/actions/conferences/invite')
-    .send({})
-    .expect('Content-type', /json/)
-    .expect(200)
-    .then((resp) => {
-      expect(resp.body).toBeDefined();
-    }));
-
-test('POST /actions/conferences/transfer', () =>
-  testFactory.app
-    .post('/calls/actions/conferences/transfer')
-    .send({})
-    .expect('Content-type', /json/)
-    .expect(200)
-    .then((resp) => {
-      expect(resp.body).toBeDefined();
-    }));
-
-test.only('POST /actions/conferences/hangup', () =>
+test('POST /actions/conferences/hangup', () =>
   testFactory.app
     .post('/calls/actions/conferences/hangup')
     .send({
@@ -78,7 +28,7 @@ test.only('POST /actions/conferences/hangup', () =>
     .expect('Content-type', /json/)
     .expect(200)
     .then(() => {
-      expect(mockHangup).toHaveBeenCalled();
+      expect(telnyxMock.mockHangup).toHaveBeenCalled();
     }));
 
 test('POST /actions/conferences/mute', () =>
@@ -95,7 +45,7 @@ test('POST /actions/conferences/mute', () =>
         .findOne('callLeg2');
 
       expect(callLeg?.muted).toEqual(true);
-      expect(mockMute).toHaveBeenCalled();
+      expect(telnyxMock.mockMute).toHaveBeenCalled();
     }));
 
 test('POST /actions/conferences/unmute', () =>
@@ -112,7 +62,7 @@ test('POST /actions/conferences/unmute', () =>
         .findOne('callLeg2');
 
       expect(callLeg?.muted).toEqual(false);
-      expect(mockUnmute).toHaveBeenCalled();
+      expect(telnyxMock.mockUnmute).toHaveBeenCalled();
     }));
 
 test('POST /callbacks/call-control-app', () =>
@@ -145,5 +95,5 @@ test('POST /callbacks/call-control-app', () =>
       });
 
       expect(callLeg).toBeDefined();
-      expect(mockAnswer).toHaveBeenCalled();
+      expect(telnyxMock.mockAnswer).toHaveBeenCalled();
     }));
