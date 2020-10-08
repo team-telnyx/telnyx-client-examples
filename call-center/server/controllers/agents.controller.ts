@@ -49,7 +49,10 @@ class AgentsController {
       } = req.body;
 
       res.json({
-        agent: await agentRepository.update(id, allowedFields),
+        agent: await agentRepository.save({
+          id,
+          ...allowedFields,
+        }),
       });
     } catch (e) {
       res
@@ -69,8 +72,6 @@ class AgentsController {
       });
 
       let agentRepository = getManager().getRepository(Agent);
-
-      console.log(req.body);
 
       let name = req.body.name || 'Unknown';
       let agent = new Agent();
@@ -104,7 +105,9 @@ class AgentsController {
         await agentRepository.save(loggedAgent);
       }
 
-      res.status(200).json({});
+      res.status(200).json({
+        agent: loggedAgent,
+      });
     } catch (e) {
       res.status(500).json({ error: e });
     }
