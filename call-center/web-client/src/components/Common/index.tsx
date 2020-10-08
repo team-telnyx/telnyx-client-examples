@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
-import { updateAgent, getLoggedInAgents } from '../services/agentsService';
-import IAgent from '../interfaces/IAgent';
-import useAgents from '../hooks/useAgents';
-import ActiveCall from './ActiveCall';
-import Agents from './Agents';
-import Dialer from './Dialer';
-import LoadingIcon from './LoadingIcon';
+import { updateAgent, getLoggedInAgents } from '../../services/agentsService';
+import IAgent from '../../interfaces/IAgent';
+import useAgents from '../../hooks/useAgents';
+import ActiveCall from '../ActiveCall';
+import Agents from '../Agents';
+import Dialer from '../Dialer';
+import LoadingIcon from '../LoadingIcon';
 import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 
 interface ICommon {
@@ -168,7 +168,12 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
         WebRTC status: {webRTCClientState}
       </section>
 
-      <audio ref={audioRef} autoPlay controls={false} />
+      <audio
+        ref={audioRef}
+        autoPlay
+        controls={false}
+        aria-label="Active call"
+      />
 
       {webRTCall && (
         <ActiveCall
