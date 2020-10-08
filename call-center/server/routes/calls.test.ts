@@ -4,11 +4,33 @@ import TestFactory from '../TestFactory';
 
 const telnyxPackage = require('telnyx');
 
+const mockAnswer = jest.fn();
+const mockMute = jest.fn();
+const mockUnmute = jest.fn();
+
+jest.mock('telnyx', () => {
+  return jest.fn().mockImplementation(() => {
+    return {
+      Call: function Call() {
+        this.answer = mockAnswer;
+      },
+      Conference: function Conference() {
+        this.mute = mockMute;
+        this.unmute = mockUnmute;
+      },
+    };
+  });
+});
+
 const testFactory = new TestFactory();
 
 beforeAll(async () => {
   await testFactory.init();
   await testFactory.loadFixtures();
+});
+
+beforeEach(() => {
+  telnyxPackage.mockClear();
 });
 
 afterAll(async () => {
@@ -58,21 +80,35 @@ test('POST /actions/conferences/hangup', () =>
 test('POST /actions/conferences/mute', () =>
   testFactory.app
     .post('/calls/actions/conferences/mute')
-    .send({})
+    .send({
+      participant: 'sip:callLeg1@sip.telnyx.com',
+    })
     .expect('Content-type', /json/)
     .expect(200)
-    .then((resp) => {
-      expect(resp.body).toBeDefined();
+    .then(async () => {
+      const callLeg = await getManager()
+        .getRepository(CallLeg)
+        .findOne('callLeg2');
+
+      expect(callLeg?.muted).toEqual(true);
+      expect(mockMute).toHaveBeenCalled();
     }));
 
-test('POST /actions/conferences/unmute', () =>
+test.only('POST /actions/conferences/unmute', () =>
   testFactory.app
     .post('/calls/actions/conferences/unmute')
-    .send({})
+    .send({
+      participant: 'sip:callLeg2@sip.telnyx.com',
+    })
     .expect('Content-type', /json/)
     .expect(200)
-    .then((resp) => {
-      expect(resp.body).toBeDefined();
+    .then(async () => {
+      const callLeg = await getManager()
+        .getRepository(CallLeg)
+        .findOne('callLeg2');
+
+      expect(callLeg?.muted).toEqual(false);
+      expect(mockUnmute).toHaveBeenCalled();
     }));
 
 test.only('POST /callbacks/call-control-app', () =>
@@ -105,4 +141,5 @@ test.only('POST /callbacks/call-control-app', () =>
       });
 
       expect(callLeg).toBeDefined();
+      expect(mockAnswer).toHaveBeenCalled();
     }));

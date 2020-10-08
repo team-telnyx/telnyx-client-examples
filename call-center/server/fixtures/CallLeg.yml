@@ -4,7 +4,7 @@ items:
     id: callLeg1
     status: 'active'
     from: '{{phone.phoneNumber}}'
-    to: '{{phone.phoneNumber}}'
+    to: 'sip:callLeg1@sip.telnyx.com'
     direction: 'incoming'
     telnyxCallControlId: 'telnyxCallControlId1'
     telnyxConnectionId: 'telnyxConnectionId1'
@@ -14,17 +14,17 @@ items:
     id: callLeg2
     status: 'active'
     from: '{{phone.phoneNumber}}'
-    to: '{{phone.phoneNumber}}'
+    to: 'sip:callLeg2@sip.telnyx.com'
     direction: 'incoming'
     telnyxCallControlId: 'telnyxCallControlId2'
     telnyxConnectionId: 'telnyxConnectionId2'
-    muted: false
+    muted: true
     conference: '@conference2'
   callLeg3:
     id: callLeg3
     status: 'active'
     from: '{{phone.phoneNumber}}'
-    to: '{{phone.phoneNumber}}'
+    to: 'sip:callLeg3@sip.telnyx.com'
     direction: 'incoming'
     telnyxCallControlId: 'telnyxCallControlId3'
     telnyxConnectionId: 'telnyxConnectionId3'
@@ -34,7 +34,7 @@ items:
     id: callLeg4
     status: 'active'
     from: '{{phone.phoneNumber}}'
-    to: '{{phone.phoneNumber}}'
+    to: 'sip:callLeg4@sip.telnyx.com'
     direction: 'incoming'
     telnyxCallControlId: 'telnyxCallControlId4'
     telnyxConnectionId: 'telnyxConnectionId4'
