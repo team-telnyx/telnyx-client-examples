@@ -49,7 +49,10 @@ class AgentsController {
       } = req.body;
 
       res.json({
-        agent: await agentRepository.update(id, allowedFields),
+        agent: await agentRepository.save({
+          id,
+          ...allowedFields,
+        }),
       });
     } catch (e) {
       res
