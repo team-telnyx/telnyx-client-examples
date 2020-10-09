@@ -22,7 +22,7 @@ export default function Agents({ agents, addToCall, transferCall }: IAgents) {
   }
 
   return (
-    <div className="Agents">
+    <div className="Agents" style={{ marginTop: 26 }}>
       {agents && agents.length > 0 && (
         <ul className="Agents-list">
           {agents.map((agent) => (

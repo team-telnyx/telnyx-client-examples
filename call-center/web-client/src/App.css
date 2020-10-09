@@ -29,15 +29,28 @@
 }
 
 .App-headline {
-  font-size: 1.5rem;
+  font-size: 32px;
   margin-bottom: 0.5rem;
-  text-align: center;
+  font-family: 'Roboto', serif;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 37px;
 }
 
 .App-form-row {
   display: grid;
   grid-template-columns: 1fr max-content;
+  grid-template-areas: 'input button';
   column-gap: 0.6rem;
+}
+@media only screen and (max-width: 570px) {
+  .App-form-row {
+    grid-template-areas:
+      'input'
+      'button';
+    grid-row-gap: 10px;
+    column-gap: 0;
+  }
 }
 
 .App-input {
@@ -70,17 +83,20 @@
   font-size: inherit;
   line-height: normal;
   padding: 0.6rem;
-  height: 3.3rem;
 }
 
 .App-form .App-input {
   padding: 0.8rem;
   min-width: 16.5rem;
+  height: 3.3rem;
+  grid-area: input;
 }
 
 .App-form .App-button {
   padding: 0.8rem;
   min-width: 7rem;
+  height: 3.3rem;
+  grid-area: button;
 }
 
 .App-button + .App-button {

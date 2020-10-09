@@ -164,7 +164,10 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
   return (
     <div>
-      <section className="App-section">
+      <section
+        className="App-section"
+        style={{ marginTop: 10, textAlign: 'center' }}
+      >
         WebRTC status: {webRTCClientState}
       </section>
 
@@ -198,9 +201,9 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
             <Dialer dial={dial} />
           </section>
 
-          <section className="App-section">
+          <section className="App-section" style={{ marginTop: 55 }}>
             <h2 className="App-headline">
-              Other agents {agentsState.loading && <LoadingIcon />}
+              Other available agents {agentsState.loading && <LoadingIcon />}
             </h2>
 
             {agentsState.error && (
