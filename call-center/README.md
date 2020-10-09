@@ -1,17 +1,17 @@
 # Call Center App
 
-This is an example of a call center app. You can use to manage, make and receive calls, create call conferences and control the agents.
+This is an example of a call center app that uses the Telnyx Client and Call Control SDKs. You can make and receive phone calls in the browser, create call conferences, and manage call center agents.
 
 ## Quick start
 
-In this guide, you’ll learn how to get started with Call Center App using Call Control and Telnyx Portal. Just follow these steps:
+In this guide, you’ll learn how to get started with the Call Center App by using Telnyx SDKs and the Telnyx Portal. Just follow these steps:
 
-1. Sign up for a Telnyx Account.
+1. Sign up for a Telnyx Account
 2. Buy a phone number
 3. Install Ngrok
 4. Create a Call Control App
 5. Update your phone number
-6. Create a SIP connection
+6. Create a SIP Connection
 7. Create an Outbound Voice Profile
 8. Write some code
 9. Run the code
@@ -34,7 +34,7 @@ This is your Call Center phone number that end users will call to reach your app
 
 Download and install [ngrok](https://ngrok.com/).\
 Start up ngrok with `ngrok http 8000` and make note of the https `Forwarding` URL.\
-You will need it to be able to receive websocket request from Call Control App 
+You will need it to be able to receive websocket requests from the Call Control App 
 
 ![ngrok URL](screenshots/get_ngrok_URL.png)
 ---
@@ -78,13 +78,12 @@ Make note of the Outbound Voice Profile ID.
 ---
 ## Step 9: Run the code
 
-1. Navigate into the `call-center` folder
-1. Run `npm install`
+1. Run `npm install` from the `call-center` folder 
 2. Run `npm start`\
 This will install and start both the server and web apps.\
 This will start an Express app on port specified as the `TELNYX_SERVER_APP_PORT` environment variable (defaults to `8000`).
-3. Open the ngrok Web Interface (ex: <http://127.0.0.1:4040/inspect/http>). You should see `/login` request.
-4. Call your Call Center phone number from your personal device or a web dialer. You should see requests to `POST /calls/callbacks/call-control-app` come through. (Note: Events may not show up in the expected order, e.g. `initiated` may be logged after `call`.)
+3. Log in as a call center agent in the browser. Open the ngrok Web Interface (ex: <http://127.0.0.1:4040/inspect/http>) in a separate tab. You should see `/login` request.
+4. Call your Call Center phone number from your personal device or a web dialer. You should see requests to `POST /calls/callbacks/call-control-app` come through.
 
 ---
 ## Demo web dialer configuration
