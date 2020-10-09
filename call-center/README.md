@@ -28,7 +28,7 @@ It’ll give you access to our Mission Control Portal where you can buy phone nu
 Access Telnyx Mission Control and [buy a phone number](https://portal.telnyx.com/#/app/numbers/search-numbers).\
 This is your Call Center phone number that end users will call to reach your application.
 
-![buy a phone number](https://raw.githubusercontent.com/team-telnyx/telnyx-client-examples/WEBRTC-176/call-center/screenshots/buy_phone_number.png)
+![buy a phone number](screenshots/buy_phone_number.png)
 ---
 ## Step 3: Install Ngrok
 
@@ -36,7 +36,7 @@ Download and install [ngrok](https://ngrok.com/).\
 Start up ngrok with `ngrok http 8000` and make note of the https `Forwarding` URL.\
 You will need it to be able to receive websocket request from Call Control App 
 
-![ngrok URL](https://raw.githubusercontent.com/team-telnyx/telnyx-client-examples/WEBRTC-176/call-center/screenshots/get_ngrok_URL.png)
+![ngrok URL](screenshots/get_ngrok_URL.png)
 ---
 ## Step 4: Create a Call Control App
 
@@ -44,31 +44,31 @@ Create a [Call Control App](https://portal.telnyx.com/#/app/call-control/applica
 Set the required webhook URL to `https://your-ngrok-forwarding-id.ngrok.io/calls/callbacks/call-control-app`.\
 Make note of the ID of your new Call Control App.
 
-![Call Control App](https://raw.githubusercontent.com/team-telnyx/telnyx-client-examples/WEBRTC-176/call-center/screenshots/create_call_control_app.png)
+![Call Control App](screenshots/create_call_control_app.png)
 ---
 ## Step 5: Update your phone number
 
 [Update your phone number](https://portal.telnyx.com/#/app/numbers/my-numbers) by selecting your Call Control App under "Connection or App" column.
 
-![Update your phone number](https://raw.githubusercontent.com/team-telnyx/telnyx-client-examples/WEBRTC-176/call-center/screenshots/select_call_control_app.png)
+![Update your phone number](screenshots/select_call_control_app.png)
 ---
 ## Step 6: Create a SIP connection
 
 [Create a SIP connection](https://portal.telnyx.com/#/app/connections), setting the "SIP Connection Type" to `Credentials`.
 
-![Create a SIP connection](https://raw.githubusercontent.com/team-telnyx/telnyx-client-examples/WEBRTC-176/call-center/screenshots/create_sip_conn.png)
+![Create a SIP connection](screenshots/create_sip_conn.png)
 
 Enable "Receive SIP URI Calls" in the "Inbound" tab.
 Make note of your SIP Connection ID.
 
-![Enable Receive SIP URI Calls](https://raw.githubusercontent.com/team-telnyx/telnyx-client-examples/WEBRTC-176/call-center/screenshots/enable_sip_receive_call.png)
+![Enable Receive SIP URI Calls](screenshots/enable_sip_receive_call.png)
 ---
 ## Step 7: Create an Outbound Voice Profile
 
 [Create an Outbound Voice Profile](https://portal.telnyx.com/#/app/outbound-profiles/new), associating it with your Call Control App and your SIP connection.
 Make note of the Outbound Voice Profile ID.
 
-![Create an Outbound Voice Profile](https://raw.githubusercontent.com/team-telnyx/telnyx-client-examples/WEBRTC-176/call-center/screenshots/create_ovp_and_associations.png)
+![Create an Outbound Voice Profile](screenshots/create_ovp_and_associations.png)
 ---
 ## Step 8: Write some code
 
