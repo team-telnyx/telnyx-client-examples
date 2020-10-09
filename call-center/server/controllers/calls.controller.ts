@@ -364,6 +364,7 @@ class CallsController {
             appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
+            appIncomingCallLeg.callControlAgentSipUsername = '';
             appIncomingCallLeg.muted = false;
 
             await callLegRepository.save(appIncomingCallLeg);
@@ -563,16 +564,17 @@ class CallsController {
     });
 
     // Save newly created leg to our database
-    let appAgentCallLeg = new CallLeg();
-    appAgentCallLeg.to = to;
-    appAgentCallLeg.from = from;
-    appAgentCallLeg.direction = CallLegDirection.OUTGOING;
-    appAgentCallLeg.status = CallLegStatus.ACTIVE;
-    appAgentCallLeg.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
-    appAgentCallLeg.telnyxConnectionId = connectionId;
-    appAgentCallLeg.muted = false;
+    let appOutgoingCall = new CallLeg();
+    appOutgoingCall.to = to;
+    appOutgoingCall.from = from;
+    appOutgoingCall.direction = CallLegDirection.OUTGOING;
+    appOutgoingCall.status = CallLegStatus.ACTIVE;
+    appOutgoingCall.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
+    appOutgoingCall.telnyxConnectionId = connectionId;
+    appOutgoingCall.callControlAgentSipUsername = '';
+    appOutgoingCall.muted = false;
 
-    return await callLegRepository.save(appAgentCallLeg);
+    return await callLegRepository.save(appOutgoingCall);
   };
 
   private static getAvailableAgent = async function () {

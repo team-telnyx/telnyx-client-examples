@@ -43,6 +43,9 @@ export class CallLeg {
   telnyxConnectionId!: string;
 
   @Column()
+  callControlAgentSipUsername!: string;
+
+  @Column()
   muted!: boolean;
 
   @ManyToOne((type) => Conference, (conference) => conference.callLegs, {
