@@ -194,7 +194,7 @@ test('POST /callbacks/call-control-app | call.initiated', () =>
       expect(telnyxMock.callMock.answer).toHaveBeenCalled();
     }));
 
-test('POST /callbacks/call-control-app | call.answered', () =>
+test('POST /callbacks/call-control-app | call.answered | client_state.answer_incoming_parked', () =>
   testFactory.app
     .post('/calls/callbacks/call-control-app')
     .send({
@@ -236,4 +236,32 @@ test('POST /callbacks/call-control-app | call.answered', () =>
         })
       );
       expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
+    }));
+
+test('POST /callbacks/call-control-app | call.answered | client_state.dial_agent', () =>
+  testFactory.app
+    .post('/calls/callbacks/call-control-app')
+    .send({
+      data: {
+        event_type: 'call.answered',
+        payload: {
+          client_state: encodeClientState({
+            appCallState: 'dial_agent',
+            appConferenceId: 'conference1',
+          }),
+          call_control_id: 'telnyxCallControlId1',
+          connection_id: 'telnyxConnectionId1',
+          from: 'fake_from',
+          to: 'sip:agent1SipUsername@sip.telnyx.com',
+          direction: 'incoming',
+        },
+      },
+    })
+    .expect('Content-type', /json/)
+    .expect(200)
+    .then(() => {
+      expect(telnyxMock.conferenceMock.join).toHaveBeenCalledWith({
+        call_control_id: 'telnyxCallControlId1',
+        start_conference_on_enter: true,
+      });
     }));

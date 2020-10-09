@@ -5,6 +5,7 @@ const callMock = {
 };
 
 const conferenceMock = {
+  join: jest.fn(),
   mute: jest.fn(),
   unmute: jest.fn(),
 };
@@ -31,6 +32,7 @@ class Call {
 class Conference {
   mute = conferenceMock.mute;
   unmute = conferenceMock.unmute;
+  join = conferenceMock.join;
 }
 
 module.exports = jest.fn().mockImplementation(() => ({
