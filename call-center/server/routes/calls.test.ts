@@ -81,10 +81,6 @@ test('POST /actions/dial', () =>
         })
       );
       expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
-      expect(telnyxMock.conferenceMock.join).toHaveBeenCalledWith({
-        call_control_id: 'fake_call_control_id',
-        start_conference_on_enter: true,
-      });
     }));
 
 test('POST /actions/invite', () =>
@@ -282,7 +278,7 @@ test('POST /callbacks/call-control-app | call.answered | client_state.answer_inc
       expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
     }));
 
-test('POST /callbacks/call-control-app | call.answered | client_state.dial', () =>
+test('POST /callbacks/call-control-app | call.answered | client_state.dial_agent', () =>
   testFactory.app
     .post('/calls/callbacks/call-control-app')
     .send({
@@ -290,7 +286,7 @@ test('POST /callbacks/call-control-app | call.answered | client_state.dial', () 
         event_type: 'call.answered',
         payload: {
           client_state: encodeClientState({
-            appCallState: 'dial',
+            appCallState: 'dial_agent',
             appConferenceId: 'conference1',
           }),
           call_control_id: 'telnyxCallControlId1',
