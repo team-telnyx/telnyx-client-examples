@@ -1,6 +1,8 @@
 import { getManager } from 'typeorm';
 import { CallLeg } from '../entities/callLeg.entity';
+import { Conference } from '../entities/conference.entity';
 import TestFactory from '../TestFactory';
+import { encodeClientState } from '../controllers/calls.controller';
 
 const telnyxMock = require('telnyx');
 
@@ -159,7 +161,7 @@ test('POST /actions/conferences/unmute', () =>
       expect(telnyxMock.conferenceMock.unmute).toHaveBeenCalled();
     }));
 
-test('POST /callbacks/call-control-app', () =>
+test('POST /callbacks/call-control-app | call.initiated', () =>
   testFactory.app
     .post('/calls/callbacks/call-control-app')
     .send({
@@ -190,4 +192,48 @@ test('POST /callbacks/call-control-app', () =>
 
       expect(callLeg).toBeDefined();
       expect(telnyxMock.callMock.answer).toHaveBeenCalled();
+    }));
+
+test('POST /callbacks/call-control-app | call.answered', () =>
+  testFactory.app
+    .post('/calls/callbacks/call-control-app')
+    .send({
+      data: {
+        event_type: 'call.answered',
+        payload: {
+          client_state: encodeClientState({
+            appCallState: 'answer_incoming_parked',
+          }),
+          call_control_id: 'telnyxCallControlId1',
+          connection_id: 'telnyxConnectionId1',
+          from: 'fake_from',
+          to: 'sip:agent1SipUsername@sip.telnyx.com',
+          direction: 'incoming',
+        },
+      },
+    })
+    .expect('Content-type', /json/)
+    .expect(200)
+    .then(async () => {
+      const conference = await getManager()
+        .getRepository(Conference)
+        .findOne({
+          where: {
+            telnyxConferenceId: 'fake_conference_id',
+            from: 'fake_from',
+          },
+          relations: ['callLegs'],
+        });
+
+      expect(conference).toBeDefined();
+      expect(conference?.callLegs).toContainEqual(
+        expect.objectContaining({
+          to: 'sip:agent1SipUsername@sip.telnyx.com',
+          direction: 'incoming',
+          telnyxCallControlId: 'telnyxCallControlId1',
+          telnyxConnectionId: 'telnyxConnectionId1',
+          status: 'active',
+        })
+      );
+      expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
     }));

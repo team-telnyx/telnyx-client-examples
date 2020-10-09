@@ -502,14 +502,14 @@ class CallsController {
 
 // The Telnyx Call Control API expects the client state to be
 // base64 encoded, so we have our encode/decode helpers here
-function encodeClientState(data: IClientState) {
+export function encodeClientState(data: IClientState) {
   let jsonStr = JSON.stringify(data);
   let buffer = Buffer.from(jsonStr);
 
   return buffer.toString('base64');
 }
 
-function decodeClientState(data?: string): Partial<IClientState> {
+export function decodeClientState(data?: string): Partial<IClientState> {
   if (!data) return {};
 
   let buffer = Buffer.from(data, 'base64');

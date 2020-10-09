@@ -16,6 +16,13 @@ const callsCreateMock = jest.fn().mockImplementation(() => ({
   },
 }));
 
+const conferencesCreateMock = jest.fn().mockImplementation(() => ({
+  ...conferenceMock,
+  data: {
+    id: 'fake_conference_id',
+  },
+}));
+
 class Call {
   answer = callMock.answer;
   hangup = callMock.hangup;
@@ -32,8 +39,12 @@ module.exports = jest.fn().mockImplementation(() => ({
   calls: {
     create: callsCreateMock,
   },
+  conferences: {
+    create: conferencesCreateMock,
+  },
 }));
 
 module.exports.callMock = callMock;
 module.exports.conferenceMock = conferenceMock;
 module.exports.callsCreateMock = callsCreateMock;
+module.exports.conferencesCreateMock = conferencesCreateMock;
