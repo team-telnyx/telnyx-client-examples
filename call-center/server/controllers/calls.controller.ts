@@ -70,7 +70,7 @@ class CallsController {
 
       // Call the agent to invite them to join the conference call
       res.json({
-        data: await CallsController.dial({
+        data: await CallsController.createCall({
           to,
           from,
           connectionId: appInviterCallLeg.telnyxConnectionId,
@@ -110,7 +110,7 @@ class CallsController {
       let from = process.env.TELNYX_SIP_OB_NUMBER || '';
 
       // Call the agent to invite them to join the conference call
-      let newAgentDial = await CallsController.dial({
+      let newAgentDial = await CallsController.createCall({
         to,
         from,
         connectionId: appTransfererCallLeg.telnyxConnectionId,
@@ -335,14 +335,14 @@ class CallsController {
 
             if (availableAgent) {
               // Create a new Telnyx Conference to organize & issue commands
-              // to multiple call legs at once
+              // to multiple call legs at once and save it to our DB
               let appConference = await CallsController.createConference({
                 from,
                 callControlId: call_control_id,
               });
 
               // Call the agent to invite them to join the conference call
-              await CallsController.dial({
+              await CallsController.createCall({
                 to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
                 from,
                 connectionId: connection_id,
@@ -463,7 +463,7 @@ class CallsController {
     return await conferenceRepository.save(appConference);
   };
 
-  private static dial = async function ({
+  private static createCall = async function ({
     from,
     to,
     connectionId,
