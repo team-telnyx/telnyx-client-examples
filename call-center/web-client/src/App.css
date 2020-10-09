@@ -19,10 +19,11 @@
   font-weight: normal;
   line-height: 1;
   margin: 0;
+  font-family: 'Roboto Slab', serif;
 }
 
 .App-title {
-  font-size: 2rem;
+  font-size: 2.5rem;
   margin-bottom: 1rem;
   text-align: center;
 }
@@ -71,7 +72,11 @@
   padding: 0.6rem;
 }
 
-.App-form .App-input,
+.App-form .App-input {
+  padding: 0.8rem;
+  min-width: 16.5rem;
+}
+
 .App-form .App-button {
   padding: 0.8rem;
   min-width: 8rem;
