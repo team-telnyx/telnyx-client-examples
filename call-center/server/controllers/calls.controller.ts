@@ -24,7 +24,8 @@ interface ICreateCallParams {
   from: string;
   to: string;
   connectionId: string;
-  appConferenceId: string;
+  appConferenceId?: string;
+  clientState?: IClientState;
 }
 
 interface ICreateConferenceParams {
@@ -43,6 +44,45 @@ class CallsController {
 
     callToBridge.bridge({ call_control_id });
     res.json({});
+  };
+
+  // Make an outbound call
+  public static dial = async function (req: Request, res: Response) {
+    let { to } = req.body;
+
+    try {
+      // NOTE Specifying the host SIP username doesn't seem to work,
+      // possibly because connection ID relationship?
+      // let from = `sip:${inviterSipUsername}@sip.telnyx.com`;
+      let from = process.env.TELNYX_SIP_OB_NUMBER!;
+
+      // Create outgoing call
+      let appOutgoingCall = await CallsController.createCall({
+        to,
+        from,
+        connectionId: process.env.TELNYX_SIP_CONNECTION_ID!,
+      });
+
+      // Join new conference immediately
+      let telnyxConference = await new telnyx.Conference({
+        id: appOutgoingCall.conference.telnyxConferenceId,
+      });
+
+      await telnyxConference.join({
+        call_control_id: appOutgoingCall.telnyxCallControlId,
+        start_conference_on_enter: true,
+      });
+
+      res.json({
+        data: appOutgoingCall,
+      });
+    } catch (e) {
+      console.error(e);
+
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
   };
 
   // Invite an agent or phone number to join another agent's conference call
@@ -68,7 +108,7 @@ class CallsController {
       // let from = `sip:${inviterSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
-      // Call the agent to invite them to join the conference call
+      // Call someone to invite them to join the conference call
       res.json({
         data: await CallsController.createCall({
           to,
@@ -109,8 +149,8 @@ class CallsController {
       // let from = `sip:${transfererSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
-      // Call the agent to invite them to join the conference call
-      let newAgentDial = await CallsController.createCall({
+      // Call someone to invite them to join the conference call
+      let appOutgoingCall = await CallsController.createCall({
         to,
         from,
         connectionId: appTransfererCallLeg.telnyxConnectionId,
@@ -127,7 +167,7 @@ class CallsController {
       transfererCall.hangup();
 
       res.json({
-        data: newAgentDial,
+        data: appOutgoingCall,
       });
     } catch (e) {
       console.error(e);
@@ -374,7 +414,7 @@ class CallsController {
                 }),
               });
             }
-          } else if (clientState.appCallState === 'dial_agent') {
+          } else if (clientState.appCallState === 'dial') {
             // Handle a call answered by an agent logged into the WebRTC client
 
             if (clientState.appConferenceId) {
@@ -481,10 +521,25 @@ class CallsController {
       // rotate to a different agent if one doesn't answer within X
       timeout_secs: 60,
       client_state: encodeClientState({
-        appCallState: 'dial_agent',
+        appCallState: 'dial',
         appConferenceId: appConferenceId,
       }),
     });
+
+    // Associate with a conference if it exists, otherwise, create a conference
+    let appConference;
+
+    if (appConferenceId) {
+      appConference = await conferenceRepository.findOne(appConferenceId);
+    }
+
+    if (!appConference) {
+      // Create a conference
+      appConference = await CallsController.createConference({
+        from,
+        callControlId: telnyxOutgoingCall.call_control_id,
+      });
+    }
 
     // Save newly created leg to our database
     let appAgentCallLeg = new CallLeg();
@@ -495,9 +550,7 @@ class CallsController {
     appAgentCallLeg.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appAgentCallLeg.telnyxConnectionId = connectionId;
     appAgentCallLeg.muted = false;
-    appAgentCallLeg.conference = await conferenceRepository.findOneOrFail(
-      appConferenceId
-    );
+    appAgentCallLeg.conference = appConference;
 
     return await callLegRepository.save(appAgentCallLeg);
   };

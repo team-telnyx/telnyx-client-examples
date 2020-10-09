@@ -238,7 +238,7 @@ test('POST /callbacks/call-control-app | call.answered | client_state.answer_inc
       expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
     }));
 
-test('POST /callbacks/call-control-app | call.answered | client_state.dial_agent', () =>
+test('POST /callbacks/call-control-app | call.answered | client_state.dial', () =>
   testFactory.app
     .post('/calls/callbacks/call-control-app')
     .send({
@@ -246,7 +246,7 @@ test('POST /callbacks/call-control-app | call.answered | client_state.dial_agent
         event_type: 'call.answered',
         payload: {
           client_state: encodeClientState({
-            appCallState: 'dial_agent',
+            appCallState: 'dial',
             appConferenceId: 'conference1',
           }),
           call_control_id: 'telnyxCallControlId1',
