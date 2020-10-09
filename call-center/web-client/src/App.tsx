@@ -76,14 +76,13 @@ function App() {
       ) : (
         <div
           style={{
-            position: 'relative',
             display: 'flex',
             flexDirection: 'column',
             padding: '0 8px',
             height: '100vh',
           }}
         >
-          <div style={{ marginTop: 48 }}>
+          <div style={{ marginTop: 48, flexShrink: 0 }}>
             <h1 className="App-heading App-title">Call Center</h1>
             <header
               style={{
@@ -97,17 +96,19 @@ function App() {
               Logged in as <b>{agent.name}</b>
             </header>
           </div>
-          <Common
-            agentId={agent.id}
-            agentSipUsername={agent.sipUsername}
-            agentName={agent.name}
-            token={sessionStorageUser.token}
-          ></Common>
+          <div style={{ flex: '1 0 auto' }}>
+            <Common
+              agentId={agent.id}
+              agentSipUsername={agent.sipUsername}
+              agentName={agent.name}
+              token={sessionStorageUser.token}
+            ></Common>
+          </div>
           <footer
             style={{
               alignSelf: 'center',
-              marginBottom: 48,
-              marginTop: 48,
+              paddingBottom: 48,
+              flexShrink: 0,
             }}
           >
             <button
