@@ -110,23 +110,14 @@ class CallsController {
       // possibly because connection ID relationship?
       // let from = `sip:${inviterSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
-      let isToAgent = to.endsWith('@sip.telnyx.com');
 
       // Call someone to invite them to join the conference call
       let appOutgoingCall = await CallsController.createCall({
         to,
         from,
         connectionId: appInviterCallLeg.telnyxConnectionId,
-        options: isToAgent
-          ? {
-              // IDEA Specify a short answer timeout so that you can quickly
-              // rotate to a different agent if one doesn't answer within X
-              timeout_secs: 60,
-              client_state: encodeClientState({
-                appCallState: 'dial_agent',
-                appConferenceId: appInviterCallLeg.conference.id,
-              }),
-            }
+        options: CallsController.isToAgent(to)
+          ? CallsController.getDialAgentOptions(appInviterCallLeg.conference.id)
           : undefined,
       });
 
@@ -168,23 +159,16 @@ class CallsController {
       // possibly because connection ID relationship?
       // let from = `sip:${transfererSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
-      let isToAgent = to.endsWith('@sip.telnyx.com');
 
       // Call someone to invite them to join the conference call
       let appOutgoingCall = await CallsController.createCall({
         to,
         from,
         connectionId: appTransfererCallLeg.telnyxConnectionId,
-        options: isToAgent
-          ? {
-              // IDEA Specify a short answer timeout so that you can quickly
-              // rotate to a different agent if one doesn't answer within X
-              timeout_secs: 60,
-              client_state: encodeClientState({
-                appCallState: 'dial_agent',
-                appConferenceId: appTransfererCallLeg.conference.id,
-              }),
-            }
+        options: CallsController.isToAgent(to)
+          ? CallsController.getDialAgentOptions(
+              appTransfererCallLeg.conference.id
+            )
           : undefined,
       });
 
@@ -435,15 +419,7 @@ class CallsController {
                 to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
                 from,
                 connectionId: connection_id,
-                options: {
-                  // IDEA Specify a short answer timeout so that you can quickly
-                  // rotate to a different agent if one doesn't answer within X
-                  timeout_secs: 60,
-                  client_state: encodeClientState({
-                    appCallState: 'dial_agent',
-                    appConferenceId: appConference.id,
-                  }),
-                },
+                options: CallsController.getDialAgentOptions(appConference.id),
               });
 
               // Add outgoing call to conference
@@ -531,6 +507,22 @@ class CallsController {
     }
 
     res.json({});
+  };
+
+  private static isToAgent = function (to: string) {
+    return to.endsWith('@sip.telnyx.com');
+  };
+
+  private static getDialAgentOptions = function (appConferenceId: string) {
+    return {
+      // IDEA Specify a short answer timeout so that you can quickly
+      // rotate to a different agent if one doesn't answer within X
+      timeout_secs: 60,
+      client_state: encodeClientState({
+        appCallState: 'dial_agent',
+        appConferenceId,
+      }),
+    };
   };
 
   private static createConference = async function ({
