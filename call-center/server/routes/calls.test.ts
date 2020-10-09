@@ -43,6 +43,50 @@ test('POST /actions/bridge', () =>
       expect(telnyxMock.callMock.bridge).toHaveBeenCalled();
     }));
 
+test('POST /actions/dial', () =>
+  testFactory.app
+    .post('/calls/actions/dial')
+    .send({
+      to: '+15551231234',
+    })
+    .expect('Content-type', /json/)
+    .expect(200)
+    .then(async () => {
+      const conference = await getManager()
+        .getRepository(Conference)
+        .findOne({
+          where: {
+            telnyxConferenceId: 'fake_conference_id',
+            from: process.env.TELNYX_SIP_OB_NUMBER,
+          },
+          relations: ['callLegs'],
+        });
+
+      expect(conference).toBeDefined();
+      expect(conference?.callLegs).toEqual([
+        expect.objectContaining({
+          to: '+15551231234',
+          direction: 'outgoing',
+          telnyxCallControlId: 'fake_call_control_id',
+          telnyxConnectionId: process.env.TELNYX_SIP_CONNECTION_ID,
+          status: 'active',
+          muted: false,
+        }),
+      ]);
+      expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: process.env.TELNYX_SIP_OB_NUMBER,
+          to: '+15551231234',
+          connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
+        })
+      );
+      expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
+      expect(telnyxMock.conferenceMock.join).toHaveBeenCalledWith({
+        call_control_id: 'fake_call_control_id',
+        start_conference_on_enter: true,
+      });
+    }));
+
 test('POST /actions/invite', () =>
   testFactory.app
     .post('/calls/actions/conferences/invite')
