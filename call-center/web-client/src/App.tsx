@@ -103,7 +103,13 @@ function App() {
             agentName={agent.name}
             token={sessionStorageUser.token}
           ></Common>
-          <footer style={{ alignSelf: 'center' }}>
+          <footer
+            style={{
+              alignSelf: 'center',
+              marginBottom: 48,
+              marginTop: 48,
+            }}
+          >
             <button
               type="button"
               className="App-button App-button--link"
