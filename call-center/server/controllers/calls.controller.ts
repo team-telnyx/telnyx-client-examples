@@ -27,6 +27,11 @@ interface IDialParams {
   appConferenceId: string;
 }
 
+interface ICreateConferenceParams {
+  from: string;
+  callControlId: string;
+}
+
 class CallsController {
   public static bridge = async function (req: Request, res: Response) {
     let { call_control_id, to } = req.body.data;
@@ -331,29 +336,10 @@ class CallsController {
             if (availableAgent) {
               // Create a new Telnyx Conference to organize & issue commands
               // to multiple call legs at once
-              let { data: telnyxConference } = await telnyx.conferences.create({
-                name: `Call from ${from} at ${Date.now()}`,
-                call_control_id,
-                // Place caller on hold until agent joins the call
-                hold_audio_url: process.env.HOLD_AUDIO_URL,
-                start_conference_on_create: false,
+              let appConference = await CallsController.createConference({
+                from,
+                callControlId: call_control_id,
               });
-
-              // Save incoming call leg status as active
-              let appIncomingCallLeg = await callLegRepository.findOneOrFail({
-                telnyxCallControlId: call_control_id,
-              });
-              appIncomingCallLeg.status = CallLegStatus.ACTIVE;
-              await callLegRepository.save(appIncomingCallLeg);
-
-              // Save the conference and incoming call in our database so that we can
-              // retrieve call control IDs later on user interaction
-              let appConference = new Conference();
-              appConference.telnyxConferenceId = telnyxConference.id;
-              appConference.from = from;
-              appConference.callLegs = [appIncomingCallLeg];
-
-              await conferenceRepository.save(appConference);
 
               // Call the agent to invite them to join the conference call
               await CallsController.dial({
@@ -446,6 +432,37 @@ class CallsController {
     res.json({});
   };
 
+  private static createConference = async function ({
+    from,
+    callControlId,
+  }: ICreateConferenceParams) {
+    let callLegRepository = getManager().getRepository(CallLeg);
+    let conferenceRepository = getManager().getRepository(Conference);
+    let { data: telnyxConference } = await telnyx.conferences.create({
+      name: `Call from ${from} at ${Date.now()}`,
+      call_control_id: callControlId,
+      // Place caller on hold until agent joins the call
+      hold_audio_url: process.env.HOLD_AUDIO_URL,
+      start_conference_on_create: false,
+    });
+
+    // Save incoming call leg status as active
+    let appIncomingCallLeg = await callLegRepository.findOneOrFail({
+      telnyxCallControlId: callControlId,
+    });
+    appIncomingCallLeg.status = CallLegStatus.ACTIVE;
+    await callLegRepository.save(appIncomingCallLeg);
+
+    // Save the conference and incoming call in our database so that we can
+    // retrieve call control IDs later on user interaction
+    let appConference = new Conference();
+    appConference.telnyxConferenceId = telnyxConference.id;
+    appConference.from = from;
+    appConference.callLegs = [appIncomingCallLeg];
+
+    return await conferenceRepository.save(appConference);
+  };
+
   private static dial = async function ({
     from,
     to,
@@ -481,7 +498,7 @@ class CallsController {
       appConferenceId
     );
 
-    return callLegRepository.save(appAgentCallLeg);
+    return await callLegRepository.save(appAgentCallLeg);
   };
 
   private static getAvailableAgent = async function () {
