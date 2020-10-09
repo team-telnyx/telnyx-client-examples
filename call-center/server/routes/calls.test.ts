@@ -65,8 +65,6 @@ test('POST /actions/invite', () =>
           relations: ['conference'],
         });
 
-      console.log(callLeg);
-
       expect(callLeg).toBeDefined();
       expect(callLeg?.conference?.id).toEqual('conference1');
       expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
@@ -101,8 +99,6 @@ test('POST /actions/transfer', () =>
           },
           relations: ['conference'],
         });
-
-      console.log(callLeg);
 
       expect(callLeg).toBeDefined();
       expect(callLeg?.conference?.id).toEqual('conference1');
