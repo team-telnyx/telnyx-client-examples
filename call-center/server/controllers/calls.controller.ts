@@ -20,7 +20,7 @@ interface IClientState {
   appConferenceId?: string;
 }
 
-interface IDialParams {
+interface ICreateCallParams {
   from: string;
   to: string;
   connectionId: string;
@@ -66,7 +66,7 @@ class CallsController {
       // NOTE Specifying the host SIP username doesn't seem to work,
       // possibly because connection ID relationship?
       // let from = `sip:${inviterSipUsername}@sip.telnyx.com`;
-      let from = process.env.TELNYX_SIP_OB_NUMBER || '';
+      let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Call the agent to invite them to join the conference call
       res.json({
@@ -107,7 +107,7 @@ class CallsController {
       // NOTE Specifying the host SIP username doesn't seem to work,
       // possibly because connection ID relationship?
       // let from = `sip:${transfererSipUsername}@sip.telnyx.com`;
-      let from = process.env.TELNYX_SIP_OB_NUMBER || '';
+      let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Call the agent to invite them to join the conference call
       let newAgentDial = await CallsController.createCall({
@@ -341,6 +341,15 @@ class CallsController {
                 callControlId: call_control_id,
               });
 
+              // Save incoming call leg status as active and add to conference
+              let appIncomingCallLeg = await callLegRepository.findOneOrFail({
+                telnyxCallControlId: call_control_id,
+              });
+              appIncomingCallLeg.status = CallLegStatus.ACTIVE;
+              appConference.callLegs = [appIncomingCallLeg];
+
+              await conferenceRepository.save(appConference);
+
               // Call the agent to invite them to join the conference call
               await CallsController.createCall({
                 to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
@@ -436,7 +445,7 @@ class CallsController {
     from,
     callControlId,
   }: ICreateConferenceParams) {
-    let callLegRepository = getManager().getRepository(CallLeg);
+    // let callLegRepository = getManager().getRepository(CallLeg);
     let conferenceRepository = getManager().getRepository(Conference);
     let { data: telnyxConference } = await telnyx.conferences.create({
       name: `Call from ${from} at ${Date.now()}`,
@@ -446,19 +455,11 @@ class CallsController {
       start_conference_on_create: false,
     });
 
-    // Save incoming call leg status as active
-    let appIncomingCallLeg = await callLegRepository.findOneOrFail({
-      telnyxCallControlId: callControlId,
-    });
-    appIncomingCallLeg.status = CallLegStatus.ACTIVE;
-    await callLegRepository.save(appIncomingCallLeg);
-
-    // Save the conference and incoming call in our database so that we can
+    // Save the conference in our database so that we can
     // retrieve call control IDs later on user interaction
     let appConference = new Conference();
     appConference.telnyxConferenceId = telnyxConference.id;
     appConference.from = from;
-    appConference.callLegs = [appIncomingCallLeg];
 
     return await conferenceRepository.save(appConference);
   };
@@ -468,7 +469,7 @@ class CallsController {
     to,
     connectionId,
     appConferenceId,
-  }: IDialParams) {
+  }: ICreateCallParams) {
     let callLegRepository = getManager().getRepository(CallLeg);
     let conferenceRepository = getManager().getRepository(Conference);
 
