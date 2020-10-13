@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
 import { updateAgent, getLoggedInAgents } from '../../services/agentsService';
+import * as callsService from '../../services/callsService';
 import IAgent from '../../interfaces/IAgent';
 import useAgents from '../../hooks/useAgents';
 import ActiveCall from '../ActiveCall';
@@ -137,21 +138,9 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
   const dial = useCallback(
     (destination) => {
-      if (!telnyxClientRef.current) {
-        return;
-      }
-
-      let call = telnyxClientRef.current.newCall({
-        destinationNumber: destination,
-        // TODO Find difference between `remote`-
-        callerName: `Call Center`,
-        // Your outbound-enabled phone number:
-        // TODO Remove hardcoded number, get from .env
-        callerNumber: '+12134639257',
-        remoteCallerName: agentName,
-        remoteCallerNumber: `sip:${agentSipUsername}@sip.telnyx.com`,
-        audio: true,
-        video: false,
+      callsService.dial({
+        initiatorSipUsername: agentSipUsername,
+        to: destination,
       });
     },
     [telnyxClientRef.current]
