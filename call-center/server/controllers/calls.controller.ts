@@ -71,9 +71,6 @@ class CallsController {
         from,
         callControlId: appOutgoingCall.telnyxCallControlId,
       });
-
-      // Add agent to call
-      appOutgoingCall.callControlAgentSipUsername = callerSipUsername;
       // Add outgoing call to conference
       appOutgoingCall.conference = appConference;
       await callLegRepository.save(appOutgoingCall);
@@ -103,7 +100,7 @@ class CallsController {
       let appInviterCallLeg = await callLegRepository.findOneOrFail({
         where: {
           status: CallLegStatus.ACTIVE,
-          callControlAgentSipUsername: inviterSipUsername,
+          to: `sip:${inviterSipUsername}@sip.telnyx.com`,
         },
         relations: ['conference'],
       });
@@ -154,7 +151,7 @@ class CallsController {
       let appTransfererCallLeg = await callLegRepository.findOneOrFail({
         where: {
           status: CallLegStatus.ACTIVE,
-          callControlAgentSipUsername: transfererSipUsername,
+          to: `sip:${transfererSipUsername}@sip.telnyx.com`,
         },
         relations: ['conference'],
       });
@@ -368,7 +365,6 @@ class CallsController {
             appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
-            appIncomingCallLeg.callControlAgentSipUsername = '';
             appIncomingCallLeg.muted = false;
 
             await callLegRepository.save(appIncomingCallLeg);
@@ -429,9 +425,6 @@ class CallsController {
                 }),
               });
 
-              // Add agent to call
-              appOutgoingCall.callControlAgentSipUsername =
-                availableAgent.sipUsername;
               // Add outgoing call to conference
               appOutgoingCall.conference = appConference;
               await callLegRepository.save(appOutgoingCall);
@@ -588,7 +581,6 @@ class CallsController {
     appOutgoingCall.status = CallLegStatus.ACTIVE;
     appOutgoingCall.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appOutgoingCall.telnyxConnectionId = connectionId;
-    appOutgoingCall.callControlAgentSipUsername = '';
     appOutgoingCall.muted = false;
 
     return await callLegRepository.save(appOutgoingCall);

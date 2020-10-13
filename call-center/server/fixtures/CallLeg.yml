@@ -9,7 +9,6 @@ items:
     telnyxCallControlId: 'telnyxCallControlId1'
     telnyxConnectionId: 'telnyxConnectionId1'
     muted: false
-    callControlAgentSipUsername: 'agent1SipUsername'
     conference: '@conference1'
   callLeg2:
     id: callLeg2
@@ -20,7 +19,6 @@ items:
     telnyxCallControlId: 'telnyxCallControlId2'
     telnyxConnectionId: 'telnyxConnectionId2'
     muted: true
-    callControlAgentSipUsername: 'agent2SipUsername'
     conference: '@conference2'
   callLeg3:
     id: callLeg3
@@ -31,7 +29,6 @@ items:
     telnyxCallControlId: 'telnyxCallControlId3'
     telnyxConnectionId: 'telnyxConnectionId3'
     muted: false
-    callControlAgentSipUsername: 'agent1SipUsername'
     conference: '@conference2'
   callLeg4:
     id: callLeg4
@@ -42,5 +39,4 @@ items:
     telnyxCallControlId: 'telnyxCallControlId4'
     telnyxConnectionId: 'telnyxConnectionId4'
     muted: false
-    callControlAgentSipUsername: ''
     conference: '@conference2'
