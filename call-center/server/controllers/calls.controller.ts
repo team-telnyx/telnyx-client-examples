@@ -18,6 +18,7 @@ interface IClientState {
   // appCallLegId: string;
   appCallState?: string;
   appConferenceId?: string;
+  finalDestinationTo?: string;
 }
 
 interface ICreateCallParams {
@@ -48,35 +49,53 @@ class CallsController {
   };
 
   // Make an outbound call
+  // We actually create 2 call legs here: 1 to the agent who is initiating
+  // the call, and 1 to the destination number
   public static dial = async function (req: Request, res: Response) {
-    let { callerSipUsername, to } = req.body;
+    let { initiatorSipUsername, to } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
+      let conferenceRepository = getManager().getRepository(Conference);
 
       // NOTE Specifying the host SIP username doesn't seem to work,
       // possibly because connection ID relationship?
       // let from = `sip:${initiatorSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
-      // Create outgoing call
-      let appOutgoingCall = await CallsController.createCall({
-        to,
+      // Create agent call
+      let appAgentCall = await CallsController.createCall({
+        to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
+        options: {
+          client_state: encodeClientState({
+            appCallState: 'initiate_dial',
+            finalDestinationTo: to,
+          }),
+        },
       });
 
-      // Create new conference
-      let appConference = await CallsController.createConference({
-        from,
-        callControlId: appOutgoingCall.telnyxCallControlId,
-      });
-      // Add outgoing call to conference
-      appOutgoingCall.conference = appConference;
-      await callLegRepository.save(appOutgoingCall);
+      // let telnyxConference = new telnyx.Conference({
+      //   id: appConference.telnyxConferenceId,
+      // });
+
+      // // Create outgoing call and join conference
+      // let appOutgoingCall = await CallsController.createCall({
+      //   to,
+      //   from,
+      //   connectionId: process.env.TELNYX_CC_APP_ID!,
+      // });
+
+      // await telnyxConference.join({
+      //   call_control_id: appOutgoingCall.telnyxCallControlId,
+      // });
+
+      // // Save both calls to conference
+      // appConference.callLegs = [appAgentCall, appOutgoingCall];
+      // await conferenceRepository.save(appConference);
 
       res.json({
-        data: appOutgoingCall,
+        data: appAgentCall,
       });
     } catch (e) {
       console.error(e);
@@ -464,8 +483,36 @@ class CallsController {
                 start_conference_on_enter: true,
               });
             }
+          } else if (
+            clientState.appCallState === 'initiate_dial' &&
+            clientState.finalDestinationTo
+          ) {
+            // Handle the first leg of the call created in an outgoing call
+
+            // Create new conference
+            let appConference = await CallsController.createConference({
+              from,
+              callControlId: call_control_id,
+            });
+
+            // Create outgoing call
+            await CallsController.createCall({
+              to: clientState.finalDestinationTo,
+              from,
+              connectionId: process.env.TELNYX_CC_APP_ID!,
+              options: {
+                client_state: encodeClientState({
+                  appCallState: 'dial_agent',
+                  appConferenceId: appConference.id,
+                }),
+              },
+            });
           }
 
+          break;
+        }
+
+        case 'conference.participant.joined': {
           break;
         }
 
