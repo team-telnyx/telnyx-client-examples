@@ -1,7 +1,12 @@
 import path from 'path';
 import express from 'express';
 import request from 'supertest';
-import { Connection, createConnection, getRepository } from 'typeorm';
+import {
+  Connection,
+  createConnection,
+  getConnection,
+  getRepository,
+} from 'typeorm';
 import {
   Builder,
   fixturesIterator,
@@ -55,6 +60,14 @@ class TestFactory {
    */
   public async close() {
     this._connection?.close();
+  }
+
+  /*
+   * Clear database
+   */
+  public async clear() {
+    // This works because `dropSchema` is specified
+    await this.connection?.synchronize(/* dropBeforeSync: */ true);
   }
 
   /*
