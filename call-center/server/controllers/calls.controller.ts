@@ -101,7 +101,7 @@ class CallsController {
       let appInviterCallLeg = await callLegRepository.findOneOrFail({
         where: {
           status: CallLegStatus.ACTIVE,
-          to: `sip:${inviterSipUsername}@sip.telnyx.com`,
+          callControlAgentSipUsername: inviterSipUsername,
         },
         relations: ['conference'],
       });
@@ -117,7 +117,9 @@ class CallsController {
         from,
         connectionId: appInviterCallLeg.telnyxConnectionId,
         options: CallsController.isToAgent(to)
-          ? CallsController.getDialAgentOptions(appInviterCallLeg.conference.id)
+          ? CallsController.getDialAgentOptions({
+              appConferenceId: appInviterCallLeg.conference.id,
+            })
           : undefined,
       });
 
@@ -150,7 +152,7 @@ class CallsController {
       let appTransfererCallLeg = await callLegRepository.findOneOrFail({
         where: {
           status: CallLegStatus.ACTIVE,
-          to: `sip:${transfererSipUsername}@sip.telnyx.com`,
+          callControlAgentSipUsername: transfererSipUsername,
         },
         relations: ['conference'],
       });
@@ -166,9 +168,9 @@ class CallsController {
         from,
         connectionId: appTransfererCallLeg.telnyxConnectionId,
         options: CallsController.isToAgent(to)
-          ? CallsController.getDialAgentOptions(
-              appTransfererCallLeg.conference.id
-            )
+          ? CallsController.getDialAgentOptions({
+              appConferenceId: appTransfererCallLeg.conference.id,
+            })
           : undefined,
       });
 
@@ -420,9 +422,14 @@ class CallsController {
                 to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
                 from,
                 connectionId: connection_id,
-                options: CallsController.getDialAgentOptions(appConference.id),
+                options: CallsController.getDialAgentOptions({
+                  appConferenceId: appConference.id,
+                }),
               });
 
+              // Add agent to call
+              appOutgoingCall.callControlAgentSipUsername =
+                availableAgent.sipUsername;
               // Add outgoing call to conference
               appOutgoingCall.conference = appConference;
               await callLegRepository.save(appOutgoingCall);
@@ -514,7 +521,15 @@ class CallsController {
     return to.endsWith('@sip.telnyx.com');
   };
 
-  private static getDialAgentOptions = function (appConferenceId: string) {
+  private static getSipUsernameFromTo = function (to: string) {
+    return to.substring(to.indexOf(':') + 1, to.indexOf('@sip'));
+  };
+
+  private static getDialAgentOptions = function ({
+    appConferenceId,
+  }: {
+    appConferenceId: string;
+  }) {
     return {
       // IDEA Specify a short answer timeout so that you can quickly
       // rotate to a different agent if one doesn't answer within X

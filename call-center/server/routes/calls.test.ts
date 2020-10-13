@@ -273,6 +273,7 @@ test('POST /callbacks/call-control-app | call.answered | client_state.answer_inc
           telnyxCallControlId: 'telnyxCallControlId1',
           telnyxConnectionId: 'telnyxConnectionId1',
           status: 'active',
+          callControlAgentSipUsername: 'agent1SipUsername',
         })
       );
       expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
