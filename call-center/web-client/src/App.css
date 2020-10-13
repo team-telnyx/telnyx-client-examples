@@ -23,9 +23,9 @@
   flex-shrink: 0;
 }
 
-.App-content,
-footer {
+footer.App-content {
   align-self: center;
+  padding-bottom: 3rem;
 }
 
 .App-header-login {
@@ -143,6 +143,9 @@ footer {
 
 .App-button--tertiary {
   background: var(--tertiary-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .App-button--danger {

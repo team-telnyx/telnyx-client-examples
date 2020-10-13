@@ -7,7 +7,6 @@
 
 .ActiveCall-actions {
   display: flex;
-  margin-top: 1rem;
   align-items: center;
 }
 
@@ -39,6 +38,7 @@
   display: grid;
   grid-template-columns: 1fr max-content;
   margin-bottom: 5px;
+  align-items: center;
 }
 
 .ActiveCall-participant {
