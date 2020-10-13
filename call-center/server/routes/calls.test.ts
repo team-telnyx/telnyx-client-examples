@@ -10,10 +10,11 @@ const testFactory = new TestFactory();
 
 beforeAll(async () => {
   await testFactory.init();
-  await testFactory.loadFixtures();
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  await testFactory.clear();
+  await testFactory.loadFixtures();
   telnyxMock.mockClear();
 });
 
@@ -48,6 +49,7 @@ test('POST /actions/dial', () =>
     .post('/calls/actions/dial')
     .send({
       to: '+15551231234',
+      callerSipUsername: 'agent1SipUsername',
     })
     .expect('Content-type', /json/)
     .expect(200)
@@ -71,6 +73,7 @@ test('POST /actions/dial', () =>
           telnyxConnectionId: process.env.TELNYX_SIP_CONNECTION_ID,
           status: 'active',
           muted: false,
+          callControlAgentSipUsername: 'agent1SipUsername',
         }),
       ]);
       expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(

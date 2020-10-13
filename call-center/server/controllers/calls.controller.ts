@@ -49,7 +49,7 @@ class CallsController {
 
   // Make an outbound call
   public static dial = async function (req: Request, res: Response) {
-    let { to } = req.body;
+    let { callerSipUsername, to } = req.body;
 
     try {
       let callLegRepository = getManager().getRepository(CallLeg);
@@ -72,6 +72,8 @@ class CallsController {
         callControlId: appOutgoingCall.telnyxCallControlId,
       });
 
+      // Add agent to call
+      appOutgoingCall.callControlAgentSipUsername = callerSipUsername;
       // Add outgoing call to conference
       appOutgoingCall.conference = appConference;
       await callLegRepository.save(appOutgoingCall);
