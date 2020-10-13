@@ -107,7 +107,15 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
           updateAgent(agentId, { available: true });
         } else {
-          if (state === 'answering') {
+          if (state === 'new') {
+            if (
+              options.callerNumber === agentSipUsername &&
+              options.destinationNumber === agentSipUsername
+            ) {
+              // Answer calls that had been initiated by the agent immediately
+              answer.bind(notification.call)();
+            }
+          } else if (state === 'answering') {
             updateAgent(agentId, { available: false });
           }
 

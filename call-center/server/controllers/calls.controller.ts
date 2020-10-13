@@ -48,35 +48,57 @@ class CallsController {
   };
 
   // Make an outbound call
+  // We actually create 2 call legs here: 1 to the agent who is initiating
+  // the call, and 1 to the destination number
   public static dial = async function (req: Request, res: Response) {
-    let { callerSipUsername, to } = req.body;
+    let { initiatorSipUsername, to } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
+      let conferenceRepository = getManager().getRepository(Conference);
 
       // NOTE Specifying the host SIP username doesn't seem to work,
       // possibly because connection ID relationship?
       // let from = `sip:${initiatorSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
-      // Create outgoing call
+      // Create agent call
+      let appAgentCall = await CallsController.createCall({
+        to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
+        from,
+        connectionId: process.env.TELNYX_CC_APP_ID!,
+        options: {
+          client_state: encodeClientState({
+            appCallState: 'dial',
+          }),
+        },
+      });
+
+      // Create new conference
+      let appConference = await CallsController.createConference({
+        from,
+        callControlId: appAgentCall.telnyxCallControlId,
+      });
+      let telnyxConference = new telnyx.Conference({
+        id: appConference.telnyxConferenceId,
+      });
+
+      // Create outgoing call and join conference
       let appOutgoingCall = await CallsController.createCall({
         to,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
       });
 
-      // Create new conference
-      let appConference = await CallsController.createConference({
-        from,
-        callControlId: appOutgoingCall.telnyxCallControlId,
+      await telnyxConference.join({
+        call_control_id: appOutgoingCall.telnyxCallControlId,
       });
-      // Add outgoing call to conference
-      appOutgoingCall.conference = appConference;
-      await callLegRepository.save(appOutgoingCall);
+
+      // Save both calls to conference
+      appConference.callLegs = [appAgentCall, appOutgoingCall];
+      await conferenceRepository.save(appConference);
 
       res.json({
-        data: appOutgoingCall,
+        data: appAgentCall,
       });
     } catch (e) {
       console.error(e);

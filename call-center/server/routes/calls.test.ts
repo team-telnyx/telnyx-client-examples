@@ -49,7 +49,7 @@ test('POST /actions/dial', () =>
     .post('/calls/actions/dial')
     .send({
       to: '+15551231234',
-      callerSipUsername: 'agent1SipUsername',
+      initiatorSipUsername: 'agent1SipUsername',
     })
     .expect('Content-type', /json/)
     .expect(200)
