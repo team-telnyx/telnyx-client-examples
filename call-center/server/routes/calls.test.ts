@@ -89,7 +89,7 @@ test('POST /actions/invite', () =>
   testFactory.app
     .post('/calls/actions/conferences/invite')
     .send({
-      inviterSipUsername: 'agent1SipUsername',
+      initiatorSipUsername: 'agent1SipUsername',
       to: 'sip:agent3SipUsername@sip.telnyx.com',
     })
     .expect('Content-type', /json/)
@@ -124,7 +124,7 @@ test('POST /actions/transfer', () =>
   testFactory.app
     .post('/calls/actions/conferences/transfer')
     .send({
-      transfererSipUsername: 'agent1SipUsername',
+      initiatorSipUsername: 'agent1SipUsername',
       to: 'sip:agent3SipUsername@sip.telnyx.com',
     })
     .expect('Content-type', /json/)
