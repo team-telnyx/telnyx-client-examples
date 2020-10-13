@@ -58,7 +58,7 @@ footer.App-content {
 }
 
 .App-headline {
-  font-size: 32px;
+  font-size: 2rem;
   margin-bottom: 0.5rem;
   font-family: 'Roboto', serif;
   font-style: normal;
@@ -157,7 +157,7 @@ footer.App-content {
 }
 
 .App-button--small {
-  height: 33px;
+  height: 2.06rem;
   padding: 0.4rem;
 }
 
