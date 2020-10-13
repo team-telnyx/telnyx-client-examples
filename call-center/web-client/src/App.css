@@ -42,6 +42,7 @@
   grid-template-columns: 1fr max-content;
   grid-template-areas: 'input button';
   column-gap: 0.6rem;
+  align-items: center;
 }
 @media only screen and (max-width: 570px) {
   .App-form-row {
@@ -70,7 +71,7 @@
   cursor: pointer;
   border-radius: var(--border-radius);
   color: white;
-  min-width: 5rem;
+  min-width: 3.75rem;
 }
 
 .App-button:hover {
@@ -124,8 +125,8 @@
 }
 
 .App-button--small {
+  height: 33px;
   padding: 0.4rem;
-  min-width: initial;
 }
 
 .App-error {

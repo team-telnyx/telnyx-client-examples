@@ -37,6 +37,7 @@
 .ActiveCall-participant-row {
   display: grid;
   grid-template-columns: 1fr max-content;
+  margin-bottom: 5px;
 }
 
 .ActiveCall-participant {

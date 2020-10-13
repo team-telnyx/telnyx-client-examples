@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-// import { State } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/constants';
 import { invite, transfer } from '../services/callsService';
 import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
@@ -228,7 +227,12 @@ function ActiveCallConference({
                 </span>
               </div>
               {index !== 0 && (
-                <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
                   <MuteUnmuteButton
                     isMuted={muted}
                     mute={() => muteParticipant(participant)}
@@ -327,7 +331,7 @@ function ActiveCall({
           <div className="ActiveCall-actions">
             <button
               type="button"
-              className="App-button App-button--primary"
+              className="App-button App-button--small App-button--primary"
               onClick={handleAnswerClick}
             >
               Answer
@@ -336,7 +340,7 @@ function ActiveCall({
             {/* TODO UX imprv: agents should transfer instead of reject */}
             <button
               type="button"
-              className="App-button App-button--danger"
+              className="App-button App-button--small App-button--danger"
               onClick={handleRejectClick}
             >
               Reject
@@ -351,7 +355,7 @@ function ActiveCall({
           <div className="ActiveCall-actions">
             <button
               type="button"
-              className="App-button App-button--danger"
+              className="App-button App-button--small App-button--danger"
               onClick={handleHangupClick}
             >
               Hangup
@@ -371,7 +375,7 @@ function ActiveCall({
           <div className="ActiveCall-actions">
             <button
               type="button"
-              className="App-button App-button--danger"
+              className="App-button App-button--small App-button--danger"
               onClick={handleHangupClick}
             >
               Hangup
