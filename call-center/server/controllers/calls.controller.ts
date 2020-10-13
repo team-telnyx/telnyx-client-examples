@@ -411,9 +411,8 @@ class CallsController {
                 telnyxCallControlId: call_control_id,
               });
               appIncomingCallLeg.status = CallLegStatus.ACTIVE;
-              appConference.callLegs = [appIncomingCallLeg];
-
-              await conferenceRepository.save(appConference);
+              appIncomingCallLeg.conference = appConference;
+              await callLegRepository.save(appIncomingCallLeg);
 
               // Call the agent to invite them to join the conference call
               let appOutgoingCall = await CallsController.createCall({
@@ -450,10 +449,7 @@ class CallsController {
 
             if (clientState.appConferenceId) {
               let appConference = await conferenceRepository.findOneOrFail(
-                clientState.appConferenceId,
-                {
-                  relations: ['callLegs'],
-                }
+                clientState.appConferenceId
               );
 
               // Join the conference with the original caller
