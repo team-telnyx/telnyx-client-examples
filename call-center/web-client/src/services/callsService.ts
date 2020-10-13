@@ -2,13 +2,8 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import ICallLeg from '../interfaces/ICallLeg';
 import { BASE_URL } from '../configs/constants';
 
-interface IInviteAgentParams {
-  inviterSipUsername: string;
-  to: string;
-}
-
-interface ITransferAgentParams {
-  transfererSipUsername: string;
+interface ICallActionsParams {
+  initiatorSipUsername: string;
   to: string;
 }
 
@@ -20,8 +15,21 @@ interface IConferenceActionsResponse {
   data: ICallLeg;
 }
 
+export const dial = async (
+  params: ICallActionsParams
+): Promise<AxiosResponse | AxiosError> => {
+  return await axios
+    .post(`${BASE_URL}/calls/actions/dial`, params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then((resp: AxiosResponse) => resp)
+    .catch((error: AxiosError) => error);
+};
+
 export const invite = async (
-  params: IInviteAgentParams
+  params: ICallActionsParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/invite`, params, {
@@ -34,7 +42,7 @@ export const invite = async (
 };
 
 export const transfer = async (
-  params: ITransferAgentParams
+  params: ICallActionsParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/transfer`, params, {
