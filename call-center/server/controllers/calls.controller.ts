@@ -63,7 +63,7 @@ class CallsController {
       let appOutgoingCall = await CallsController.createCall({
         to,
         from,
-        connectionId: process.env.TELNYX_SIP_CONNECTION_ID!,
+        connectionId: process.env.TELNYX_CC_APP_ID!,
       });
 
       // Create new conference
