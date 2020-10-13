@@ -70,7 +70,7 @@ test('POST /actions/dial', () =>
           to: '+15551231234',
           direction: 'outgoing',
           telnyxCallControlId: 'fake_call_control_id',
-          telnyxConnectionId: process.env.TELNYX_SIP_CONNECTION_ID,
+          telnyxConnectionId: process.env.TELNYX_CC_APP_ID,
           status: 'active',
           muted: false,
         }),
@@ -79,7 +79,7 @@ test('POST /actions/dial', () =>
         expect.objectContaining({
           from: process.env.TELNYX_SIP_OB_NUMBER,
           to: '+15551231234',
-          connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
+          connection_id: process.env.TELNYX_CC_APP_ID,
         })
       );
       expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
