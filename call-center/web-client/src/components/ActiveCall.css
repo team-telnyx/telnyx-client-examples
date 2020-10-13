@@ -8,6 +8,7 @@
 .ActiveCall-actions {
   display: flex;
   margin-top: 1rem;
+  align-items: center;
 }
 
 .ActiveCall-agentList {

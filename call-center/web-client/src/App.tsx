@@ -74,29 +74,14 @@ function App() {
       {!agent || !sessionStorageUser.token ? (
         <Login agent={agent} onLogin={handleLogin}></Login>
       ) : (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '0 8px',
-            height: '100vh',
-          }}
-        >
-          <div style={{ marginTop: 48, flexShrink: 0 }}>
+        <div className="App-container">
+          <div className="App-content">
             <h1 className="App-heading App-title">Call Center</h1>
-            <header
-              style={{
-                marginTop: 26,
-                fontFamily: 'Roboto',
-                fontWeight: 400,
-                fontSize: 18,
-                textAlign: 'center',
-              }}
-            >
+            <header className="App-header-login">
               Logged in as <b>{agent.name}</b>
             </header>
           </div>
-          <div style={{ flex: '1 0 auto' }}>
+          <div className="App-main-content">
             <Common
               agentId={agent.id}
               agentSipUsername={agent.sipUsername}
@@ -104,13 +89,7 @@ function App() {
               token={sessionStorageUser.token}
             ></Common>
           </div>
-          <footer
-            style={{
-              alignSelf: 'center',
-              paddingBottom: 48,
-              flexShrink: 0,
-            }}
-          >
+          <footer className="App-content">
             <button
               type="button"
               className="App-button App-button--link"

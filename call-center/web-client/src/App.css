@@ -11,6 +11,35 @@
   margin: 0 auto;
 }
 
+.App-container {
+  display: flex;
+  flex-direction: column;
+  padding: 0px 0.5rem;
+  height: 100vh;
+}
+
+.App-content {
+  margin-top: 3rem;
+  flex-shrink: 0;
+}
+
+.App-content,
+footer {
+  align-self: center;
+}
+
+.App-header-login {
+  margin-top: 1.625rem;
+  font-family: 'Roboto';
+  font-weight: 400;
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+.App-main-content {
+  flex: 1 0 auto;
+}
+
 .App-section {
   margin-bottom: 2rem;
 }
@@ -132,4 +161,16 @@
 .App-error {
   color: red;
   padding: 10px;
+}
+
+.App-marginTop--big {
+  margin-top: 3.43rem;
+}
+
+.App-marginTop--medium {
+  margin-top: 1.625rem;
+}
+
+.App-marginTop--small {
+  margin-top: 0.625rem;
 }

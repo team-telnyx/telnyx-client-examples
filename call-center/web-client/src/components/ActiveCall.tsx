@@ -227,12 +227,7 @@ function ActiveCallConference({
                 </span>
               </div>
               {index !== 0 && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                >
+                <div className="ActiveCall-actions">
                   <MuteUnmuteButton
                     isMuted={muted}
                     mute={() => muteParticipant(participant)}
