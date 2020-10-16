@@ -43,7 +43,7 @@ export class CallLeg {
   telnyxConnectionId!: string;
 
   @Column()
-  telnyxRtcSessionId!: string;
+  clientCallInitiationId!: string;
 
   @Column()
   muted!: boolean;

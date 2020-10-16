@@ -26,7 +26,7 @@ interface ICreateCallParams {
   to: string;
   connectionId: string;
   clientState?: IClientState;
-  telnyxRtcSessionId?: string;
+  clientCallInitiationId?: string;
   telnyxCallOptions?: Object;
 }
 
@@ -48,7 +48,7 @@ class CallsController {
 
       res.json({
         conference: callLegRepository.findOneOrFail({
-          telnyxRtcSessionId: telnyx_rtc_session_id,
+          clientCallInitiationId: telnyx_rtc_session_id,
         }),
       });
     } catch (e) {
@@ -76,7 +76,7 @@ class CallsController {
   // We actually create 2 call legs here: 1 to the agent who is initiating
   // the call, and 1 to the destination number
   public static dial = async function (req: Request, res: Response) {
-    let { initiatorSipUsername, to, telnyxRtcSessionId } = req.body;
+    let { initiatorSipUsername, to, clientCallInitiationId } = req.body;
 
     try {
       let conferenceRepository = getManager().getRepository(Conference);
@@ -91,7 +91,7 @@ class CallsController {
         to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
-        telnyxRtcSessionId,
+        clientCallInitiationId,
         telnyxCallOptions: {
           client_state: encodeClientState({
             appCallState: 'initiate_dial',
@@ -409,7 +409,7 @@ class CallsController {
             appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
-            appIncomingCallLeg.telnyxRtcSessionId = '';
+            appIncomingCallLeg.clientCallInitiationId = '';
             appIncomingCallLeg.muted = false;
 
             await callLegRepository.save(appIncomingCallLeg);
@@ -631,7 +631,7 @@ class CallsController {
     from,
     to,
     connectionId,
-    telnyxRtcSessionId,
+    clientCallInitiationId,
     telnyxCallOptions,
   }: ICreateCallParams) {
     let callLegRepository = getManager().getRepository(CallLeg);
@@ -651,7 +651,7 @@ class CallsController {
     appOutgoingCall.status = CallLegStatus.ACTIVE;
     appOutgoingCall.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appOutgoingCall.telnyxConnectionId = connectionId;
-    appOutgoingCall.telnyxRtcSessionId = telnyxRtcSessionId || '';
+    appOutgoingCall.clientCallInitiationId = clientCallInitiationId || '';
     appOutgoingCall.muted = false;
 
     return await callLegRepository.save(appOutgoingCall);
