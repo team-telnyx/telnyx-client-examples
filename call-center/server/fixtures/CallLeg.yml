@@ -23,8 +23,8 @@ items:
   callLeg3:
     id: callLeg3
     status: 'active'
-    from: '{{phone.phoneNumber}}'
-    to: '{{phone.phoneNumber}}'
+    from: 'sip:agent1SipUsername@sip.telnyx.com'
+    to: 'sip:agent2SipUsername@sip.telnyx.com'
     direction: 'incoming'
     telnyxCallControlId: 'telnyxCallControlId3'
     telnyxConnectionId: 'telnyxConnectionId3'
@@ -33,9 +33,9 @@ items:
   callLeg4:
     id: callLeg4
     status: 'active'
-    from: '{{phone.phoneNumber}}'
-    to: '{{phone.phoneNumber}}'
-    direction: 'incoming'
+    from: 'sip:agent1SipUsername@sip.telnyx.com'
+    to: 'sip:agent2SipUsername@sip.telnyx.com'
+    direction: 'outgoing'
     telnyxCallControlId: 'telnyxCallControlId4'
     telnyxConnectionId: 'telnyxConnectionId4'
     muted: false
