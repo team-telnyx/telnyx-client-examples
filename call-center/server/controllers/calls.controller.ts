@@ -36,6 +36,29 @@ interface ICreateConferenceParams {
 }
 
 class CallsController {
+  public static getByTelnyxRtcSessionid = async function (
+    req: Request,
+    res: Response
+  ) {
+    let { telnyx_rtc_session_id } = req.params;
+
+    try {
+      let callLegRepository = getManager().getRepository(CallLeg);
+
+      res.json({
+        conference: callLegRepository.findOneOrFail({
+          telnyxRtcSessionId: telnyx_rtc_session_id,
+        }),
+      });
+    } catch (e) {
+      console.error(e);
+
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
+
   public static bridge = async function (req: Request, res: Response) {
     let { call_control_id, to } = req.body.data;
     let callToBridge = await telnyx.calls.create({
@@ -384,6 +407,7 @@ class CallsController {
             appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
+            appIncomingCallLeg.telnyxRtcSessionId = '';
             appIncomingCallLeg.muted = false;
 
             await callLegRepository.save(appIncomingCallLeg);
@@ -624,6 +648,7 @@ class CallsController {
     appOutgoingCall.status = CallLegStatus.ACTIVE;
     appOutgoingCall.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appOutgoingCall.telnyxConnectionId = connectionId;
+    appOutgoingCall.telnyxRtcSessionId = '';
     appOutgoingCall.muted = false;
 
     return await callLegRepository.save(appOutgoingCall);

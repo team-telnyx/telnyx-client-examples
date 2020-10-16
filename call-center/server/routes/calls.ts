@@ -3,6 +3,11 @@ import CallsController from '../controllers/calls.controller';
 
 let router = express.Router();
 
+router.post(
+  '/rtc-sessions/:telnyx_rtc_session_id',
+  CallsController.getByTelnyxRtcSessionid
+);
+
 // Actions
 router.post('/actions/bridge', CallsController.bridge);
 router.post('/actions/dial', CallsController.dial);
