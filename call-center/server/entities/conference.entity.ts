@@ -12,6 +12,9 @@ export class Conference {
   @Column()
   from!: string;
 
+  @Column()
+  to!: string;
+
   @OneToMany((type) => CallLeg, (callLeg) => callLeg.conference, {
     cascade: ['insert', 'update'],
   })
