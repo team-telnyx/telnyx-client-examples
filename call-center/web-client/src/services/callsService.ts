@@ -5,6 +5,7 @@ import { BASE_URL } from '../configs/constants';
 interface ICallActionsParams {
   initiatorSipUsername: string;
   to: string;
+  telnyxRtcSessionId?: string;
 }
 
 interface IConferenceActionsParams {

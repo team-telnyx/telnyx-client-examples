@@ -149,6 +149,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       callsService.dial({
         initiatorSipUsername: agentSipUsername,
         to: destination,
+        telnyxRtcSessionId: 'TODO',
       });
     },
     [telnyxClientRef.current]

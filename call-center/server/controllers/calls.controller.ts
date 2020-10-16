@@ -26,7 +26,8 @@ interface ICreateCallParams {
   to: string;
   connectionId: string;
   clientState?: IClientState;
-  options?: Object;
+  telnyxRtcSessionId?: string;
+  telnyxCallOptions?: Object;
 }
 
 interface ICreateConferenceParams {
@@ -75,7 +76,7 @@ class CallsController {
   // We actually create 2 call legs here: 1 to the agent who is initiating
   // the call, and 1 to the destination number
   public static dial = async function (req: Request, res: Response) {
-    let { initiatorSipUsername, to } = req.body;
+    let { initiatorSipUsername, to, telnyxRtcSessionId } = req.body;
 
     try {
       let conferenceRepository = getManager().getRepository(Conference);
@@ -90,7 +91,8 @@ class CallsController {
         to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
-        options: {
+        telnyxRtcSessionId,
+        telnyxCallOptions: {
           client_state: encodeClientState({
             appCallState: 'initiate_dial',
             finalDestinationTo: to,
@@ -157,7 +159,7 @@ class CallsController {
         to,
         from,
         connectionId: appInviterCallLeg.telnyxConnectionId,
-        options: CallsController.isToAgent(to)
+        telnyxCallOptions: CallsController.isToAgent(to)
           ? CallsController.getDialAgentOptions({
               appConferenceId: appInviterCallLeg.conference.id,
             })
@@ -208,7 +210,7 @@ class CallsController {
         to,
         from,
         connectionId: appTransfererCallLeg.telnyxConnectionId,
-        options: CallsController.isToAgent(to)
+        telnyxCallOptions: CallsController.isToAgent(to)
           ? CallsController.getDialAgentOptions({
               appConferenceId: appTransfererCallLeg.conference.id,
             })
@@ -462,7 +464,7 @@ class CallsController {
                 to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
                 from,
                 connectionId: connection_id,
-                options: CallsController.getDialAgentOptions({
+                telnyxCallOptions: CallsController.getDialAgentOptions({
                   appConferenceId: appConference.id,
                 }),
               });
@@ -524,7 +526,7 @@ class CallsController {
               to: clientState.finalDestinationTo,
               from,
               connectionId: process.env.TELNYX_CC_APP_ID!,
-              options: {
+              telnyxCallOptions: {
                 client_state: encodeClientState({
                   appCallState: 'dial_agent',
                   appConferenceId: appConference.id,
@@ -629,7 +631,8 @@ class CallsController {
     from,
     to,
     connectionId,
-    options,
+    telnyxRtcSessionId,
+    telnyxCallOptions,
   }: ICreateCallParams) {
     let callLegRepository = getManager().getRepository(CallLeg);
 
@@ -637,7 +640,7 @@ class CallsController {
       to,
       from,
       connection_id: connectionId,
-      ...options,
+      ...telnyxCallOptions,
     });
 
     // Save newly created leg to our database
@@ -648,7 +651,7 @@ class CallsController {
     appOutgoingCall.status = CallLegStatus.ACTIVE;
     appOutgoingCall.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appOutgoingCall.telnyxConnectionId = connectionId;
-    appOutgoingCall.telnyxRtcSessionId = '';
+    appOutgoingCall.telnyxRtcSessionId = telnyxRtcSessionId || '';
     appOutgoingCall.muted = false;
 
     return await callLegRepository.save(appOutgoingCall);
