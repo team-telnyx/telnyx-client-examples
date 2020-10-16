@@ -4,8 +4,8 @@ import CallsController from '../controllers/calls.controller';
 let router = express.Router();
 
 router.post(
-  '/rtc-sessions/:telnyx_rtc_session_id',
-  CallsController.getByTelnyxRtcSessionid
+  '/client-call-initiations/:client_call_initiation_id',
+  CallsController.getByClientCallInitiationId
 );
 
 // Actions

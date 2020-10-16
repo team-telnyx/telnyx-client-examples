@@ -5,7 +5,7 @@ import { BASE_URL } from '../configs/constants';
 interface ICallActionsParams {
   initiatorSipUsername: string;
   to: string;
-  clientCallInitiationId?: string;
+  callInitiationId?: string;
 }
 
 interface IConferenceActionsParams {
@@ -15,6 +15,19 @@ interface IConferenceActionsParams {
 interface IConferenceActionsResponse {
   data: ICallLeg;
 }
+
+export const getByCallInitiationId = async (
+  callInitiationId: string
+): Promise<AxiosResponse<{ call: ICallLeg }>> => {
+  return await axios.get(
+    `${BASE_URL}/calls/client-call-initiations/${callInitiationId}`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+};
 
 export const dial = async (
   params: ICallActionsParams

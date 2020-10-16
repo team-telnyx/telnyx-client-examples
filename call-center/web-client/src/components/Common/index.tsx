@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
+import { v4 as uuidv4 } from 'uuid';
 import { updateAgent, getLoggedInAgents } from '../../services/agentsService';
 import * as callsService from '../../services/callsService';
 import IAgent from '../../interfaces/IAgent';
@@ -42,6 +43,11 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
+  // Generate and store IDs of calls dialed (initated) from
+  // the client in order to check whether an incoming call
+  // from the central call center server is actually an
+  // outgoing call initated by tge agent
+  let callInitiationIdRef = useRef<string>();
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
   let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
   let agentsState = useAgents(agentSipUsername);
@@ -85,7 +91,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       updateAgent(agentId, { available: false });
     });
 
-    telnyxClient.on('telnyx.notification', (notification: any) => {
+    telnyxClient.on('telnyx.notification', async (notification: any) => {
       console.log('notification:', notification);
 
       if (notification.call) {
@@ -107,28 +113,43 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
           updateAgent(agentId, { available: true });
         } else {
-          if (state === 'new') {
-            if (
-              options.callerNumber === agentSipUsername &&
-              options.destinationNumber === agentSipUsername
-            ) {
-              // // Answer calls that had been initiated by the agent immediately
-              // answer.bind(notification.call)();
+          // Check if this is an outgoing call initated by the agent
+          let initiatedCall;
+
+          if (state === 'new' && callInitiationIdRef.current) {
+            try {
+              await callsService
+                .getByCallInitiationId(callInitiationIdRef.current)
+                .then((res) => {
+                  initiatedCall = res?.data?.call;
+                });
+            } catch (err) {
+              console.error(err);
             }
-          } else if (state === 'answering') {
-            updateAgent(agentId, { available: false });
           }
 
-          setWebRTCCall({
-            state,
-            direction,
-            options,
-            remoteStream,
-            answer: answer.bind(notification.call),
-            hangup: hangup.bind(notification.call),
-            muteAudio: muteAudio.bind(notification.call),
-            unmuteAudio: unmuteAudio.bind(notification.call),
-          });
+          if (initiatedCall) {
+            callInitiationIdRef.current = undefined;
+
+            // Answer immediately
+            // TODO show UI feedback
+            answer.bind(notification.call)();
+          } else {
+            if (state === 'answering') {
+              updateAgent(agentId, { available: false });
+            }
+
+            setWebRTCCall({
+              state,
+              direction,
+              options,
+              remoteStream,
+              answer: answer.bind(notification.call),
+              hangup: hangup.bind(notification.call),
+              muteAudio: muteAudio.bind(notification.call),
+              unmuteAudio: unmuteAudio.bind(notification.call),
+            });
+          }
         }
       }
     });
@@ -149,7 +170,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       callsService.dial({
         initiatorSipUsername: agentSipUsername,
         to: destination,
-        clientCallInitiationId: 'TODO',
+        callInitiationId: uuidv4(),
       });
     },
     [telnyxClientRef.current]

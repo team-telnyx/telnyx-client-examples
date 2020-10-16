@@ -37,18 +37,18 @@ interface ICreateConferenceParams {
 }
 
 class CallsController {
-  public static getByTelnyxRtcSessionid = async function (
+  public static getByClientCallInitiationId = async function (
     req: Request,
     res: Response
   ) {
-    let { telnyx_rtc_session_id } = req.params;
+    let { client_call_initiation_id } = req.params;
 
     try {
       let callLegRepository = getManager().getRepository(CallLeg);
 
       res.json({
-        conference: callLegRepository.findOneOrFail({
-          clientCallInitiationId: telnyx_rtc_session_id,
+        call: await callLegRepository.findOne({
+          clientCallInitiationId: client_call_initiation_id,
         }),
       });
     } catch (e) {
@@ -79,7 +79,7 @@ class CallsController {
     let { initiatorSipUsername, to, clientCallInitiationId } = req.body;
 
     try {
-      let conferenceRepository = getManager().getRepository(Conference);
+      // let conferenceRepository = getManager().getRepository(Conference);
 
       // NOTE Specifying the host SIP username doesn't seem to work,
       // possibly because connection ID relationship?
@@ -515,24 +515,26 @@ class CallsController {
           ) {
             // Handle the first leg of the call created in an outgoing call
 
-            // Create new conference
-            let appConference = await CallsController.createConference({
-              from,
-              callControlId: call_control_id,
-            });
+            console.log('initiate dial');
 
-            // Create outgoing call
-            await CallsController.createCall({
-              to: clientState.finalDestinationTo,
-              from,
-              connectionId: process.env.TELNYX_CC_APP_ID!,
-              telnyxCallOptions: {
-                client_state: encodeClientState({
-                  appCallState: 'dial_agent',
-                  appConferenceId: appConference.id,
-                }),
-              },
-            });
+            // // Create new conference
+            // let appConference = await CallsController.createConference({
+            //   from,
+            //   callControlId: call_control_id,
+            // });
+
+            // // Create outgoing call
+            // await CallsController.createCall({
+            //   to: clientState.finalDestinationTo,
+            //   from,
+            //   connectionId: process.env.TELNYX_CC_APP_ID!,
+            //   telnyxCallOptions: {
+            //     client_state: encodeClientState({
+            //       appCallState: 'dial_agent',
+            //       appConferenceId: appConference.id,
+            //     }),
+            //   },
+            // });
           }
 
           break;
