@@ -47,7 +47,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // the client in order to check whether an incoming call
   // from the central call center server is actually an
   // outgoing call initated by tge agent
-  let callInitiationIdRef = useRef<string>();
+  let [callInitiationId, setCallInitiationId] = useState<string>('');
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
   let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
   let agentsState = useAgents(agentSipUsername);
@@ -113,43 +113,20 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
           updateAgent(agentId, { available: true });
         } else {
-          // Check if this is an outgoing call initated by the agent
-          let initiatedCall;
-
-          if (state === 'new' && callInitiationIdRef.current) {
-            try {
-              await callsService
-                .getByCallInitiationId(callInitiationIdRef.current)
-                .then((res) => {
-                  initiatedCall = res?.data?.call;
-                });
-            } catch (err) {
-              console.error(err);
-            }
+          if (state === 'answering') {
+            updateAgent(agentId, { available: false });
           }
 
-          if (initiatedCall) {
-            callInitiationIdRef.current = undefined;
-
-            // Answer immediately
-            // TODO show UI feedback
-            answer.bind(notification.call)();
-          } else {
-            if (state === 'answering') {
-              updateAgent(agentId, { available: false });
-            }
-
-            setWebRTCCall({
-              state,
-              direction,
-              options,
-              remoteStream,
-              answer: answer.bind(notification.call),
-              hangup: hangup.bind(notification.call),
-              muteAudio: muteAudio.bind(notification.call),
-              unmuteAudio: unmuteAudio.bind(notification.call),
-            });
-          }
+          setWebRTCCall({
+            state,
+            direction,
+            options,
+            remoteStream,
+            answer: answer.bind(notification.call),
+            hangup: hangup.bind(notification.call),
+            muteAudio: muteAudio.bind(notification.call),
+            unmuteAudio: unmuteAudio.bind(notification.call),
+          });
         }
       }
     });
@@ -165,13 +142,33 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
     };
   }, [token, agentId]);
 
+  useEffect(() => {
+    if (!webRTCall) return;
+
+    const { state, answer } = webRTCall;
+
+    if (callInitiationId) {
+      if (state === 'new') {
+        // Immediately answer
+        // TODO check server for call status first
+        answer();
+      }
+
+      setCallInitiationId('');
+    }
+  }, [callInitiationId, webRTCall]);
+
   const dial = useCallback(
     (destination) => {
-      callsService.dial({
+      let dialParams = {
         initiatorSipUsername: agentSipUsername,
         to: destination,
         callInitiationId: uuidv4(),
-      });
+      };
+
+      setCallInitiationId(dialParams.callInitiationId);
+
+      callsService.dial(dialParams);
     },
     [telnyxClientRef.current]
   );
