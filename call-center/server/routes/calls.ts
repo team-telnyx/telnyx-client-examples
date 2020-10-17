@@ -3,7 +3,7 @@ import CallsController from '../controllers/calls.controller';
 
 let router = express.Router();
 
-router.post(
+router.get(
   '/client-call-initiations/:client_call_initiation_id',
   CallsController.getByClientCallInitiationId
 );

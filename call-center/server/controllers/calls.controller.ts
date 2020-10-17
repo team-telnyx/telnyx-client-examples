@@ -47,6 +47,8 @@ class CallsController {
   ) {
     let { client_call_initiation_id } = req.params;
 
+    console.log('client_call_initiation_id:', client_call_initiation_id);
+
     try {
       let callLegRepository = getManager().getRepository(CallLeg);
 
@@ -81,7 +83,7 @@ class CallsController {
   // initiation UUID, which tells the server create a conference call
   // between the client (agent) and the final call destination
   public static dial = async function (req: Request, res: Response) {
-    let { initiatorSipUsername, to, clientCallInitiationId } = req.body;
+    let { initiatorSipUsername, to, callInitiationId } = req.body;
 
     try {
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
@@ -90,13 +92,13 @@ class CallsController {
         to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
-        clientCallInitiationId,
+        clientCallInitiationId: callInitiationId,
         telnyxCallOptions: {
           // Client state tells our call control handler how to
           // route this call after the agent answers
           client_state: encodeClientState({
             appCallState: 'initiate_dial',
-            clientCallInitiationId,
+            clientCallInitiationId: callInitiationId,
             clientCallDestination: to,
           }),
         },
