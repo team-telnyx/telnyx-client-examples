@@ -149,12 +149,13 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
           .get({
             // TODO Use `telnyx_session_id`
             // once https://github.com/team-telnyx/webrtc/pull/46 is published
-            to: `sip:${agentSipUsername}@telnyx.com`,
+            to: `sip:${agentSipUsername}@sip.telnyx.com`,
             limit: 1,
           })
           .then(({ data }) => {
             if (
-              data.call.clientCallState === CallLegClientCallState.AUTO_ANSWER
+              data.calls[0]?.clientCallState ===
+              CallLegClientCallState.AUTO_ANSWER
             ) {
               answer();
             }

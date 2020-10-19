@@ -21,7 +21,7 @@ interface IConferenceActionsResponse {
 
 export const get = async (
   params: Partial<ICallLeg & IFindManyParams>
-): Promise<AxiosResponse<{ call: ICallLeg }>> => {
+): Promise<AxiosResponse<{ calls: ICallLeg[] }>> => {
   return await axios.get(`${BASE_URL}/calls/`, {
     params,
     headers: {
