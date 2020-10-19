@@ -74,15 +74,22 @@ function App() {
       {!agent || !sessionStorageUser.token ? (
         <Login agent={agent} onLogin={handleLogin}></Login>
       ) : (
-        <Fragment>
-          <header>Logged in as {agent.name}</header>
-          <Common
-            agentId={agent.id}
-            agentSipUsername={agent.sipUsername}
-            agentName={agent.name}
-            token={sessionStorageUser.token}
-          ></Common>
-          <footer>
+        <div className="App-container">
+          <div className="App-content">
+            <h1 className="App-heading App-title">Call Center</h1>
+            <header className="App-header-login">
+              Logged in as <b>{agent.name}</b>
+            </header>
+          </div>
+          <div className="App-main-content">
+            <Common
+              agentId={agent.id}
+              agentSipUsername={agent.sipUsername}
+              agentName={agent.name}
+              token={sessionStorageUser.token}
+            ></Common>
+          </div>
+          <footer className="App-content">
             <button
               type="button"
               className="App-button App-button--link"
@@ -93,7 +100,7 @@ function App() {
 
             {error && error.length > 0 && <p className="App-error">{error}</p>}
           </footer>
-        </Fragment>
+        </div>
       )}
     </main>
   );

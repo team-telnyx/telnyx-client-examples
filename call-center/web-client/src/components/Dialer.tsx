@@ -25,7 +25,7 @@ function Dialer({ dial }: IDialer) {
   };
 
   return (
-    <section className="App-section">
+    <section className="App-section App-marginTop--big">
       <form className="App-form" onSubmit={handleSubmit}>
         <label className="App-input-label" htmlFor="destination_input">
           Destination

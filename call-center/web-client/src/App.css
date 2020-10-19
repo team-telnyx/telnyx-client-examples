@@ -11,6 +11,35 @@
   margin: 0 auto;
 }
 
+.App-container {
+  display: flex;
+  flex-direction: column;
+  padding: 0px 0.5rem;
+  height: 100vh;
+}
+
+.App-content {
+  margin-top: 3rem;
+  flex-shrink: 0;
+}
+
+footer.App-content {
+  align-self: center;
+  padding-bottom: 3rem;
+}
+
+.App-header-login {
+  margin-top: 1.625rem;
+  font-family: 'Roboto';
+  font-weight: 400;
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+.App-main-content {
+  flex: 1 0 auto;
+}
+
 .App-section {
   margin-bottom: 2rem;
 }
@@ -19,24 +48,39 @@
   font-weight: normal;
   line-height: 1;
   margin: 0;
+  font-family: 'Roboto Slab', serif;
 }
 
 .App-title {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: 2.4rem;
+  margin-bottom: 2.5rem;
   text-align: center;
 }
 
 .App-headline {
-  font-size: 1.5rem;
+  font-size: 2rem;
   margin-bottom: 0.5rem;
-  text-align: center;
+  font-family: 'Roboto', serif;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 37px;
 }
 
 .App-form-row {
   display: grid;
   grid-template-columns: 1fr max-content;
+  grid-template-areas: 'input button';
   column-gap: 0.6rem;
+  align-items: center;
+}
+@media only screen and (max-width: 570px) {
+  .App-form-row {
+    grid-template-areas:
+      'input'
+      'button';
+    grid-row-gap: 10px;
+    column-gap: 0;
+  }
 }
 
 .App-input {
@@ -47,7 +91,7 @@
 
 .App-input-label {
   display: inline-block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 
 .App-button {
@@ -56,7 +100,7 @@
   cursor: pointer;
   border-radius: var(--border-radius);
   color: white;
-  min-width: 5rem;
+  min-width: 3.75rem;
 }
 
 .App-button:hover {
@@ -71,10 +115,18 @@
   padding: 0.6rem;
 }
 
-.App-form .App-input,
+.App-form .App-input {
+  padding: 0.8rem;
+  min-width: 16.5rem;
+  height: 3.3rem;
+  grid-area: input;
+}
+
 .App-form .App-button {
   padding: 0.8rem;
-  min-width: 8rem;
+  min-width: 7rem;
+  height: 3.3rem;
+  grid-area: button;
 }
 
 .App-button + .App-button {
@@ -91,6 +143,9 @@
 
 .App-button--tertiary {
   background: var(--tertiary-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .App-button--danger {
@@ -102,11 +157,23 @@
 }
 
 .App-button--small {
+  height: 2.06rem;
   padding: 0.4rem;
-  min-width: initial;
 }
 
 .App-error {
   color: red;
   padding: 10px;
+}
+
+.App-marginTop--big {
+  margin-top: 3.43rem;
+}
+
+.App-marginTop--medium {
+  margin-top: 1.625rem;
+}
+
+.App-marginTop--small {
+  margin-top: 0.625rem;
 }
