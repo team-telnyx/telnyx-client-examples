@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
-import { v4 as uuidv4 } from 'uuid';
 import { updateAgent, getLoggedInAgents } from '../../services/agentsService';
 import * as callsService from '../../services/callsService';
-import IAgent from '../../interfaces/IAgent';
+import { CallLegClientCallState } from '../../interfaces/ICallLeg';
 import useAgents from '../../hooks/useAgents';
 import ActiveCall from '../ActiveCall';
 import Agents from '../Agents';
@@ -43,11 +42,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
-  // Generate and store IDs of calls dialed (initated) from
-  // the client in order to check whether an incoming call
-  // from the central call center server is actually an
-  // outgoing call initated by tge agent
-  let [callInitiationId, setCallInitiationId] = useState<string>('');
+  let [isDialInitiated, setIsDialInitiated] = useState<boolean>(false);
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
   let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
   let agentsState = useAgents(agentSipUsername);
@@ -147,32 +142,40 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
     const { state, answer } = webRTCall;
 
-    if (callInitiationId) {
+    if (isDialInitiated) {
       if (state === 'new') {
         // Immediately answer
         callsService
-          .getByCallInitiationId(callInitiationId)
+          .get({
+            // TODO Use `telnyx_session_id`
+            // once https://github.com/team-telnyx/webrtc/pull/46 is published
+            to: `sip:${agentSipUsername}@telnyx.com`,
+            limit: 1,
+          })
           .then(({ data }) => {
-            if (data.call.clientCallInitiationId === callInitiationId) {
+            if (
+              data.call.clientCallState === CallLegClientCallState.AUTO_ANSWER
+            ) {
               answer();
-              setCallInitiationId('');
             }
+          })
+          .finally(() => {
+            setIsDialInitiated(false);
           });
       } else {
-        setCallInitiationId('');
+        setIsDialInitiated(false);
       }
     }
-  }, [callInitiationId, webRTCall]);
+  }, [isDialInitiated, webRTCall]);
 
   const dial = useCallback(
     (destination) => {
       let dialParams = {
         initiatorSipUsername: agentSipUsername,
         to: destination,
-        callInitiationId: uuidv4(),
       };
 
-      setCallInitiationId(dialParams.callInitiationId);
+      setIsDialInitiated(true);
 
       callsService.dial(dialParams);
     },

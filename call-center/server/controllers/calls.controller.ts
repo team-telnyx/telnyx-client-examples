@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { getManager } from 'typeorm';
-import { NIL as NIL_UUID } from 'uuid';
+import { FindManyOptions, getManager } from 'typeorm';
 import {
   CallLeg,
   CallLegStatus,
+  CallLegClientCallState,
   CallLegDirection,
 } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
@@ -16,10 +16,8 @@ let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 interface IClientState {
   // Define your own call states to direct the flow of the call
   // through your application
-  // appCallLegId: string;
   appCallState?: string;
   appConferenceId?: string;
-  clientCallInitiationId?: string;
   clientCallDestination?: string;
 }
 
@@ -27,8 +25,7 @@ interface ICreateCallParams {
   from: string;
   to: string;
   connectionId: string;
-  clientState?: IClientState;
-  clientCallInitiationId?: string;
+  clientCallState?: CallLegClientCallState;
   telnyxCallOptions?: Object;
 }
 
@@ -41,21 +38,23 @@ interface ICreateConferenceParams {
 }
 
 class CallsController {
-  public static getByClientCallInitiationId = async function (
-    req: Request,
-    res: Response
-  ) {
-    let { client_call_initiation_id } = req.params;
+  public static get = async function (req: Request, res: Response) {
+    let { limit, ...callLegQuery } = req.query;
+    let findOpts = {
+      // NOTE You'll likely want to do some validation here
+      // to check for valid columns to query
+      where: callLegQuery,
+    } as FindManyOptions;
 
-    console.log('client_call_initiation_id:', client_call_initiation_id);
+    if (limit) {
+      findOpts.take = parseInt(limit as string);
+    }
 
     try {
       let callLegRepository = getManager().getRepository(CallLeg);
 
       res.json({
-        call: await callLegRepository.findOne({
-          clientCallInitiationId: client_call_initiation_id,
-        }),
+        calls: await callLegRepository.find(findOpts),
       });
     } catch (e) {
       console.error(e);
@@ -83,7 +82,7 @@ class CallsController {
   // initiation UUID, which tells the server create a conference call
   // between the client (agent) and the final call destination
   public static dial = async function (req: Request, res: Response) {
-    let { initiatorSipUsername, to, callInitiationId } = req.body;
+    let { initiatorSipUsername, to } = req.body;
 
     try {
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
@@ -92,13 +91,12 @@ class CallsController {
         to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
-        clientCallInitiationId: callInitiationId,
+        clientCallState: CallLegClientCallState.AUTO_ANSWER,
         telnyxCallOptions: {
           // Client state tells our call control handler how to
           // route this call after the agent answers
           client_state: encodeClientState({
             appCallState: 'initiate_dial',
-            clientCallInitiationId: callInitiationId,
             clientCallDestination: to,
           }),
         },
@@ -394,7 +392,7 @@ class CallsController {
             appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
-            appIncomingCallLeg.clientCallInitiationId = NIL_UUID;
+            appIncomingCallLeg.clientCallState = CallLegClientCallState.DEFAULT;
             appIncomingCallLeg.muted = false;
 
             await callLegRepository.save(appIncomingCallLeg);
@@ -627,7 +625,7 @@ class CallsController {
     from,
     to,
     connectionId,
-    clientCallInitiationId,
+    clientCallState,
     telnyxCallOptions,
   }: ICreateCallParams) {
     let callLegRepository = getManager().getRepository(CallLeg);
@@ -647,7 +645,8 @@ class CallsController {
     appOutgoingCall.status = CallLegStatus.ACTIVE;
     appOutgoingCall.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appOutgoingCall.telnyxConnectionId = connectionId;
-    appOutgoingCall.clientCallInitiationId = clientCallInitiationId || NIL_UUID;
+    appOutgoingCall.clientCallState =
+      clientCallState || CallLegClientCallState.DEFAULT;
     appOutgoingCall.muted = false;
 
     return await callLegRepository.save(appOutgoingCall);

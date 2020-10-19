@@ -6,6 +6,11 @@ export enum CallLegStatus {
   ACTIVE = 'active',
 }
 
+export enum CallLegClientCallState {
+  DEFAULT = 'default',
+  AUTO_ANSWER = 'auto_answer',
+}
+
 export enum CallLegDirection {
   INCOMING = 'incoming',
   OUTGOING = 'outgoing',
@@ -22,6 +27,13 @@ export class CallLeg {
     default: CallLegStatus.INACTIVE,
   })
   status!: string;
+
+  @Column({
+    type: 'simple-enum',
+    enum: CallLegClientCallState,
+    default: CallLegClientCallState.DEFAULT,
+  })
+  clientCallState!: string;
 
   @Column()
   from!: string;
@@ -41,9 +53,6 @@ export class CallLeg {
 
   @Column()
   telnyxConnectionId!: string;
-
-  @Column()
-  clientCallInitiationId!: string;
 
   @Column()
   muted!: boolean;

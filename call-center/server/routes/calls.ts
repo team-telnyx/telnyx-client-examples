@@ -3,10 +3,7 @@ import CallsController from '../controllers/calls.controller';
 
 let router = express.Router();
 
-router.get(
-  '/client-call-initiations/:client_call_initiation_id',
-  CallsController.getByClientCallInitiationId
-);
+router.get('/', CallsController.get);
 
 // Actions
 router.post('/actions/bridge', CallsController.bridge);
