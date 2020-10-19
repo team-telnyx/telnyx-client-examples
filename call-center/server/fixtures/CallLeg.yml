@@ -8,6 +8,7 @@ items:
     direction: 'incoming'
     telnyxCallControlId: 'telnyxCallControlId1'
     telnyxConnectionId: 'telnyxConnectionId1'
+    clientCallState: 'default'
     muted: false
     conference: '@conference1'
   callLeg2:
@@ -18,6 +19,7 @@ items:
     direction: 'incoming'
     telnyxCallControlId: 'telnyxCallControlId2'
     telnyxConnectionId: 'telnyxConnectionId2'
+    clientCallState: 'default'
     muted: true
     conference: '@conference2'
   callLeg3:
@@ -28,6 +30,7 @@ items:
     direction: 'incoming'
     telnyxCallControlId: 'telnyxCallControlId3'
     telnyxConnectionId: 'telnyxConnectionId3'
+    clientCallState: 'default'
     muted: false
     conference: '@conference2'
   callLeg4:
@@ -38,5 +41,6 @@ items:
     direction: 'outgoing'
     telnyxCallControlId: 'telnyxCallControlId4'
     telnyxConnectionId: 'telnyxConnectionId4'
+    clientCallState: 'default'
     muted: false
     conference: '@conference2'
