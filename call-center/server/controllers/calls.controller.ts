@@ -518,9 +518,17 @@ class CallsController {
               },
             });
 
-            // Add call to conference
-            appOutgoingCall.conference = appConference;
-            await callLegRepository.save(appOutgoingCall);
+            // Add calls to conference
+            appConference.callLegs = [
+              await callLegRepository.findOneOrFail({
+                to,
+                status: CallLegStatus.ACTIVE,
+                telnyxCallControlId: call_control_id,
+              }),
+              appOutgoingCall,
+            ];
+
+            await conferenceRepository.save(appConference);
           }
 
           break;

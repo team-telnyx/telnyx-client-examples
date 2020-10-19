@@ -44,3 +44,14 @@ items:
     clientCallState: 'default'
     muted: false
     conference: '@conference2'
+  callLeg5:
+    id: callLeg5
+    status: 'active'
+    from: '{{phone.phoneNumber}}'
+    to: 'sip:agent1SipUsername@sip.telnyx.com'
+    direction: 'outgoing'
+    telnyxCallControlId: 'telnyxCallControlId5'
+    telnyxConnectionId: 'telnyxConnectionId5'
+    clientCallState: 'auto_answer'
+    muted: false
+    conference: null

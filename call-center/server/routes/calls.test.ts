@@ -310,8 +310,8 @@ test('POST /callbacks/call-control-app | call.answered | client_state.initiate_d
             appCallState: 'initiate_dial',
             clientCallDestination: '+15551231234',
           }),
-          call_control_id: 'telnyxCallControlId1',
-          connection_id: 'telnyxConnectionId1',
+          call_control_id: 'telnyxCallControlId5',
+          connection_id: 'telnyxConnectionId5',
           from: 'fake_from',
           to: 'sip:agent1SipUsername@sip.telnyx.com',
           direction: 'incoming',
@@ -332,6 +332,13 @@ test('POST /callbacks/call-control-app | call.answered | client_state.initiate_d
         });
 
       expect(conference).toBeDefined();
+      expect(conference?.callLegs).toContainEqual(
+        expect.objectContaining({
+          to: 'sip:agent1SipUsername@sip.telnyx.com',
+          direction: 'outgoing',
+          status: 'active',
+        })
+      );
       expect(conference?.callLegs).toContainEqual(
         expect.objectContaining({
           to: '+15551231234',
