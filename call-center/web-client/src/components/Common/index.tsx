@@ -150,11 +150,17 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
     if (callInitiationId) {
       if (state === 'new') {
         // Immediately answer
-        // TODO check server for call status first
-        answer();
+        callsService
+          .getByCallInitiationId(callInitiationId)
+          .then(({ data }) => {
+            if (data.call.clientCallInitiationId === callInitiationId) {
+              answer();
+              setCallInitiationId('');
+            }
+          });
+      } else {
+        setCallInitiationId('');
       }
-
-      setCallInitiationId('');
     }
   }, [callInitiationId, webRTCall]);
 
