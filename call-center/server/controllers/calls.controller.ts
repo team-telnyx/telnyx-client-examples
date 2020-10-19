@@ -472,7 +472,7 @@ class CallsController {
               });
             }
           } else if (clientState.appCallState === 'dial') {
-            // Handle a call answered by an agent logged into the WebRTC client
+            // Handle a call answered from an outgoing call center dial
 
             if (clientState.appConferenceId) {
               let appConference = await conferenceRepository.findOneOrFail(
@@ -506,7 +506,7 @@ class CallsController {
             });
 
             // Create outgoing call
-            await CallsController.createCall({
+            let appOutgoingCall = await CallsController.createCall({
               from,
               to: clientState.clientCallDestination,
               connectionId: process.env.TELNYX_CC_APP_ID!,
@@ -517,6 +517,10 @@ class CallsController {
                 }),
               },
             });
+
+            // Add call to conference
+            appOutgoingCall.conference = appConference;
+            await callLegRepository.save(appOutgoingCall);
           }
 
           break;

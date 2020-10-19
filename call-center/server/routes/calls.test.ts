@@ -1,5 +1,5 @@
 import { getManager } from 'typeorm';
-import { CallLeg } from '../entities/callLeg.entity';
+import { CallLeg, CallLegClientCallState } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import TestFactory from '../TestFactory';
 import { encodeClientState } from '../controllers/calls.controller';
@@ -54,35 +54,26 @@ test('POST /actions/dial', () =>
     .expect('Content-type', /json/)
     .expect(200)
     .then(async () => {
-      const conference = await getManager()
-        .getRepository(Conference)
+      const callLeg = await getManager()
+        .getRepository(CallLeg)
         .findOne({
           where: {
-            telnyxConferenceId: 'fake_conference_id',
+            to: 'sip:agent1SipUsername@sip.telnyx.com',
             from: process.env.TELNYX_SIP_OB_NUMBER,
+            clientCallState: CallLegClientCallState.AUTO_ANSWER,
           },
-          relations: ['callLegs'],
+          relations: ['conference'],
         });
 
-      expect(conference).toBeDefined();
-      expect(conference?.callLegs).toEqual([
-        expect.objectContaining({
-          to: '+15551231234',
-          direction: 'outgoing',
-          telnyxCallControlId: 'fake_call_control_id',
-          telnyxConnectionId: process.env.TELNYX_CC_APP_ID,
-          status: 'active',
-          muted: false,
-        }),
-      ]);
+      expect(callLeg).toBeDefined();
+      expect(callLeg?.conference).toBe(null);
       expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
         expect.objectContaining({
           from: process.env.TELNYX_SIP_OB_NUMBER,
-          to: '+15551231234',
+          to: 'sip:agent1SipUsername@sip.telnyx.com',
           connection_id: process.env.TELNYX_CC_APP_ID,
         })
       );
-      expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
     }));
 
 test('POST /actions/invite', () =>
@@ -280,7 +271,7 @@ test('POST /callbacks/call-control-app | call.answered | client_state.answer_inc
       expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
     }));
 
-test('POST /callbacks/call-control-app | call.answered | client_state.dial_agent', () =>
+test('POST /callbacks/call-control-app | call.answered | client_state.dial', () =>
   testFactory.app
     .post('/calls/callbacks/call-control-app')
     .send({
@@ -288,7 +279,7 @@ test('POST /callbacks/call-control-app | call.answered | client_state.dial_agent
         event_type: 'call.answered',
         payload: {
           client_state: encodeClientState({
-            appCallState: 'dial_agent',
+            appCallState: 'dial',
             appConferenceId: 'conference1',
           }),
           call_control_id: 'telnyxCallControlId1',
@@ -306,4 +297,47 @@ test('POST /callbacks/call-control-app | call.answered | client_state.dial_agent
         call_control_id: 'telnyxCallControlId1',
         start_conference_on_enter: true,
       });
+    }));
+
+test('POST /callbacks/call-control-app | call.answered | client_state.initiate_dial', () =>
+  testFactory.app
+    .post('/calls/callbacks/call-control-app')
+    .send({
+      data: {
+        event_type: 'call.answered',
+        payload: {
+          client_state: encodeClientState({
+            appCallState: 'initiate_dial',
+            clientCallDestination: '+15551231234',
+          }),
+          call_control_id: 'telnyxCallControlId1',
+          connection_id: 'telnyxConnectionId1',
+          from: 'fake_from',
+          to: 'sip:agent1SipUsername@sip.telnyx.com',
+          direction: 'incoming',
+        },
+      },
+    })
+    .expect('Content-type', /json/)
+    .expect(200)
+    .then(async () => {
+      const conference = await getManager()
+        .getRepository(Conference)
+        .findOne({
+          where: {
+            telnyxConferenceId: 'fake_conference_id',
+            to: '+15551231234',
+          },
+          relations: ['callLegs'],
+        });
+
+      expect(conference).toBeDefined();
+      expect(conference?.callLegs).toContainEqual(
+        expect.objectContaining({
+          to: '+15551231234',
+          direction: 'outgoing',
+          status: 'active',
+        })
+      );
+      expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
     }));
