@@ -1,9 +1,20 @@
-import {
-  CallLegStatus,
-  CallLegClientCallState,
-  CallLegDirection,
-} from '../../../server/entities/callLeg.entity';
 import IConference from './IConference';
+
+// TODO Same import as in `callLeg.entity`
+export enum CallLegStatus {
+  INACTIVE = 'inactive',
+  ACTIVE = 'active',
+}
+
+export enum CallLegClientCallState {
+  DEFAULT = 'default',
+  AUTO_ANSWER = 'auto_answer',
+}
+
+export enum CallLegDirection {
+  INCOMING = 'incoming',
+  OUTGOING = 'outgoing',
+}
 
 export interface ICallLeg {
   id: string;
@@ -18,5 +29,4 @@ export interface ICallLeg {
   conference: IConference;
 }
 
-export { CallLegStatus, CallLegClientCallState, CallLegDirection };
 export default ICallLeg;
