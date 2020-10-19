@@ -497,8 +497,6 @@ class CallsController {
           ) {
             // Handle the first leg of the call created in an outgoing call
 
-            console.log('initiate dial');
-
             // Create new conference
             let appConference = await CallsController.createConference({
               from: to,
