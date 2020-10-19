@@ -78,9 +78,6 @@ class CallsController {
   };
 
   // Initiate an outgoing call
-  // Calls from the client are identified by a temporary client call
-  // initiation UUID, which tells the server create a conference call
-  // between the client (agent) and the final call destination
   public static dial = async function (req: Request, res: Response) {
     let { initiatorSipUsername, to } = req.body;
 
