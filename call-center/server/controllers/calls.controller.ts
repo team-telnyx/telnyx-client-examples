@@ -527,10 +527,6 @@ class CallsController {
           break;
         }
 
-        case 'conference.participant.joined': {
-          break;
-        }
-
         case 'call.speak.ended': {
           if (clientState.appCallState === 'speak_no_available_agents') {
             await telnyxCall.hangup();
