@@ -86,7 +86,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       updateAgent(agentId, { available: false });
     });
 
-    telnyxClient.on('telnyx.notification', async (notification: any) => {
+    telnyxClient.on('telnyx.notification', (notification: any) => {
       console.log('notification:', notification);
 
       if (notification.call) {
