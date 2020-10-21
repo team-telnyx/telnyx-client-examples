@@ -14,7 +14,7 @@ interface ICallActionsParams {
   to: string;
 }
 
-interface IConferenceActionsParams {
+interface IConferenceActionsParams extends IActiveCallActionParams {
   participant: string;
 }
 
