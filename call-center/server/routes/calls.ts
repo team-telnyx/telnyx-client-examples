@@ -6,7 +6,6 @@ let router = express.Router();
 router.get('/', CallsController.get);
 
 // Actions
-router.post('/actions/bridge', CallsController.bridge);
 router.post('/actions/dial', CallsController.dial);
 router.post('/actions/conferences/invite', CallsController.invite);
 router.post('/actions/conferences/transfer', CallsController.transfer);

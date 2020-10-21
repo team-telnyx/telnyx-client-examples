@@ -65,18 +65,6 @@ class CallsController {
     }
   };
 
-  public static bridge = async function (req: Request, res: Response) {
-    let { call_control_id, to } = req.body.data;
-    let callToBridge = await telnyx.calls.create({
-      connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
-      from: process.env.TELNYX_SIP_OB_NUMBER,
-      to,
-    });
-
-    callToBridge.bridge({ call_control_id });
-    res.json({});
-  };
-
   // Initiate an outgoing call
   public static dial = async function (req: Request, res: Response) {
     let { initiatorSipUsername, to } = req.body;
