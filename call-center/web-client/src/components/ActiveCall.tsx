@@ -22,6 +22,7 @@ interface IActiveCall {
   // FIXME `IWebRTCCall.state` needs to be updated to be `State`
   // callState: State;
   callState: string;
+  isDialing: boolean;
   answer: Function;
   hangup: Function;
   muteAudio: Function;
@@ -286,12 +287,12 @@ function ActiveCall({
   callDestination,
   callerId,
   callState,
+  isDialing,
   answer,
   hangup,
   muteAudio,
   unmuteAudio,
 }: IActiveCall) {
-  console.log('callState:', callState);
   const [isMuted, setIsMuted] = useState(false);
 
   const handleAnswerClick = () => answer();
@@ -310,16 +311,11 @@ function ActiveCall({
 
   const isIncoming = callDirection === 'inbound';
   const isRinging = callState === 'ringing';
-  const isCalling =
-    (!isIncoming && callState === 'new') ||
-    callState === 'requesting' ||
-    callState === 'trying' ||
-    callState === 'early';
   const isActive = callState === 'active';
 
   return (
     <section>
-      {isRinging && (
+      {!isDialing && isRinging && (
         <div className="App-section">
           <div>Incoming call</div>
           <div className="ActiveCall-callerId">{callerId}</div>
@@ -343,22 +339,7 @@ function ActiveCall({
           </div>
         </div>
       )}
-      {isCalling && (
-        <div className="App-section">
-          <div>Calling...</div>
-          <div className="ActiveCall-callerId">{callDestination}</div>
-          <div className="ActiveCall-actions">
-            <button
-              type="button"
-              className="App-button App-button--small App-button--danger"
-              onClick={handleHangupClick}
-            >
-              Hangup
-            </button>
-          </div>
-        </div>
-      )}
-      {isActive && (
+      {(isDialing || isActive) && (
         <div className="App-section">
           <div>Call in progress</div>
           <ActiveCallConference

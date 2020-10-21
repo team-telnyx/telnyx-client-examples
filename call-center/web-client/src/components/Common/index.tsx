@@ -26,6 +26,7 @@ interface IPartialWebRTCCall {
     remoteCallerName: string;
     remoteCallerNumber: string;
     destinationNumber: string;
+    telnyxCallControlId: string;
   };
   answer: Function;
   hangup: Function;
@@ -42,7 +43,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
-  let [isDialInitiated, setIsDialInitiated] = useState<boolean>(false);
+  let [dialingDestination, setDialingDestination] = useState<string | null>();
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
   let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
   let agentsState = useAgents(agentSipUsername);
@@ -108,11 +109,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
           updateAgent(agentId, { available: true });
         } else {
-          if (state === 'answering') {
-            updateAgent(agentId, { available: false });
-          }
-
-          setWebRTCCall({
+          let nextWebRTCall = {
             state,
             direction,
             options,
@@ -121,7 +118,35 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
             hangup: hangup.bind(notification.call),
             muteAudio: muteAudio.bind(notification.call),
             unmuteAudio: unmuteAudio.bind(notification.call),
-          });
+          };
+
+          if (state === 'answering') {
+            updateAgent(agentId, { available: false });
+          } else if (state === 'new') {
+            // Check if call should be answered automatically, such as in
+            // the case when the agent has initiated an outgoing call:
+            // when an agent dials a number, the call is routed through
+            // the call center app, a conference is created, and both the
+            // agent and external number is invited to the conference.
+            callsService
+              .get({
+                telnyxCallControlId: options.telnyxCallControlId,
+                limit: 1,
+              })
+              .then(({ data }) => {
+                if (
+                  data.calls[0]?.clientCallState ===
+                    CallLegClientCallState.AUTO_ANSWER &&
+                  isMountedRef.current
+                ) {
+                  nextWebRTCall.answer();
+                }
+              });
+          } else if (state === 'active') {
+            setDialingDestination(null);
+          }
+
+          setWebRTCCall(nextWebRTCall);
         }
       }
     });
@@ -137,38 +162,6 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
     };
   }, [token, agentId]);
 
-  useEffect(() => {
-    if (!webRTCall) return;
-
-    const { state, answer } = webRTCall;
-
-    if (isDialInitiated) {
-      if (state === 'new') {
-        // Immediately answer
-        callsService
-          .get({
-            // TODO Use `telnyx_session_id`
-            // once https://github.com/team-telnyx/webrtc/pull/46 is published
-            to: `sip:${agentSipUsername}@sip.telnyx.com`,
-            limit: 1,
-          })
-          .then(({ data }) => {
-            if (
-              data.calls[0]?.clientCallState ===
-              CallLegClientCallState.AUTO_ANSWER
-            ) {
-              answer();
-            }
-          })
-          .finally(() => {
-            setIsDialInitiated(false);
-          });
-      } else {
-        setIsDialInitiated(false);
-      }
-    }
-  }, [isDialInitiated, webRTCall]);
-
   const dial = useCallback(
     (destination) => {
       let dialParams = {
@@ -176,7 +169,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
         to: destination,
       };
 
-      setIsDialInitiated(true);
+      setDialingDestination(destination);
 
       callsService.dial(dialParams);
     },
@@ -208,7 +201,10 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
         <ActiveCall
           sipUsername={agentSipUsername}
           callDirection={webRTCall.direction}
-          callDestination={webRTCall.options.destinationNumber}
+          callDestination={
+            dialingDestination || webRTCall.options.destinationNumber
+          }
+          isDialing={Boolean(dialingDestination)}
           callerId={
             webRTCall.options.remoteCallerName ||
             webRTCall.options.remoteCallerNumber
