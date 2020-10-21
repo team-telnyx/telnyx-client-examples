@@ -129,14 +129,14 @@ function ActiveCallConference({
     });
 
   const removeParticipant = (participant: string) => {
-    appHangup({ participant });
+    appHangup({ telnyxCallControlId, participant });
   };
 
   const muteParticipant = (participant: string) => {
-    appMute({ participant });
+    appMute({ telnyxCallControlId, participant });
   };
   const unmuteParticipant = (participant: string) => {
-    appUnmute({ participant });
+    appUnmute({ telnyxCallControlId, participant });
   };
 
   const confirmRemove = (participant: string) => {
