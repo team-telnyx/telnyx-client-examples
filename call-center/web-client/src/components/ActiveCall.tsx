@@ -114,13 +114,13 @@ function ActiveCallConference({
 
   const addToCall = (destination: string) =>
     invite({
-      inviterSipUsername: sipUsername,
+      initiatorSipUsername: sipUsername,
       to: destination,
     });
 
   const transferCall = (destination: string) =>
     transfer({
-      transfererSipUsername: sipUsername,
+      initiatorSipUsername: sipUsername,
       to: destination,
     });
 

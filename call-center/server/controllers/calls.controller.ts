@@ -56,14 +56,14 @@ class CallsController {
 
       // NOTE Specifying the host SIP username doesn't seem to work,
       // possibly because connection ID relationship?
-      // let from = `sip:${inviterSipUsername}@sip.telnyx.com`;
+      // let from = `sip:${initiatorSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Create outgoing call
       let appOutgoingCall = await CallsController.createCall({
         to,
         from,
-        connectionId: process.env.TELNYX_SIP_CONNECTION_ID!,
+        connectionId: process.env.TELNYX_CC_APP_ID!,
       });
 
       // Create new conference
@@ -89,7 +89,7 @@ class CallsController {
 
   // Invite an agent or phone number to join another agent's conference call
   public static invite = async function (req: Request, res: Response) {
-    let { inviterSipUsername, to } = req.body;
+    let { initiatorSipUsername, to } = req.body;
 
     try {
       // Find the correct call leg and conference by inviter's SIP username
@@ -100,14 +100,14 @@ class CallsController {
       let appInviterCallLeg = await callLegRepository.findOneOrFail({
         where: {
           status: CallLegStatus.ACTIVE,
-          to: `sip:${inviterSipUsername}@sip.telnyx.com`,
+          to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         },
         relations: ['conference'],
       });
 
       // NOTE Specifying the host SIP username doesn't seem to work,
       // possibly because connection ID relationship?
-      // let from = `sip:${inviterSipUsername}@sip.telnyx.com`;
+      // let from = `sip:${initiatorSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Call someone to invite them to join the conference call
@@ -140,7 +140,7 @@ class CallsController {
 
   // Transfer the call to an agent or phone number to join
   public static transfer = async function (req: Request, res: Response) {
-    let { transfererSipUsername, to } = req.body;
+    let { initiatorSipUsername, to } = req.body;
 
     try {
       // Find the correct call leg and conference by transferer's SIP username
@@ -151,14 +151,14 @@ class CallsController {
       let appTransfererCallLeg = await callLegRepository.findOneOrFail({
         where: {
           status: CallLegStatus.ACTIVE,
-          to: `sip:${transfererSipUsername}@sip.telnyx.com`,
+          to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         },
         relations: ['conference'],
       });
 
       // NOTE Specifying the host SIP username doesn't seem to work,
       // possibly because connection ID relationship?
-      // let from = `sip:${transfererSipUsername}@sip.telnyx.com`;
+      // let from = `sip:${initiatorSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Call someone to invite them to join the conference call
