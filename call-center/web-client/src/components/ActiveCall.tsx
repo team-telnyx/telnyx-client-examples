@@ -223,11 +223,11 @@ function ActiveCallConference({
     <div className="ActiveCall-conference">
       <div>
         {conferenceParticipants.map(
-          (
-            { muted, displayName, participant, participantTelnyxCallControlId },
-            index
-          ) => (
-            <div className="ActiveCall-participant-row">
+          ({ muted, displayName, participantTelnyxCallControlId }, index) => (
+            <div
+              className="ActiveCall-participant-row"
+              key={participantTelnyxCallControlId}
+            >
               <div className="ActiveCall-participant">
                 {index !== 0 ? (
                   <span className="ActiveCall-ampersand">&</span>
