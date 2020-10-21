@@ -26,6 +26,7 @@ interface IPartialWebRTCCall {
     remoteCallerName: string;
     remoteCallerNumber: string;
     destinationNumber: string;
+    telnyxCallControlId: string;
   };
   answer: Function;
   hangup: Function;
@@ -140,16 +141,18 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   useEffect(() => {
     if (!webRTCall) return;
 
-    const { state, answer } = webRTCall;
+    const { state, answer, options } = webRTCall;
 
     if (isDialInitiated) {
       if (state === 'new') {
-        // Immediately answer
+        // Check if call should be answered automatically, such as in
+        // the case when the agent has initiated an outgoing call:
+        // when an agent dials a number, the call is routed through
+        // the call center app, a conference is created, and both the
+        // agent and external number is invited to the conference.
         callsService
-          .get({
-            // TODO Use `telnyx_session_id`
-            // once https://github.com/team-telnyx/webrtc/pull/46 is published
-            to: `sip:${agentSipUsername}@sip.telnyx.com`,
+          .getCall({
+            telnyxCallControlId: options.telnyxCallControlId,
             limit: 1,
           })
           .then(({ data }) => {

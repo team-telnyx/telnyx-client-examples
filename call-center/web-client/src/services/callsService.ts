@@ -19,7 +19,7 @@ interface IConferenceActionsResponse {
   data: ICallLeg;
 }
 
-export const get = async (
+export const getCall = async (
   params: Partial<ICallLeg & IFindManyParams>
 ): Promise<AxiosResponse<{ calls: ICallLeg[] }>> => {
   return await axios.get(`${BASE_URL}/calls/`, {
