@@ -151,7 +151,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
         // the call center app, a conference is created, and both the
         // agent and external number is invited to the conference.
         callsService
-          .getCall({
+          .get({
             telnyxCallControlId: options.telnyxCallControlId,
             limit: 1,
           })
