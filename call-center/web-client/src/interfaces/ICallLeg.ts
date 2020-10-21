@@ -1,8 +1,14 @@
 import IConference from './IConference';
 
+// TODO Same import as in `callLeg.entity`
 export enum CallLegStatus {
   INACTIVE = 'inactive',
   ACTIVE = 'active',
+}
+
+export enum CallLegClientCallState {
+  DEFAULT = 'default',
+  AUTO_ANSWER = 'auto_answer',
 }
 
 export enum CallLegDirection {
@@ -15,9 +21,10 @@ export interface ICallLeg {
   status: CallLegStatus;
   from: string;
   to: string;
-  direction: string;
+  direction: CallLegDirection;
   telnyxCallControlId: string;
   telnyxConnectionId: string;
+  clientCallState: CallLegClientCallState;
   muted: boolean;
   conference: IConference;
 }

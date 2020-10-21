@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
 import { updateAgent, getLoggedInAgents } from '../../services/agentsService';
-import IAgent from '../../interfaces/IAgent';
+import * as callsService from '../../services/callsService';
+import { CallLegClientCallState } from '../../interfaces/ICallLeg';
 import useAgents from '../../hooks/useAgents';
 import ActiveCall from '../ActiveCall';
 import Agents from '../Agents';
@@ -41,6 +42,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
+  let [isDialInitiated, setIsDialInitiated] = useState<boolean>(false);
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
   let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
   let agentsState = useAgents(agentSipUsername);
@@ -135,24 +137,48 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
     };
   }, [token, agentId]);
 
+  useEffect(() => {
+    if (!webRTCall) return;
+
+    const { state, answer } = webRTCall;
+
+    if (isDialInitiated) {
+      if (state === 'new') {
+        // Immediately answer
+        callsService
+          .get({
+            // TODO Use `telnyx_session_id`
+            // once https://github.com/team-telnyx/webrtc/pull/46 is published
+            to: `sip:${agentSipUsername}@sip.telnyx.com`,
+            limit: 1,
+          })
+          .then(({ data }) => {
+            if (
+              data.calls[0]?.clientCallState ===
+              CallLegClientCallState.AUTO_ANSWER
+            ) {
+              answer();
+            }
+          })
+          .finally(() => {
+            setIsDialInitiated(false);
+          });
+      } else {
+        setIsDialInitiated(false);
+      }
+    }
+  }, [isDialInitiated, webRTCall]);
+
   const dial = useCallback(
     (destination) => {
-      if (!telnyxClientRef.current) {
-        return;
-      }
+      let dialParams = {
+        initiatorSipUsername: agentSipUsername,
+        to: destination,
+      };
 
-      let call = telnyxClientRef.current.newCall({
-        destinationNumber: destination,
-        // TODO Find difference between `remote`-
-        callerName: `Call Center`,
-        // Your outbound-enabled phone number:
-        // TODO Remove hardcoded number, get from .env
-        callerNumber: '+12134639257',
-        remoteCallerName: agentName,
-        remoteCallerNumber: `sip:${agentSipUsername}@sip.telnyx.com`,
-        audio: true,
-        video: false,
-      });
+      setIsDialInitiated(true);
+
+      callsService.dial(dialParams);
     },
     [telnyxClientRef.current]
   );

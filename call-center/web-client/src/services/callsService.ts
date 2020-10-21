@@ -2,6 +2,10 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import ICallLeg from '../interfaces/ICallLeg';
 import { BASE_URL } from '../configs/constants';
 
+interface IFindManyParams {
+  limit: number;
+}
+
 interface ICallActionsParams {
   initiatorSipUsername: string;
   to: string;
@@ -14,6 +18,17 @@ interface IConferenceActionsParams {
 interface IConferenceActionsResponse {
   data: ICallLeg;
 }
+
+export const get = async (
+  params: Partial<ICallLeg & IFindManyParams>
+): Promise<AxiosResponse<{ calls: ICallLeg[] }>> => {
+  return await axios.get(`${BASE_URL}/calls/`, {
+    params,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
 
 export const dial = async (
   params: ICallActionsParams

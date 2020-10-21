@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { getManager } from 'typeorm';
+import { FindManyOptions, getManager } from 'typeorm';
 import {
   CallLeg,
   CallLegStatus,
+  CallLegClientCallState,
   CallLegDirection,
 } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
@@ -15,26 +16,55 @@ let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 interface IClientState {
   // Define your own call states to direct the flow of the call
   // through your application
-  // appCallLegId: string;
   appCallState?: string;
   appConferenceId?: string;
+  clientCallDestination?: string;
 }
 
 interface ICreateCallParams {
   from: string;
   to: string;
   connectionId: string;
-  clientState?: IClientState;
-  options?: Object;
+  clientCallState?: CallLegClientCallState;
+  telnyxCallOptions?: Object;
 }
 
 interface ICreateConferenceParams {
   from: string;
+  to: string;
+  direction: string;
   callControlId: string;
   options?: Object;
 }
 
 class CallsController {
+  public static get = async function (req: Request, res: Response) {
+    let { limit, ...callLegQuery } = req.query;
+    let findOpts = {
+      // NOTE You'll likely want to do some validation here
+      // to check for valid columns to query
+      where: callLegQuery,
+    } as FindManyOptions;
+
+    if (limit) {
+      findOpts.take = parseInt(limit as string);
+    }
+
+    try {
+      let callLegRepository = getManager().getRepository(CallLeg);
+
+      res.json({
+        calls: await callLegRepository.find(findOpts),
+      });
+    } catch (e) {
+      console.error(e);
+
+      res
+        .status(e && e.name === 'EntityNotFound' ? 404 : 500)
+        .send({ error: e });
+    }
+  };
+
   public static bridge = async function (req: Request, res: Response) {
     let { call_control_id, to } = req.body.data;
     let callToBridge = await telnyx.calls.create({
@@ -47,36 +77,30 @@ class CallsController {
     res.json({});
   };
 
-  // Make an outbound call
+  // Initiate an outgoing call
   public static dial = async function (req: Request, res: Response) {
-    let { callerSipUsername, to } = req.body;
+    let { initiatorSipUsername, to } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
-
-      // NOTE Specifying the host SIP username doesn't seem to work,
-      // possibly because connection ID relationship?
-      // let from = `sip:${initiatorSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
-      // Create outgoing call
-      let appOutgoingCall = await CallsController.createCall({
-        to,
+      let appAgentCall = await CallsController.createCall({
+        to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
+        clientCallState: CallLegClientCallState.AUTO_ANSWER,
+        telnyxCallOptions: {
+          // Client state tells our call control handler how to
+          // route this call after the agent answers
+          client_state: encodeClientState({
+            appCallState: 'initiate_dial',
+            clientCallDestination: to,
+          }),
+        },
       });
-
-      // Create new conference
-      let appConference = await CallsController.createConference({
-        from,
-        callControlId: appOutgoingCall.telnyxCallControlId,
-      });
-      // Add outgoing call to conference
-      appOutgoingCall.conference = appConference;
-      await callLegRepository.save(appOutgoingCall);
 
       res.json({
-        data: appOutgoingCall,
+        data: appAgentCall,
       });
     } catch (e) {
       console.error(e);
@@ -115,7 +139,7 @@ class CallsController {
         to,
         from,
         connectionId: appInviterCallLeg.telnyxConnectionId,
-        options: CallsController.isToAgent(to)
+        telnyxCallOptions: CallsController.isToAgent(to)
           ? CallsController.getDialAgentOptions({
               appConferenceId: appInviterCallLeg.conference.id,
             })
@@ -166,7 +190,7 @@ class CallsController {
         to,
         from,
         connectionId: appTransfererCallLeg.telnyxConnectionId,
-        options: CallsController.isToAgent(to)
+        telnyxCallOptions: CallsController.isToAgent(to)
           ? CallsController.getDialAgentOptions({
               appConferenceId: appTransfererCallLeg.conference.id,
             })
@@ -365,6 +389,7 @@ class CallsController {
             appIncomingCallLeg.direction = CallLegDirection.INCOMING;
             appIncomingCallLeg.telnyxCallControlId = call_control_id;
             appIncomingCallLeg.telnyxConnectionId = connection_id;
+            appIncomingCallLeg.clientCallState = CallLegClientCallState.DEFAULT;
             appIncomingCallLeg.muted = false;
 
             await callLegRepository.save(appIncomingCallLeg);
@@ -398,6 +423,8 @@ class CallsController {
               // to multiple call legs at once and save it to our DB
               let appConference = await CallsController.createConference({
                 from,
+                to,
+                direction,
                 callControlId: call_control_id,
                 options: {
                   // Place caller on hold until agent joins the call
@@ -419,7 +446,7 @@ class CallsController {
                 to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
                 from,
                 connectionId: connection_id,
-                options: CallsController.getDialAgentOptions({
+                telnyxCallOptions: CallsController.getDialAgentOptions({
                   appConferenceId: appConference.id,
                 }),
               });
@@ -444,8 +471,8 @@ class CallsController {
                 }),
               });
             }
-          } else if (clientState.appCallState === 'dial_agent') {
-            // Handle a call answered by an agent logged into the WebRTC client
+          } else if (clientState.appCallState === 'dial') {
+            // Handle a call answered from an outgoing call center dial
 
             if (clientState.appConferenceId) {
               let appConference = await conferenceRepository.findOneOrFail(
@@ -464,6 +491,44 @@ class CallsController {
                 start_conference_on_enter: true,
               });
             }
+          } else if (
+            clientState.appCallState === 'initiate_dial' &&
+            clientState.clientCallDestination
+          ) {
+            // Handle the first leg of the call created in an outgoing call
+
+            // Create new conference
+            let appConference = await CallsController.createConference({
+              from: to,
+              to: clientState.clientCallDestination,
+              direction: CallLegDirection.OUTGOING,
+              callControlId: call_control_id,
+            });
+
+            // Create outgoing call
+            let appOutgoingCall = await CallsController.createCall({
+              from,
+              to: clientState.clientCallDestination,
+              connectionId: process.env.TELNYX_CC_APP_ID!,
+              telnyxCallOptions: {
+                client_state: encodeClientState({
+                  appCallState: 'dial',
+                  appConferenceId: appConference.id,
+                }),
+              },
+            });
+
+            // Add calls to conference
+            appConference.callLegs = [
+              await callLegRepository.findOneOrFail({
+                to,
+                status: CallLegStatus.ACTIVE,
+                telnyxCallControlId: call_control_id,
+              }),
+              appOutgoingCall,
+            ];
+
+            await conferenceRepository.save(appConference);
           }
 
           break;
@@ -526,7 +591,7 @@ class CallsController {
       // rotate to a different agent if one doesn't answer within X
       timeout_secs: 60,
       client_state: encodeClientState({
-        appCallState: 'dial_agent',
+        appCallState: 'dial',
         appConferenceId,
       }),
     };
@@ -534,13 +599,17 @@ class CallsController {
 
   private static createConference = async function ({
     from,
+    to,
+    direction,
     callControlId,
     options,
   }: ICreateConferenceParams) {
     // let callLegRepository = getManager().getRepository(CallLeg);
     let conferenceRepository = getManager().getRepository(Conference);
     let { data: telnyxConference } = await telnyx.conferences.create({
-      name: `Call from ${from} at ${Date.now()}`,
+      name: `Call ${
+        direction === CallLegDirection.OUTGOING ? `to ${to}` : `from ${from}`
+      } at ${Date.now()}`,
       call_control_id: callControlId,
       ...options,
     });
@@ -550,6 +619,7 @@ class CallsController {
     let appConference = new Conference();
     appConference.telnyxConferenceId = telnyxConference.id;
     appConference.from = from;
+    appConference.to = to;
 
     return await conferenceRepository.save(appConference);
   };
@@ -558,7 +628,8 @@ class CallsController {
     from,
     to,
     connectionId,
-    options,
+    clientCallState,
+    telnyxCallOptions,
   }: ICreateCallParams) {
     let callLegRepository = getManager().getRepository(CallLeg);
 
@@ -566,7 +637,7 @@ class CallsController {
       to,
       from,
       connection_id: connectionId,
-      ...options,
+      ...telnyxCallOptions,
     });
 
     // Save newly created leg to our database
@@ -577,6 +648,8 @@ class CallsController {
     appOutgoingCall.status = CallLegStatus.ACTIVE;
     appOutgoingCall.telnyxCallControlId = telnyxOutgoingCall.call_control_id;
     appOutgoingCall.telnyxConnectionId = connectionId;
+    appOutgoingCall.clientCallState =
+      clientCallState || CallLegClientCallState.DEFAULT;
     appOutgoingCall.muted = false;
 
     return await callLegRepository.save(appOutgoingCall);
