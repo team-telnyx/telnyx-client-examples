@@ -43,7 +43,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
-  let [isDialInitiated, setIsDialInitiated] = useState<boolean>(false);
+  let [isDialing, setIsDialing] = useState<boolean>(false);
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
   let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
   let agentsState = useAgents(agentSipUsername);
@@ -143,7 +143,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
     const { state, answer, options } = webRTCall;
 
-    if (isDialInitiated) {
+    if (isDialing) {
       if (state === 'new') {
         // Check if call should be answered automatically, such as in
         // the case when the agent has initiated an outgoing call:
@@ -162,15 +162,12 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
             ) {
               answer();
             }
-          })
-          .finally(() => {
-            setIsDialInitiated(false);
           });
-      } else {
-        setIsDialInitiated(false);
+      } else if (state === 'active') {
+        setIsDialing(false);
       }
     }
-  }, [isDialInitiated, webRTCall]);
+  }, [isDialing, webRTCall]);
 
   const dial = useCallback(
     (destination) => {
@@ -179,7 +176,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
         to: destination,
       };
 
-      setIsDialInitiated(true);
+      setIsDialing(true);
 
       callsService.dial(dialParams);
     },
@@ -217,6 +214,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
             webRTCall.options.remoteCallerNumber
           }
           callState={webRTCall.state}
+          isDialing={isDialing}
           answer={webRTCall.answer}
           hangup={webRTCall.hangup}
           muteAudio={webRTCall.muteAudio}
