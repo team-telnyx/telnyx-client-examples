@@ -43,7 +43,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
-  let [isDialing, setIsDialing] = useState<boolean>(false);
+  let [dialingDestination, setDialingDestination] = useState<string | null>();
   let [webRTCClientState, setWebRTCClientState] = useState<string>('');
   let [webRTCall, setWebRTCCall] = useState<IPartialWebRTCCall | null>();
   let agentsState = useAgents(agentSipUsername);
@@ -143,7 +143,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
     const { state, answer, options } = webRTCall;
 
-    if (isDialing) {
+    if (Boolean(dialingDestination)) {
       if (state === 'new') {
         // Check if call should be answered automatically, such as in
         // the case when the agent has initiated an outgoing call:
@@ -164,10 +164,10 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
             }
           });
       } else if (state === 'active') {
-        setIsDialing(false);
+        setDialingDestination(null);
       }
     }
-  }, [isDialing, webRTCall]);
+  }, [dialingDestination, webRTCall]);
 
   const dial = useCallback(
     (destination) => {
@@ -176,7 +176,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
         to: destination,
       };
 
-      setIsDialing(true);
+      setDialingDestination(destination);
 
       callsService.dial(dialParams);
     },
@@ -208,13 +208,15 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
         <ActiveCall
           sipUsername={agentSipUsername}
           callDirection={webRTCall.direction}
-          callDestination={webRTCall.options.destinationNumber}
+          callDestination={
+            dialingDestination || webRTCall.options.destinationNumber
+          }
+          isDialing={Boolean(dialingDestination)}
           callerId={
             webRTCall.options.remoteCallerName ||
             webRTCall.options.remoteCallerNumber
           }
           callState={webRTCall.state}
-          isDialing={isDialing}
           answer={webRTCall.answer}
           hangup={webRTCall.hangup}
           muteAudio={webRTCall.muteAudio}

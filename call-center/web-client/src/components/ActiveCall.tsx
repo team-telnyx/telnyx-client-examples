@@ -309,13 +309,13 @@ function ActiveCall({
     setIsMuted(false);
   };
 
-  const isIncoming = !isDialing && callDirection === 'inbound';
+  const isIncoming = callDirection === 'inbound';
   const isRinging = callState === 'ringing';
   const isActive = callState === 'active';
 
   return (
     <section>
-      {isIncoming && isRinging && (
+      {!isDialing && isRinging && (
         <div className="App-section">
           <div>Incoming call</div>
           <div className="ActiveCall-callerId">{callerId}</div>
@@ -339,23 +339,7 @@ function ActiveCall({
           </div>
         </div>
       )}
-      {isDialing && (
-        <div className="App-section">
-          <div>Calling...</div>
-          {/* TODO Get final destination number */}
-          <div className="ActiveCall-callerId">{callDestination}</div>
-          <div className="ActiveCall-actions">
-            <button
-              type="button"
-              className="App-button App-button--small App-button--danger"
-              onClick={handleHangupClick}
-            >
-              Hangup
-            </button>
-          </div>
-        </div>
-      )}
-      {isActive && (
+      {(isDialing || isActive) && (
         <div className="App-section">
           <div>Call in progress</div>
           <ActiveCallConference
