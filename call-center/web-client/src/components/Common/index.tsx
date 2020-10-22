@@ -3,7 +3,6 @@ import { TelnyxRTC } from '@telnyx/webrtc';
 import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
 import { updateAgent, getLoggedInAgents } from '../../services/agentsService';
 import * as callsService from '../../services/callsService';
-import { CallLegClientCallState } from '../../interfaces/ICallLeg';
 import useAgents from '../../hooks/useAgents';
 import ActiveCall from '../ActiveCall';
 import Agents from '../Agents';
@@ -139,38 +138,6 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       telnyxClientRef.current = undefined;
     };
   }, [token, agentId]);
-
-  // Run effects on state change
-  useEffect(() => {
-    if (!webRTCall?.state) {
-      return;
-    }
-
-    const { state, options, answer } = webRTCall;
-
-    // Check server app call state
-    callsService
-      .get({
-        telnyxCallControlId: options.telnyxCallControlId,
-        limit: 1,
-      })
-      .then(({ data }) => {
-        // Check if call should be answered automatically, such as in
-        // the case when the agent has initiated an outgoing call:
-        // when an agent dials a number, the call is routed through
-        // the call center app, a conference is created, and both the
-        // agent and external number is invited to the conference.
-        if (state === 'new') {
-          if (
-            data.calls[0]?.clientCallState ===
-              CallLegClientCallState.AUTO_ANSWER &&
-            isMountedRef.current
-          ) {
-            answer();
-          }
-        }
-      });
-  }, [webRTCall?.state]);
 
   const dial = useCallback(
     (destination) => {
