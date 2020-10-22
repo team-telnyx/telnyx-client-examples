@@ -44,6 +44,7 @@ interface IActiveCallConference {
 }
 
 interface IConferenceParticipant {
+  isActive: boolean;
   displayName: string;
   muted?: boolean;
   participantTelnyxCallControlId: string;
@@ -201,7 +202,6 @@ function ActiveCallConference({
   let conferenceParticipants: IConferenceParticipant[] = useMemo(() => {
     if (conference?.callLegs?.length) {
       let otherParticipants = conference.callLegs
-        .filter((callLeg) => callLeg.status === CallLegStatus.ACTIVE)
         .map((callLeg) => ({
           ...callLeg,
           participant:
@@ -213,8 +213,9 @@ function ActiveCallConference({
           ({ participant }) =>
             participant !== `sip:${sipUsername}@sip.telnyx.com`
         )
-        .map(({ muted, participant, telnyxCallControlId }) => {
+        .map(({ muted, participant, telnyxCallControlId, status }) => {
           let conferenceParticipant = {
+            isActive: status === CallLegStatus.ACTIVE,
             displayName: participant,
             muted,
             participant,
@@ -237,6 +238,7 @@ function ActiveCallConference({
     } else if (isDialing) {
       return [
         {
+          isActive: true,
           displayName: callDestination,
           participantTelnyxCallControlId: telnyxCallControlId,
           participant: callDestination,
@@ -262,12 +264,19 @@ function ActiveCallConference({
     <div className="ActiveCall-conference">
       <div>
         {conferenceParticipants.map(
-          ({ muted, displayName, participantTelnyxCallControlId }, index) => (
+          (
+            { isActive, muted, displayName, participantTelnyxCallControlId },
+            index
+          ) => (
             <div
               className="ActiveCall-participant-row"
               key={participantTelnyxCallControlId}
             >
-              <div className="ActiveCall-participant">
+              <div
+                className={`ActiveCall-participant ${
+                  isActive ? '' : 'ActiveCall-participant--inactive'
+                }`}
+              >
                 {index !== 0 ? (
                   <span className="ActiveCall-ampersand">&</span>
                 ) : null}
@@ -275,25 +284,27 @@ function ActiveCallConference({
                   {displayName}
                 </span>
               </div>
-              <div className="ActiveCall-actions">
-                <MuteUnmuteButton
-                  isMuted={muted}
-                  mute={() => muteParticipant(participantTelnyxCallControlId)}
-                  unmute={() =>
-                    unmuteParticipant(participantTelnyxCallControlId)
-                  }
-                />
+              {isActive && (
+                <div className="ActiveCall-actions">
+                  <MuteUnmuteButton
+                    isMuted={muted}
+                    mute={() => muteParticipant(participantTelnyxCallControlId)}
+                    unmute={() =>
+                      unmuteParticipant(participantTelnyxCallControlId)
+                    }
+                  />
 
-                <button
-                  type="button"
-                  className="App-button App-button--small App-button--danger"
-                  onClick={() =>
-                    confirmRemove(participantTelnyxCallControlId, displayName)
-                  }
-                >
-                  Remove
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    className="App-button App-button--small App-button--danger"
+                    onClick={() =>
+                      confirmRemove(participantTelnyxCallControlId, displayName)
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
             </div>
           )
         )}

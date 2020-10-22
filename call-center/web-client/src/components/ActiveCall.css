@@ -46,6 +46,10 @@
   font-weight: bold;
 }
 
+.ActiveCall-participant--inactive {
+  opacity: 0.5;
+}
+
 .ActiveCall-ampersand {
   display: inline-block;
   margin-right: 1rem;
