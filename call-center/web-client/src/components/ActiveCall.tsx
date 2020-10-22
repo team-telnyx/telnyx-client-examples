@@ -9,10 +9,16 @@ import {
   hangup as appHangup,
   mute as appMute,
   unmute as appUnmute,
+  getCall as appGetCall,
 } from '../services/callsService';
 import { getConference } from '../services/conferencesService';
 import IConference from '../interfaces/IConference';
-import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
+import {
+  ICallLeg,
+  CallLegDirection,
+  CallLegStatus,
+  CallLegClientCallState,
+} from '../interfaces/ICallLeg';
 
 interface IActiveCall {
   telnyxCallControlId: string;
@@ -26,22 +32,21 @@ interface IActiveCall {
   isDialing: boolean;
   answer: Function;
   hangup: Function;
-  muteAudio: Function;
-  unmuteAudio: Function;
 }
 
 interface IActiveCallConference {
   telnyxCallControlId: string;
   sipUsername: string;
-  isIncoming: boolean;
+  isDialing: boolean;
   callDestination: string;
   callerId: string;
   agents?: IAgent[];
 }
 
 interface IConferenceParticipant {
-  displayName?: string;
+  displayName: string;
   muted?: boolean;
+  participantTelnyxCallControlId: string;
   participant: string;
 }
 
@@ -51,7 +56,42 @@ interface IMuteUnmuteButton {
   unmute: () => void;
 }
 
-function useActiveConference(sipUsername: string) {
+function getCall(telnyxCallControlId: string) {
+  return appGetCall({
+    telnyxCallControlId: telnyxCallControlId,
+    limit: 1,
+  }).then((res) => res.data?.calls?.[0]);
+}
+
+function useAppCall(telnyxCallControlId: string) {
+  let [loading, setLoading] = useState<boolean>(true);
+  let [error, setError] = useState<string | undefined>();
+  let [call, setCall] = useState<ICallLeg | undefined>();
+
+  function loadCall() {
+    setLoading(true);
+
+    return getCall(telnyxCallControlId)
+      .then((appCall) => {
+        if (appCall) {
+          setCall(appCall);
+        } else {
+          throw new Error('Call by Telnyx Call Control ID not found in DB');
+        }
+      })
+      .catch((error) => {
+        setError(error.toString());
+      })
+      .finally(() => setLoading(false));
+  }
+
+  // Poll for Call state every second
+  useInterval(loadCall, 1000);
+
+  return { loading, error, call };
+}
+
+function useActiveConference(telnyxCallControlId: string) {
   let [loading, setLoading] = useState<boolean>(true);
   let [error, setError] = useState<string | undefined>();
   let [conference, setConference] = useState<IConference | undefined>();
@@ -59,7 +99,7 @@ function useActiveConference(sipUsername: string) {
   function loadConference() {
     setLoading(true);
 
-    return getConference(`sip:${sipUsername}@sip.telnyx.com`)
+    return getConference(telnyxCallControlId)
       .then((res) => {
         setConference(res.data.conference);
       })
@@ -99,7 +139,7 @@ function ActiveCallConference({
   telnyxCallControlId,
   sipUsername,
   callDestination,
-  isIncoming,
+  isDialing,
   callerId,
 }: IActiveCallConference) {
   let { agents } = useAgents(sipUsername);
@@ -107,7 +147,7 @@ function ActiveCallConference({
     loading: conferenceLoading,
     error: conferenceError,
     conference,
-  } = useActiveConference(sipUsername);
+  } = useActiveConference(telnyxCallControlId);
   let [newParticipant, setNewParticipant] = useState('');
 
   const handleChangeDestination = (
@@ -128,24 +168,27 @@ function ActiveCallConference({
       to: destination,
     });
 
-  const removeParticipant = (participant: string) => {
-    appHangup({ participant });
+  const removeParticipant = (participantTelnyxCallControlId: string) => {
+    appHangup({ telnyxCallControlId: participantTelnyxCallControlId });
   };
 
-  const muteParticipant = (participant: string) => {
-    appMute({ participant });
+  const muteParticipant = (participantTelnyxCallControlId: string) => {
+    appMute({ telnyxCallControlId: participantTelnyxCallControlId });
   };
-  const unmuteParticipant = (participant: string) => {
-    appUnmute({ participant });
+  const unmuteParticipant = (participantTelnyxCallControlId: string) => {
+    appUnmute({ telnyxCallControlId: participantTelnyxCallControlId });
   };
 
-  const confirmRemove = (participant: string) => {
+  const confirmRemove = (
+    participantTelnyxCallControlId: string,
+    displayName: string
+  ) => {
     let result = window.confirm(
-      `Are you sure you want to remove ${participant} from this call?`
+      `Are you sure you want to remove ${displayName} from this call?`
     );
 
     if (result) {
-      removeParticipant(participant);
+      removeParticipant(participantTelnyxCallControlId);
     }
   };
 
@@ -156,11 +199,11 @@ function ActiveCallConference({
   };
 
   let conferenceParticipants: IConferenceParticipant[] = useMemo(() => {
-    if (conference) {
+    if (conference?.callLegs?.length) {
       let otherParticipants = conference.callLegs
         .filter((callLeg) => callLeg.status === CallLegStatus.ACTIVE)
         .map((callLeg) => ({
-          muted: callLeg.muted,
+          ...callLeg,
           participant:
             callLeg.direction === CallLegDirection.INCOMING
               ? callLeg.from
@@ -170,40 +213,39 @@ function ActiveCallConference({
           ({ participant }) =>
             participant !== `sip:${sipUsername}@sip.telnyx.com`
         )
-        .map(({ muted, participant }) => {
+        .map(({ muted, participant, telnyxCallControlId }) => {
+          let conferenceParticipant = {
+            displayName: participant,
+            muted,
+            participant,
+            participantTelnyxCallControlId: telnyxCallControlId,
+          } as IConferenceParticipant;
+
           let agent = agents?.find((agent) =>
             participant.includes(agent.sipUsername)
           );
 
           if (agent) {
-            return {
-              muted,
-              displayName: agent.name || agent.sipUsername,
-              participant: `sip:${agent.sipUsername}@sip.telnyx.com`,
-            };
+            conferenceParticipant.displayName = agent.name || agent.sipUsername;
+            conferenceParticipant.participant = `sip:${agent.sipUsername}@sip.telnyx.com`;
           }
 
-          return {
-            muted,
-            participant,
-          };
+          return conferenceParticipant;
         });
 
       return otherParticipants;
-    } else if (isIncoming) {
+    } else if (isDialing) {
       return [
         {
-          participant: callerId,
+          displayName: callDestination,
+          participantTelnyxCallControlId: telnyxCallControlId,
+          participant: callDestination,
         },
       ];
     }
 
-    return [
-      {
-        participant: callDestination,
-      },
-    ];
-  }, [conference, sipUsername]);
+    return [];
+  }, [conference, isDialing, telnyxCallControlId, callDestination]);
 
   useEffect(() => {
     if (
@@ -220,33 +262,38 @@ function ActiveCallConference({
     <div className="ActiveCall-conference">
       <div>
         {conferenceParticipants.map(
-          ({ muted, displayName, participant }, index) => (
-            <div className="ActiveCall-participant-row">
+          ({ muted, displayName, participantTelnyxCallControlId }, index) => (
+            <div
+              className="ActiveCall-participant-row"
+              key={participantTelnyxCallControlId}
+            >
               <div className="ActiveCall-participant">
                 {index !== 0 ? (
                   <span className="ActiveCall-ampersand">&</span>
                 ) : null}
                 <span className="ActiveCall-participant-name">
-                  {displayName || participant}
+                  {displayName}
                 </span>
               </div>
-              {index !== 0 && (
-                <div className="ActiveCall-actions">
-                  <MuteUnmuteButton
-                    isMuted={muted}
-                    mute={() => muteParticipant(participant)}
-                    unmute={() => unmuteParticipant(participant)}
-                  />
+              <div className="ActiveCall-actions">
+                <MuteUnmuteButton
+                  isMuted={muted}
+                  mute={() => muteParticipant(participantTelnyxCallControlId)}
+                  unmute={() =>
+                    unmuteParticipant(participantTelnyxCallControlId)
+                  }
+                />
 
-                  <button
-                    type="button"
-                    className="App-button App-button--small App-button--danger"
-                    onClick={() => confirmRemove(participant)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              )}
+                <button
+                  type="button"
+                  className="App-button App-button--small App-button--danger"
+                  onClick={() =>
+                    confirmRemove(participantTelnyxCallControlId, displayName)
+                  }
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           )
         )}
@@ -294,26 +341,38 @@ function ActiveCall({
   isDialing,
   answer,
   hangup,
-  muteAudio,
-  unmuteAudio,
 }: IActiveCall) {
-  const [isMuted, setIsMuted] = useState(false);
+  const { call } = useAppCall(telnyxCallControlId);
 
   const handleAnswerClick = () => answer();
   const handleRejectClick = () => hangup();
   const handleHangupClick = () => hangup();
 
   const muteSelf = () => {
-    setIsMuted(true);
-    muteAudio();
+    appMute({ telnyxCallControlId });
   };
 
   const unmuteSelf = () => {
-    unmuteAudio();
-    setIsMuted(false);
+    appUnmute({ telnyxCallControlId });
   };
 
-  const isIncoming = callDirection === 'inbound';
+  // Run effects on state change
+  useEffect(() => {
+    // Get server app call state
+    getCall(telnyxCallControlId).then((appCall) => {
+      if (callState === 'new') {
+        // Check if call should be answered automatically, such as in
+        // the case when the agent has initiated an outgoing call:
+        // when an agent dials a number, the call is routed through
+        // the call center app, a conference is created, and both the
+        // agent and external number is invited to the conference.
+        if (appCall.clientCallState === CallLegClientCallState.AUTO_ANSWER) {
+          answer();
+        }
+      }
+    });
+  }, [callState]);
+
   const isRinging = callState === 'ringing';
   const isActive = callState === 'active';
 
@@ -349,7 +408,7 @@ function ActiveCall({
           <ActiveCallConference
             telnyxCallControlId={telnyxCallControlId}
             sipUsername={sipUsername}
-            isIncoming={isIncoming}
+            isDialing={isDialing}
             callDestination={callDestination}
             callerId={callerId}
           />
@@ -362,11 +421,13 @@ function ActiveCall({
               Hangup
             </button>
 
-            <MuteUnmuteButton
-              isMuted={isMuted}
-              mute={muteSelf}
-              unmute={unmuteSelf}
-            />
+            {call && (
+              <MuteUnmuteButton
+                isMuted={call.muted}
+                mute={muteSelf}
+                unmute={unmuteSelf}
+              />
+            )}
           </div>
         </div>
       )}

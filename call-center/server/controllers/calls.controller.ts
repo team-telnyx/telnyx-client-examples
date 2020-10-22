@@ -197,14 +197,13 @@ class CallsController {
   // Mute a call
   // NOTE call must be active participant in a conference
   public static mute = async function (req: Request, res: Response) {
-    let { participant } = req.body;
+    let { telnyxCallControlId } = req.body;
 
     try {
       let callLegRepository = getManager().getRepository(CallLeg);
       let appCall = await callLegRepository.findOneOrFail({
         where: {
-          status: CallLegStatus.ACTIVE,
-          to: participant,
+          telnyxCallControlId,
         },
         relations: ['conference'],
       });
@@ -239,14 +238,13 @@ class CallsController {
   // Unmute a call
   // NOTE call must be active participant in a conference
   public static unmute = async function (req: Request, res: Response) {
-    let { participant } = req.body;
+    let { telnyxCallControlId } = req.body;
 
     try {
       let callLegRepository = getManager().getRepository(CallLeg);
       let appCall = await callLegRepository.findOneOrFail({
         where: {
-          status: CallLegStatus.ACTIVE,
-          to: participant,
+          telnyxCallControlId,
         },
         relations: ['conference'],
       });
@@ -281,14 +279,13 @@ class CallsController {
   // Hang up a call by the specified destination, e.g. to remove a number
   // from a conference call
   public static hangup = async function (req: Request, res: Response) {
-    let { participant } = req.body;
+    let { telnyxCallControlId } = req.body;
 
     try {
       let callLegRepository = getManager().getRepository(CallLeg);
       let appCall = await callLegRepository.findOneOrFail({
         where: {
-          status: CallLegStatus.ACTIVE,
-          to: participant,
+          telnyxCallControlId,
         },
       });
 

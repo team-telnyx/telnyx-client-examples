@@ -14,15 +14,11 @@ interface ICallActionsParams {
   to: string;
 }
 
-interface IConferenceActionsParams {
-  participant: string;
-}
-
 interface IConferenceActionsResponse {
   data: ICallLeg;
 }
 
-export const get = async (
+export const getCall = async (
   params: Partial<ICallLeg & IFindManyParams>
 ): Promise<AxiosResponse<{ calls: ICallLeg[] }>> => {
   return await axios.get(`${BASE_URL}/calls/`, {
@@ -73,7 +69,7 @@ export const transfer = async (
 };
 
 export const hangup = async (
-  params: IConferenceActionsParams
+  params: IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/hangup`, params, {
@@ -86,7 +82,7 @@ export const hangup = async (
 };
 
 export const mute = async (
-  params: IConferenceActionsParams
+  params: IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/mute`, params, {
@@ -99,7 +95,7 @@ export const mute = async (
 };
 
 export const unmute = async (
-  params: IConferenceActionsParams
+  params: IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/unmute`, params, {
