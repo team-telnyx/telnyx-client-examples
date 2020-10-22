@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+} from 'typeorm';
 import { Conference } from './conference.entity';
 
 export enum CallLegStatus {
@@ -20,6 +26,9 @@ export enum CallLegDirection {
 export class CallLeg {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
+
+  @CreateDateColumn()
+  createdAt!: Date;
 
   @Column({
     type: 'simple-enum',
