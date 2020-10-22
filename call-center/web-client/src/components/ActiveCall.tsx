@@ -26,8 +26,6 @@ interface IActiveCall {
   isDialing: boolean;
   answer: Function;
   hangup: Function;
-  muteAudio: Function;
-  unmuteAudio: Function;
 }
 
 interface IActiveCallConference {
@@ -302,8 +300,6 @@ function ActiveCall({
   isDialing,
   answer,
   hangup,
-  muteAudio,
-  unmuteAudio,
 }: IActiveCall) {
   const [isMuted, setIsMuted] = useState(false);
 
@@ -313,11 +309,11 @@ function ActiveCall({
 
   const muteSelf = () => {
     setIsMuted(true);
-    muteAudio();
+    appMute({ telnyxCallControlId });
   };
 
   const unmuteSelf = () => {
-    unmuteAudio();
+    appUnmute({ telnyxCallControlId });
     setIsMuted(false);
   };
 

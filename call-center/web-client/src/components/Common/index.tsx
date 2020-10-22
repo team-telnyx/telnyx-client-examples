@@ -109,7 +109,13 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
           updateAgent(agentId, { available: true });
         } else {
-          let nextWebRTCall = {
+          if (state === 'answering') {
+            updateAgent(agentId, { available: false });
+          } else if (state === 'active') {
+            setDialingDestination(null);
+          }
+
+          setWebRTCCall({
             state,
             direction,
             options,
@@ -118,35 +124,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
             hangup: hangup.bind(notification.call),
             muteAudio: muteAudio.bind(notification.call),
             unmuteAudio: unmuteAudio.bind(notification.call),
-          };
-
-          if (state === 'answering') {
-            updateAgent(agentId, { available: false });
-          } else if (state === 'new') {
-            // Check if call should be answered automatically, such as in
-            // the case when the agent has initiated an outgoing call:
-            // when an agent dials a number, the call is routed through
-            // the call center app, a conference is created, and both the
-            // agent and external number is invited to the conference.
-            callsService
-              .get({
-                telnyxCallControlId: options.telnyxCallControlId,
-                limit: 1,
-              })
-              .then(({ data }) => {
-                if (
-                  data.calls[0]?.clientCallState ===
-                    CallLegClientCallState.AUTO_ANSWER &&
-                  isMountedRef.current
-                ) {
-                  nextWebRTCall.answer();
-                }
-              });
-          } else if (state === 'active') {
-            setDialingDestination(null);
-          }
-
-          setWebRTCCall(nextWebRTCall);
+          });
         }
       }
     });
@@ -161,6 +139,38 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
       telnyxClientRef.current = undefined;
     };
   }, [token, agentId]);
+
+  // Run effects on state change
+  useEffect(() => {
+    if (!webRTCall?.state) {
+      return;
+    }
+
+    const { state, options, answer } = webRTCall;
+
+    // Check server app call state
+    callsService
+      .get({
+        telnyxCallControlId: options.telnyxCallControlId,
+        limit: 1,
+      })
+      .then(({ data }) => {
+        // Check if call should be answered automatically, such as in
+        // the case when the agent has initiated an outgoing call:
+        // when an agent dials a number, the call is routed through
+        // the call center app, a conference is created, and both the
+        // agent and external number is invited to the conference.
+        if (state === 'new') {
+          if (
+            data.calls[0]?.clientCallState ===
+              CallLegClientCallState.AUTO_ANSWER &&
+            isMountedRef.current
+          ) {
+            answer();
+          }
+        }
+      });
+  }, [webRTCall?.state]);
 
   const dial = useCallback(
     (destination) => {
@@ -213,8 +223,6 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
           callState={webRTCall.state}
           answer={webRTCall.answer}
           hangup={webRTCall.hangup}
-          muteAudio={webRTCall.muteAudio}
-          unmuteAudio={webRTCall.unmuteAudio}
         />
       )}
 
