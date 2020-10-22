@@ -15,6 +15,7 @@ import IConference from '../interfaces/IConference';
 import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
 
 interface IActiveCall {
+  telnyxCallControlId: string;
   sipUsername: string;
   callDirection: string;
   callDestination: string;
@@ -30,6 +31,7 @@ interface IActiveCall {
 }
 
 interface IActiveCallConference {
+  telnyxCallControlId: string;
   sipUsername: string;
   isIncoming: boolean;
   callDestination: string;
@@ -94,6 +96,7 @@ function MuteUnmuteButton({ isMuted, mute, unmute }: IMuteUnmuteButton) {
 }
 
 function ActiveCallConference({
+  telnyxCallControlId,
   sipUsername,
   callDestination,
   isIncoming,
@@ -115,13 +118,13 @@ function ActiveCallConference({
 
   const addToCall = (destination: string) =>
     invite({
-      initiatorSipUsername: sipUsername,
+      telnyxCallControlId,
       to: destination,
     });
 
   const transferCall = (destination: string) =>
     transfer({
-      initiatorSipUsername: sipUsername,
+      telnyxCallControlId,
       to: destination,
     });
 
@@ -282,6 +285,7 @@ function ActiveCallConference({
 }
 
 function ActiveCall({
+  telnyxCallControlId,
   sipUsername,
   callDirection,
   callDestination,
@@ -343,6 +347,7 @@ function ActiveCall({
         <div className="App-section">
           <div>Call in progress</div>
           <ActiveCallConference
+            telnyxCallControlId={telnyxCallControlId}
             sipUsername={sipUsername}
             isIncoming={isIncoming}
             callDestination={callDestination}

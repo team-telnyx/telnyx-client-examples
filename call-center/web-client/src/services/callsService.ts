@@ -6,8 +6,11 @@ interface IFindManyParams {
   limit: number;
 }
 
+interface IActiveCallActionParams {
+  telnyxCallControlId: string;
+}
+
 interface ICallActionsParams {
-  initiatorSipUsername: string;
   to: string;
 }
 
@@ -44,7 +47,7 @@ export const dial = async (
 };
 
 export const invite = async (
-  params: ICallActionsParams
+  params: ICallActionsParams & IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/invite`, params, {
@@ -57,7 +60,7 @@ export const invite = async (
 };
 
 export const transfer = async (
-  params: ICallActionsParams
+  params: ICallActionsParams & IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
     .post(`${BASE_URL}/calls/actions/conferences/transfer`, params, {

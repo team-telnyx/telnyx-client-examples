@@ -65,18 +65,6 @@ class CallsController {
     }
   };
 
-  public static bridge = async function (req: Request, res: Response) {
-    let { call_control_id, to } = req.body.data;
-    let callToBridge = await telnyx.calls.create({
-      connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
-      from: process.env.TELNYX_SIP_OB_NUMBER,
-      to,
-    });
-
-    callToBridge.bridge({ call_control_id });
-    res.json({});
-  };
-
   // Initiate an outgoing call
   public static dial = async function (req: Request, res: Response) {
     let { initiatorSipUsername, to } = req.body;
@@ -113,25 +101,17 @@ class CallsController {
 
   // Invite an agent or phone number to join another agent's conference call
   public static invite = async function (req: Request, res: Response) {
-    let { initiatorSipUsername, to } = req.body;
+    let { to, telnyxCallControlId } = req.body;
 
     try {
-      // Find the correct call leg and conference by inviter's SIP username
-      // TODO Once INIT-1896 is done, the WebRTC SDK will expose the Call Control
-      // ID. We will be able to ask for the conference related to the Call
-      // Control ID directly instead of infering from its participant SIP address
       let callLegRepository = getManager().getRepository(CallLeg);
       let appInviterCallLeg = await callLegRepository.findOneOrFail({
         where: {
-          status: CallLegStatus.ACTIVE,
-          to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
+          telnyxCallControlId,
         },
         relations: ['conference'],
       });
 
-      // NOTE Specifying the host SIP username doesn't seem to work,
-      // possibly because connection ID relationship?
-      // let from = `sip:${initiatorSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Call someone to invite them to join the conference call
@@ -164,25 +144,17 @@ class CallsController {
 
   // Transfer the call to an agent or phone number to join
   public static transfer = async function (req: Request, res: Response) {
-    let { initiatorSipUsername, to } = req.body;
+    let { to, telnyxCallControlId } = req.body;
 
     try {
-      // Find the correct call leg and conference by transferer's SIP username
-      // TODO Once INIT-1896 is done, the WebRTC SDK will expose the Call Control
-      // ID. We will be able to ask for the conference related to the Call
-      // Control ID directly instead of infering from its participant SIP address
       let callLegRepository = getManager().getRepository(CallLeg);
       let appTransfererCallLeg = await callLegRepository.findOneOrFail({
         where: {
-          status: CallLegStatus.ACTIVE,
-          to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
+          telnyxCallControlId,
         },
         relations: ['conference'],
       });
 
-      // NOTE Specifying the host SIP username doesn't seem to work,
-      // possibly because connection ID relationship?
-      // let from = `sip:${initiatorSipUsername}@sip.telnyx.com`;
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Call someone to invite them to join the conference call

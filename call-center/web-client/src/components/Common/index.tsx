@@ -199,6 +199,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
       {webRTCall && (
         <ActiveCall
+          telnyxCallControlId={webRTCall.options.telnyxCallControlId}
           sipUsername={agentSipUsername}
           callDirection={webRTCall.direction}
           callDestination={
