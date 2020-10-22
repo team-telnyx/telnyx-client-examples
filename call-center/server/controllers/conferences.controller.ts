@@ -13,13 +13,16 @@ class ConferencesController {
 
       let appConference = await conferenceRepository
         .createQueryBuilder('conference')
-        .innerJoinAndSelect(
+        .innerJoin(
           'conference.callLegs',
           'callLeg',
           'callLeg.telnyxCallControlId = :telnyxCallControlId',
           { telnyxCallControlId }
         )
+        .leftJoinAndSelect('conference.callLegs', 'callLegs')
         .getOne();
+
+      console.log('appConference:', appConference);
 
       res.json({
         conference: appConference,
