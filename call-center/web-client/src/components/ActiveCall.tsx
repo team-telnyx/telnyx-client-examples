@@ -52,7 +52,7 @@ interface IMuteUnmuteButton {
   unmute: () => void;
 }
 
-function useActiveConference(sipUsername: string) {
+function useActiveConference(telnyxCallControlId: string) {
   let [loading, setLoading] = useState<boolean>(true);
   let [error, setError] = useState<string | undefined>();
   let [conference, setConference] = useState<IConference | undefined>();
@@ -60,7 +60,7 @@ function useActiveConference(sipUsername: string) {
   function loadConference() {
     setLoading(true);
 
-    return getConference(`sip:${sipUsername}@sip.telnyx.com`)
+    return getConference(telnyxCallControlId)
       .then((res) => {
         setConference(res.data.conference);
       })
@@ -108,7 +108,7 @@ function ActiveCallConference({
     loading: conferenceLoading,
     error: conferenceError,
     conference,
-  } = useActiveConference(sipUsername);
+  } = useActiveConference(telnyxCallControlId);
   let [newParticipant, setNewParticipant] = useState('');
 
   const handleChangeDestination = (
