@@ -13,16 +13,16 @@ class ConferencesController {
 
       let appConference = await conferenceRepository
         .createQueryBuilder('conference')
+        // Find conference by call leg with matching CC ID
         .innerJoin(
           'conference.callLegs',
           'callLeg',
           'callLeg.telnyxCallControlId = :telnyxCallControlId',
           { telnyxCallControlId }
         )
+        // Return all call legs with the conference
         .leftJoinAndSelect('conference.callLegs', 'callLegs')
         .getOne();
-
-      console.log('appConference:', appConference);
 
       res.json({
         conference: appConference,
