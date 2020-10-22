@@ -4,6 +4,6 @@ import ConferencesController from '../controllers/conferences.controller';
 let router = express.Router();
 
 // Actions
-router.get('/:id_or_sip_address', ConferencesController.get);
+router.get('/:telnyx_call_control_id', ConferencesController.get);
 
 export default router;

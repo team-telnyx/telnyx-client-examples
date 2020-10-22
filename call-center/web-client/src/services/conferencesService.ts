@@ -3,9 +3,9 @@ import IConference from '../interfaces/IConference';
 import { BASE_URL } from '../configs/constants';
 
 export const getConference = async (
-  id: string
+  telnyxCallControlId: string
 ): Promise<AxiosResponse<{ conference: IConference }>> => {
-  return await axios.get(`${BASE_URL}/conferences/${id}`, {
+  return await axios.get(`${BASE_URL}/conferences/${telnyxCallControlId}`, {
     headers: {
       'Content-Type': 'application/json',
     },
