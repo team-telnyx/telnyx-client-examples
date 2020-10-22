@@ -37,8 +37,6 @@ interface IActiveCall {
 interface IActiveCallConference {
   telnyxCallControlId: string;
   sipUsername: string;
-  isDialing: boolean;
-  callDestination: string;
   callerId: string;
   agents?: IAgent[];
 }
@@ -139,9 +137,6 @@ function MuteUnmuteButton({ isMuted, mute, unmute }: IMuteUnmuteButton) {
 function ActiveCallConference({
   telnyxCallControlId,
   sipUsername,
-  callDestination,
-  isDialing,
-  callerId,
 }: IActiveCallConference) {
   let { agents } = useAgents(sipUsername);
   let {
@@ -210,8 +205,7 @@ function ActiveCallConference({
               : callLeg.to,
         }))
         .filter(
-          ({ participant }) =>
-            participant !== `sip:${sipUsername}@sip.telnyx.com`
+          (callLeg) => telnyxCallControlId !== callLeg.telnyxCallControlId
         )
         .map(({ muted, participant, telnyxCallControlId, status }) => {
           let conferenceParticipant = {
@@ -235,19 +229,10 @@ function ActiveCallConference({
         });
 
       return otherParticipants;
-    } else if (isDialing) {
-      return [
-        {
-          status: CallLegStatus.NEW,
-          displayName: callDestination,
-          participantTelnyxCallControlId: telnyxCallControlId,
-          participant: callDestination,
-        },
-      ];
     }
 
     return [];
-  }, [conference, isDialing, telnyxCallControlId, callDestination]);
+  }, [conference, telnyxCallControlId]);
 
   useEffect(() => {
     if (
@@ -417,14 +402,18 @@ function ActiveCall({
           </div>
         </div>
       )}
-      {(isDialing || isActive) && (
+      {isDialing && !isActive && (
+        <div className="App-section">
+          <div>Calling...</div>
+          <div className="ActiveCall-callerId">{callDestination}</div>
+        </div>
+      )}
+      {!isDialing && isActive && (
         <div className="App-section">
           <div>Call in progress</div>
           <ActiveCallConference
             telnyxCallControlId={telnyxCallControlId}
             sipUsername={sipUsername}
-            isDialing={isDialing}
-            callDestination={callDestination}
             callerId={callerId}
           />
           <div className="ActiveCall-actions">
