@@ -9,6 +9,7 @@ import { Conference } from './conference.entity';
 
 export enum CallLegStatus {
   INACTIVE = 'inactive',
+  NEW = 'new',
   ACTIVE = 'active',
 }
 
@@ -33,7 +34,7 @@ export class CallLeg {
   @Column({
     type: 'simple-enum',
     enum: CallLegStatus,
-    default: CallLegStatus.INACTIVE,
+    default: CallLegStatus.NEW,
   })
   status!: string;
 

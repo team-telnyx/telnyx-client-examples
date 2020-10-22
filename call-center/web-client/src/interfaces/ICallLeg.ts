@@ -3,6 +3,7 @@ import IConference from './IConference';
 // TODO Same import as in `callLeg.entity`
 export enum CallLegStatus {
   INACTIVE = 'inactive',
+  NEW = 'new',
   ACTIVE = 'active',
 }
 

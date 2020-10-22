@@ -44,7 +44,7 @@ interface IActiveCallConference {
 }
 
 interface IConferenceParticipant {
-  isActive: boolean;
+  status: CallLegStatus;
   displayName: string;
   muted?: boolean;
   participantTelnyxCallControlId: string;
@@ -215,7 +215,7 @@ function ActiveCallConference({
         )
         .map(({ muted, participant, telnyxCallControlId, status }) => {
           let conferenceParticipant = {
-            isActive: status === CallLegStatus.ACTIVE,
+            status,
             displayName: participant,
             muted,
             participant,
@@ -238,7 +238,7 @@ function ActiveCallConference({
     } else if (isDialing) {
       return [
         {
-          isActive: true,
+          status: CallLegStatus.NEW,
           displayName: callDestination,
           participantTelnyxCallControlId: telnyxCallControlId,
           participant: callDestination,
@@ -265,7 +265,7 @@ function ActiveCallConference({
       <div>
         {conferenceParticipants.map(
           (
-            { isActive, muted, displayName, participantTelnyxCallControlId },
+            { status, muted, displayName, participantTelnyxCallControlId },
             index
           ) => (
             <div
@@ -273,8 +273,10 @@ function ActiveCallConference({
               key={participantTelnyxCallControlId}
             >
               <div
-                className={`ActiveCall-participant ${
-                  isActive ? '' : 'ActiveCall-participant--inactive'
+                className={`ActiveCall-participant${
+                  status === CallLegStatus.INACTIVE
+                    ? ' ActiveCall-participant--inactive'
+                    : ''
                 }`}
               >
                 {index !== 0 ? (
@@ -284,8 +286,8 @@ function ActiveCallConference({
                   {displayName}
                 </span>
               </div>
-              {isActive && (
-                <div className="ActiveCall-actions">
+              <div className="ActiveCall-actions">
+                {status === CallLegStatus.ACTIVE && (
                   <MuteUnmuteButton
                     isMuted={muted}
                     mute={() => muteParticipant(participantTelnyxCallControlId)}
@@ -293,7 +295,9 @@ function ActiveCallConference({
                       unmuteParticipant(participantTelnyxCallControlId)
                     }
                   />
+                )}
 
+                {status !== CallLegStatus.INACTIVE && (
                   <button
                     type="button"
                     className="App-button App-button--small App-button--danger"
@@ -303,8 +307,8 @@ function ActiveCallConference({
                   >
                     Remove
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )
         )}
@@ -377,7 +381,7 @@ function ActiveCall({
         // when an agent dials a number, the call is routed through
         // the call center app, a conference is created, and both the
         // agent and external number is invited to the conference.
-        if (appCall.clientCallState === CallLegClientCallState.AUTO_ANSWER) {
+        if (appCall?.clientCallState === CallLegClientCallState.AUTO_ANSWER) {
           answer();
         }
       }
