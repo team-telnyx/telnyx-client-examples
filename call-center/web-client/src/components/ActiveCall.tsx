@@ -160,7 +160,7 @@ function ActiveCallConference({
   };
 
   let conferenceParticipants: IConferenceParticipant[] = useMemo(() => {
-    if (conference) {
+    if (conference?.callLegs?.length) {
       let otherParticipants = conference.callLegs
         .filter((callLeg) => callLeg.status === CallLegStatus.ACTIVE)
         .map((callLeg) => ({
