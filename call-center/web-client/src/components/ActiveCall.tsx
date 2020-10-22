@@ -9,10 +9,16 @@ import {
   hangup as appHangup,
   mute as appMute,
   unmute as appUnmute,
+  getCall as appGetCall,
 } from '../services/callsService';
 import { getConference } from '../services/conferencesService';
 import IConference from '../interfaces/IConference';
-import { CallLegDirection, CallLegStatus } from '../interfaces/ICallLeg';
+import {
+  ICallLeg,
+  CallLegDirection,
+  CallLegStatus,
+  CallLegClientCallState,
+} from '../interfaces/ICallLeg';
 
 interface IActiveCall {
   telnyxCallControlId: string;
@@ -26,8 +32,6 @@ interface IActiveCall {
   isDialing: boolean;
   answer: Function;
   hangup: Function;
-  muteAudio: Function;
-  unmuteAudio: Function;
 }
 
 interface IActiveCallConference {
@@ -50,6 +54,41 @@ interface IMuteUnmuteButton {
   isMuted?: boolean;
   mute: () => void;
   unmute: () => void;
+}
+
+function getCall(telnyxCallControlId: string) {
+  return appGetCall({
+    telnyxCallControlId: telnyxCallControlId,
+    limit: 1,
+  }).then((res) => res.data?.calls?.[0]);
+}
+
+function useAppCall(telnyxCallControlId: string) {
+  let [loading, setLoading] = useState<boolean>(true);
+  let [error, setError] = useState<string | undefined>();
+  let [call, setCall] = useState<ICallLeg | undefined>();
+
+  function loadCall() {
+    setLoading(true);
+
+    return getCall(telnyxCallControlId)
+      .then((appCall) => {
+        if (appCall) {
+          setCall(appCall);
+        } else {
+          throw new Error('Call by Telnyx Call Control ID not found in DB');
+        }
+      })
+      .catch((error) => {
+        setError(error.toString());
+      })
+      .finally(() => setLoading(false));
+  }
+
+  // Poll for Call state every second
+  useInterval(loadCall, 1000);
+
+  return { loading, error, call };
 }
 
 function useActiveConference(telnyxCallControlId: string) {
@@ -302,26 +341,38 @@ function ActiveCall({
   isDialing,
   answer,
   hangup,
-  muteAudio,
-  unmuteAudio,
 }: IActiveCall) {
-  const [isMuted, setIsMuted] = useState(false);
+  const { call } = useAppCall(telnyxCallControlId);
 
   const handleAnswerClick = () => answer();
   const handleRejectClick = () => hangup();
   const handleHangupClick = () => hangup();
 
   const muteSelf = () => {
-    setIsMuted(true);
-    muteAudio();
+    appMute({ telnyxCallControlId });
   };
 
   const unmuteSelf = () => {
-    unmuteAudio();
-    setIsMuted(false);
+    appUnmute({ telnyxCallControlId });
   };
 
-  const isIncoming = callDirection === 'inbound';
+  // Run effects on state change
+  useEffect(() => {
+    // Get server app call state
+    getCall(telnyxCallControlId).then((appCall) => {
+      if (callState === 'new') {
+        // Check if call should be answered automatically, such as in
+        // the case when the agent has initiated an outgoing call:
+        // when an agent dials a number, the call is routed through
+        // the call center app, a conference is created, and both the
+        // agent and external number is invited to the conference.
+        if (appCall.clientCallState === CallLegClientCallState.AUTO_ANSWER) {
+          answer();
+        }
+      }
+    });
+  }, [callState]);
+
   const isRinging = callState === 'ringing';
   const isActive = callState === 'active';
 
@@ -370,11 +421,13 @@ function ActiveCall({
               Hangup
             </button>
 
-            <MuteUnmuteButton
-              isMuted={isMuted}
-              mute={muteSelf}
-              unmute={unmuteSelf}
-            />
+            {call && (
+              <MuteUnmuteButton
+                isMuted={call.muted}
+                mute={muteSelf}
+                unmute={unmuteSelf}
+              />
+            )}
           </div>
         </div>
       )}
