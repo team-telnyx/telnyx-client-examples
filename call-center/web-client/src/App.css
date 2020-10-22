@@ -5,6 +5,7 @@
   --tertiary-color: #80868b;
   --tertiary-color-faded: rgba(128, 134, 139, 0.2);
   --danger-color: #ff6666;
+  --white-color: #fff;
   --border-radius: 3px;
 
   max-width: 35rem;
@@ -118,15 +119,19 @@ footer.App-content {
 .App-form .App-input {
   padding: 0.8rem;
   min-width: 16.5rem;
-  height: 3.3rem;
+  height: 3.312rem;
   grid-area: input;
 }
 
 .App-form .App-button {
   padding: 0.8rem;
-  min-width: 7rem;
-  height: 3.3rem;
+  min-width: 6.875rem;
+  height: 3.312rem;
   grid-area: button;
+  font-size: 1.125rem;
+  font-weight: 500;
+  font-style: normal;
+  line-height: 1.312rem;
 }
 
 .App-button + .App-button {
@@ -176,4 +181,13 @@ footer.App-content {
 
 .App-marginTop--small {
   margin-top: 0.625rem;
+}
+
+footer > button.App-button,
+button.App-button--link {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 1.125rem;
+  line-height: 1.312rem;
+  color: var(--white-color);
 }
