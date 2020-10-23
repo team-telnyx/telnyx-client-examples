@@ -36,7 +36,7 @@ interface ICreateConferenceParams {
   to: string;
   direction: string;
   callControlId: string;
-  options?: Object;
+  telnyxConferenceOptions?: Object;
 }
 
 class CallsController {
@@ -433,7 +433,7 @@ class CallsController {
                 to,
                 direction,
                 callControlId: call_control_id,
-                options: {
+                telnyxConferenceOptions: {
                   // Place caller on hold until agent joins the call
                   hold_audio_url: process.env.HOLD_AUDIO_URL,
                   start_conference_on_create: false,
@@ -581,16 +581,15 @@ class CallsController {
     to,
     direction,
     callControlId,
-    options,
+    telnyxConferenceOptions,
   }: ICreateConferenceParams) {
-    // let callLegRepository = getManager().getRepository(CallLeg);
     let conferenceRepository = getManager().getRepository(Conference);
     let { data: telnyxConference } = await telnyx.conferences.create({
       name: `Call ${
         direction === CallLegDirection.OUTGOING ? `to ${to}` : `from ${from}`
       } at ${Date.now()}`,
       call_control_id: callControlId,
-      ...options,
+      ...telnyxConferenceOptions,
     });
 
     // Save the conference in our database so that we can
