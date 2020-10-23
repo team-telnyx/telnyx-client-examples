@@ -28,6 +28,7 @@ interface ICreateCallParams {
   connectionId: string;
   clientCallState?: CallLegClientCallState;
   telnyxCallOptions?: Object;
+  appConference?: Conference;
 }
 
 interface ICreateConferenceParams {
@@ -104,7 +105,7 @@ class CallsController {
       });
 
       // Create a call leg for the agent who initiated the call
-      let appAgentCall = await CallsController.createCall({
+      await CallsController.createCall({
         to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
@@ -118,11 +119,8 @@ class CallsController {
             transferrerTelnyxCallControlId: appCall.telnyxCallControlId,
           }),
         },
+        appConference,
       });
-
-      // Add agent call to conference
-      appAgentCall.conference = appConference;
-      await callLegRepository.save(appAgentCall);
 
       // Create the outgoing call leg
       let appOutgoingCall = await CallsController.createCall({
@@ -135,11 +133,8 @@ class CallsController {
             appConferenceId: appConference.id,
           }),
         },
+        appConference,
       });
-
-      // Add outgoing call to conference
-      appOutgoingCall.conference = appConference;
-      await callLegRepository.save(appOutgoingCall);
 
       res.json({
         data: appOutgoingCall,
@@ -179,11 +174,8 @@ class CallsController {
             appConferenceId: appInviterCallLeg.conference.id,
           }),
         },
+        appConference: appInviterCallLeg.conference,
       });
-
-      // Add outgoing call to conference
-      appOutgoingCall.conference = appInviterCallLeg.conference;
-      await callLegRepository.save(appOutgoingCall);
 
       res.json({
         data: appOutgoingCall,
@@ -223,11 +215,8 @@ class CallsController {
             appConferenceId: appTransfererCallLeg.conference.id,
           }),
         },
+        appConference: appTransfererCallLeg.conference,
       });
-
-      // Add outgoing call to conference
-      appOutgoingCall.conference = appTransfererCallLeg.conference;
-      await callLegRepository.save(appOutgoingCall);
 
       // Create a new Telnyx Call in order to issue call control commands
       // to the transferer call leg
@@ -474,11 +463,8 @@ class CallsController {
                     },
                   }),
                 },
+                appConference,
               });
-
-              // Add outgoing call to conference
-              appOutgoingCall.conference = appConference;
-              await callLegRepository.save(appOutgoingCall);
             } else {
               // Handle when no agents are available to transfer the call
 
@@ -623,6 +609,7 @@ class CallsController {
     connectionId,
     clientCallState,
     telnyxCallOptions,
+    appConference,
   }: ICreateCallParams) {
     let callLegRepository = getManager().getRepository(CallLeg);
 
@@ -643,6 +630,10 @@ class CallsController {
     appOutgoingCall.clientCallState =
       clientCallState || CallLegClientCallState.DEFAULT;
     appOutgoingCall.muted = false;
+
+    if (appConference) {
+      appOutgoingCall.conference = appConference;
+    }
 
     return await callLegRepository.save(appOutgoingCall);
   };
