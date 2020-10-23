@@ -22,28 +22,6 @@ afterAll(async () => {
   await testFactory.close();
 });
 
-test('POST /actions/bridge', () =>
-  testFactory.app
-    .post('/calls/actions/bridge')
-    .send({
-      data: {
-        call_control_id: 'fake_call_control_id',
-        to: 'sip:agent3SipUsername@sip.telnyx.com',
-      },
-    })
-    .expect('Content-type', /json/)
-    .expect(200)
-    .then(() => {
-      expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: process.env.TELNYX_SIP_OB_NUMBER,
-          to: 'sip:agent3SipUsername@sip.telnyx.com',
-          connection_id: process.env.TELNYX_SIP_CONNECTION_ID,
-        })
-      );
-      expect(telnyxMock.callMock.bridge).toHaveBeenCalled();
-    }));
-
 test('POST /actions/dial', () =>
   testFactory.app
     .post('/calls/actions/dial')
