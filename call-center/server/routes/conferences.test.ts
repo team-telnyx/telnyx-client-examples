@@ -19,9 +19,9 @@ afterAll(async () => {
   await testFactory.close();
 });
 
-test('GET /:id_or_sip_address', () =>
+test('GET /:telnyx_call_control_id', () =>
   testFactory.app
-    .get('/conferences/conference1')
+    .get('/conferences/telnyxCallControlId1')
     .expect('Content-type', /json/)
     .expect(200)
     .then((resp) => {
