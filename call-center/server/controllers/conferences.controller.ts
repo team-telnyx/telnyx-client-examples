@@ -1,7 +1,6 @@
 import { Conference } from '../entities/conference.entity';
 import { Request, Response } from 'express';
 import { getManager, createQueryBuilder } from 'typeorm';
-import { CallLeg, CallLegStatus } from '../entities/callLeg.entity';
 
 class ConferencesController {
   // Find conference by call leg Call Control ID
@@ -22,6 +21,9 @@ class ConferencesController {
         )
         // Return all call legs with the conference
         .leftJoinAndSelect('conference.callLegs', 'callLegs')
+        .orderBy({
+          'callLegs.createdAt': 'ASC',
+        })
         .getOne();
 
       res.json({

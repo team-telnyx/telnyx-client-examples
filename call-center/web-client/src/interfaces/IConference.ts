@@ -4,6 +4,7 @@ export interface IConference {
   id: string;
   telnyxConferenceId: string;
   from: string;
+  to: string;
   callLegs: ICallLeg[];
 }
 
