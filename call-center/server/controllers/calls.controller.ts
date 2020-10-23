@@ -142,7 +142,7 @@ class CallsController {
       await callLegRepository.save(appOutgoingCall);
 
       res.json({
-        data: appAgentCall,
+        data: appOutgoingCall,
       });
     } catch (e) {
       console.error(e);

@@ -10,3 +10,8 @@ items:
     from: '{{phone.phoneNumber}}'
     to: '{{phone.phoneNumber}}'
     telnyxConferenceId: 'telnyxConference2'
+  conference3:
+    id: conference3
+    from: '{{phone.phoneNumber}}'
+    to: '{{phone.phoneNumber}}'
+    telnyxConferenceId: 'telnyxConference3'
