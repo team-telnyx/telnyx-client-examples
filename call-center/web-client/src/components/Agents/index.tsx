@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import IAgent from '../../interfaces/IAgent';
 import './styles.css';
 

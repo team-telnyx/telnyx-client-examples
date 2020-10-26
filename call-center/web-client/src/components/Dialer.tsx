@@ -1,9 +1,4 @@
 import React, { useState } from 'react';
-import { TelnyxRTC } from '@telnyx/webrtc';
-import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
-import { updateAgent } from '../services/agentsService';
-import ActiveCall from './ActiveCall';
-import Agents from './Agents';
 
 interface IDialer {
   dial: Function;

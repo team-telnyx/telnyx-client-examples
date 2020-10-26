@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { invite, transfer } from '../services/callsService';
 import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
@@ -140,8 +140,6 @@ function ActiveCallConference({
 }: IActiveCallConference) {
   let { agents } = useAgents(sipUsername);
   let {
-    loading: conferenceLoading,
-    error: conferenceError,
     conference,
   } = useActiveConference(telnyxCallControlId);
   let [newParticipant, setNewParticipant] = useState('');
