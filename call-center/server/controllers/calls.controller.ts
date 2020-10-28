@@ -14,10 +14,10 @@ let telnyxPackage: any = require('telnyx');
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
 enum CallControlEventType {
-  INITIATED = 'call.initiated',
-  ANSWERED = 'call.answered',
-  SPEAK_ENDED = 'call.speak.ended',
-  HANGUP = 'call.hangup',
+  CALL_INITIATED = 'call.initiated',
+  CALL_ANSWERED = 'call.answered',
+  CALL_SPEAK_ENDED = 'call.speak.ended',
+  CALL_HANGUP = 'call.hangup',
   CONFERENCE_PARTICIPANT_JOINED = 'conference.participant.joined',
 }
 
@@ -394,16 +394,12 @@ class CallsController {
 
       console.log('=== clientState ===', clientState);
 
-      if (eventType === CallControlEventType.INITIATED) {
-        let isNewIncomingCall =
-          direction === 'incoming' &&
-          state === 'parked' &&
-          !client_state &&
-          // IDEA Create a separate phone number or webhook to handle
-          // routing calls instead of checking to/from in CC event
-          !(from === process.env.TELNYX_SIP_OB_NUMBER && to === from);
-
-        if (isNewIncomingCall) {
+      if (eventType === CallControlEventType.CALL_INITIATED) {
+        // IDEA Specify a different webhook URL for all subsequent calls,
+        // so that we don't need to check whether this is the start of
+        // the call flow for a call coming into our call center application
+        // for the very first time
+        if (CallsController.isStartOfIncomingCallFlow(eventPayload)) {
           await CallsController.answerIncomingParkedCall(eventPayload);
 
           // Find the first available agent and transfer the call to them.
@@ -423,7 +419,7 @@ class CallsController {
             await CallsController.speakNoAvailableAgents(eventPayload);
           }
         }
-      } else if (eventType === CallControlEventType.ANSWERED) {
+      } else if (eventType === CallControlEventType.CALL_ANSWERED) {
         // Handle a call answered from a call center dial
 
         if (
@@ -432,7 +428,7 @@ class CallsController {
         ) {
           await CallsController.joinConference(eventPayload);
         }
-      } else if (eventType === CallControlEventType.SPEAK_ENDED) {
+      } else if (eventType === CallControlEventType.CALL_SPEAK_ENDED) {
         if (clientState.appCallState === 'speak_no_available_agents') {
           await CallsController.hangupCall(eventPayload);
         }
@@ -440,7 +436,7 @@ class CallsController {
         eventType === CallControlEventType.CONFERENCE_PARTICIPANT_JOINED
       ) {
         await CallsController.markCallActive(eventPayload);
-      } else if (eventType === CallControlEventType.HANGUP) {
+      } else if (eventType === CallControlEventType.CALL_HANGUP) {
         await CallsController.markCallInactive(eventPayload);
       }
     } catch (e) {
@@ -455,6 +451,20 @@ class CallsController {
 
     res.json({});
   };
+
+  private static isStartOfIncomingCallFlow(
+    eventPayload: ICallControlEventPayload
+  ) {
+    return (
+      eventPayload.direction === 'incoming' &&
+      eventPayload.state === 'parked' &&
+      !eventPayload.client_state &&
+      !(
+        eventPayload.from === process.env.TELNYX_SIP_OB_NUMBER &&
+        eventPayload.to === eventPayload.from
+      )
+    );
+  }
 
   private static async answerIncomingParkedCall(
     eventPayload: ICallControlEventPayload
