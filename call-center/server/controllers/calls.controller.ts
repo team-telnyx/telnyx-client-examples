@@ -13,6 +13,14 @@ import { format } from 'path';
 let telnyxPackage: any = require('telnyx');
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
+enum CallControlEventType {
+  INITIATED = 'call.initiated',
+  ANSWERED = 'call.answered',
+  SPEAK_ENDED = 'call.speak.ended',
+  HANGUP = 'call.hangup',
+  CONFERENCE_PARTICIPANT_JOINED = 'conference.participant.joined',
+}
+
 interface ICallControlEventPayload {
   state: string;
   call_control_id: string;
@@ -24,7 +32,7 @@ interface ICallControlEventPayload {
 }
 
 interface ICallControlEvent {
-  event_type: string;
+  event_type: CallControlEventType;
   payload: ICallControlEventPayload;
 }
 
@@ -378,100 +386,62 @@ class CallsController {
 
     try {
       let event: ICallControlEvent = req.body.data;
-      let eventPayload = event.payload;
+      let { event_type: eventType, payload: eventPayload } = event;
 
-      let {
-        state,
-        client_state,
-        call_control_id,
-        connection_id,
-        from,
-        to,
-        direction,
-      } = eventPayload;
+      let { state, client_state, from, to, direction } = eventPayload;
 
       let clientState = decodeClientState(client_state);
 
       console.log('=== clientState ===', clientState);
 
-      let callLegRepository = getManager().getRepository(CallLeg);
+      if (eventType === CallControlEventType.INITIATED) {
+        let isNewIncomingCall =
+          direction === 'incoming' &&
+          state === 'parked' &&
+          !client_state &&
+          // IDEA Create a separate phone number or webhook to handle
+          // routing calls instead of checking to/from in CC event
+          !(from === process.env.TELNYX_SIP_OB_NUMBER && to === from);
 
-      // Create a new Telnyx Call in order to issue call control commands
-      let telnyxCall = new telnyx.Call({
-        call_control_id,
-      });
+        if (isNewIncomingCall) {
+          await CallsController.answerIncomingParkedCall(eventPayload);
 
-      switch (event.event_type) {
-        case 'call.initiated': {
-          /*
-           * Only answering parked calls because we also get the call.initiated
-           * event for the second leg of the call
-           */
-          if (
-            direction === 'incoming' &&
-            state === 'parked' &&
-            !client_state &&
-            // IDEA Create a separate phone number or webhook to handle
-            // routing calls instead of checking to/from in CC event
-            !(from === process.env.TELNYX_SIP_OB_NUMBER && to === from)
-          ) {
-            await CallsController.answerIncomingParkedCall(eventPayload);
+          // Find the first available agent and transfer the call to them.
+          // You may want more complex functionality here, such as transferring
+          // the call to multiple available agents and then assigning the call
+          // to the first agent who answers.
+          let availableAgent = await CallsController.getAvailableAgent();
 
-            // Find the first available agent and transfer the call to them.
-            // You may want more complex functionality here, such as transferring
-            // the call to multiple available agents and then assigning the call
-            // to the first agent who answers.
-            let availableAgent = await CallsController.getAvailableAgent();
+          if (availableAgent) {
+            await CallsController.startConferenceWithAgent(
+              eventPayload,
+              availableAgent
+            );
+          } else {
+            // Handle when no agents are available to transfer the call
 
-            if (availableAgent) {
-              await CallsController.startConferenceWithAgent(
-                eventPayload,
-                availableAgent
-              );
-            } else {
-              // Handle when no agents are available to transfer the call
-
-              await CallsController.speakNoAvailableAgents(eventPayload);
-            }
+            await CallsController.speakNoAvailableAgents(eventPayload);
           }
-          break;
         }
+      } else if (eventType === CallControlEventType.ANSWERED) {
+        // Handle a call answered from a call center dial
 
-        case 'call.answered': {
-          // Handle a call answered from a call center dial
-
-          if (
-            clientState.appCallState === 'join_conference' &&
-            clientState.appConferenceId
-          ) {
-            await CallsController.joinConference(eventPayload);
-          }
-
-          break;
+        if (
+          clientState.appCallState === 'join_conference' &&
+          clientState.appConferenceId
+        ) {
+          await CallsController.joinConference(eventPayload);
         }
-
-        case 'call.speak.ended': {
-          if (clientState.appCallState === 'speak_no_available_agents') {
-            await CallsController.hangupCall(eventPayload);
-          }
-
-          break;
+      } else if (eventType === CallControlEventType.SPEAK_ENDED) {
+        if (clientState.appCallState === 'speak_no_available_agents') {
+          await CallsController.hangupCall(eventPayload);
         }
-
-        case 'conference.participant.joined': {
-          await CallsController.markCallActive(eventPayload);
-
-          break;
-        }
-
-        case 'call.hangup': {
-          await CallsController.markCallInactive(eventPayload);
-
-          break;
-        }
-
-        default:
-          break;
+      } else if (
+        eventType === CallControlEventType.CONFERENCE_PARTICIPANT_JOINED
+      ) {
+        await CallsController.markCallActive(eventPayload);
+      } else if (eventType === CallControlEventType.HANGUP) {
+        await CallsController.markCallInactive(eventPayload);
       }
     } catch (e) {
       console.error(e);
