@@ -395,7 +395,6 @@ class CallsController {
       console.log('=== clientState ===', clientState);
 
       let callLegRepository = getManager().getRepository(CallLeg);
-      let conferenceRepository = getManager().getRepository(Conference);
 
       // Create a new Telnyx Call in order to issue call control commands
       let telnyxCall = new telnyx.Call({
@@ -445,29 +444,7 @@ class CallsController {
             clientState.appCallState === 'join_conference' &&
             clientState.appConferenceId
           ) {
-            let appConference = await conferenceRepository.findOneOrFail(
-              clientState.appConferenceId
-            );
-
-            // Join the conference with the original caller
-            let telnyxConference = await new telnyx.Conference({
-              id: appConference.telnyxConferenceId,
-            });
-
-            await telnyxConference.join({
-              call_control_id,
-              ...clientState.appConferenceOptions,
-            });
-          }
-
-          // Check if we should hang up the conference creator
-          // after joining the conference
-          if (clientState.transferrerTelnyxCallControlId) {
-            let telnyxCall = new telnyx.Call({
-              call_control_id: clientState.transferrerTelnyxCallControlId,
-            });
-
-            await telnyxCall.hangup();
+            await CallsController.joinConference(eventPayload);
           }
 
           break;
@@ -606,7 +583,7 @@ class CallsController {
     });
   }
 
-  private static speakNoAvailableAgents(
+  private static async speakNoAvailableAgents(
     eventPayload: ICallControlEventPayload
   ) {
     // Create a new Telnyx Call in order to issue call control commands
@@ -614,7 +591,7 @@ class CallsController {
       call_control_id: eventPayload.call_control_id,
     });
 
-    return telnyxCall.speak({
+    await telnyxCall.speak({
       // All following fields are required:
       language: 'en-US',
       payload: 'Sorry, there are no agents available to take your call.',
@@ -626,6 +603,36 @@ class CallsController {
         appCallState: 'speak_no_available_agents',
       }),
     });
+  }
+
+  private static async joinConference(eventPayload: ICallControlEventPayload) {
+    let clientState = decodeClientState(eventPayload.client_state);
+
+    // Access database repository to perform database operations
+    let conferenceRepository = getManager().getRepository(Conference);
+    let appConference = await conferenceRepository.findOneOrFail(
+      clientState.appConferenceId
+    );
+
+    // Join the conference with the original caller
+    let telnyxConference = await new telnyx.Conference({
+      id: appConference.telnyxConferenceId,
+    });
+
+    await telnyxConference.join({
+      call_control_id: eventPayload.call_control_id,
+      ...clientState.appConferenceOptions,
+    });
+
+    // Check if we should hang up the conference creator
+    // after joining the conference
+    if (clientState.transferrerTelnyxCallControlId) {
+      let telnyxCall = new telnyx.Call({
+        call_control_id: clientState.transferrerTelnyxCallControlId,
+      });
+
+      await telnyxCall.hangup();
+    }
   }
 
   private static createConference = async function ({
