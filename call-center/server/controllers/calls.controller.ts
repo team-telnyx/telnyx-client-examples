@@ -459,31 +459,13 @@ class CallsController {
         }
 
         case 'conference.participant.joined': {
-          try {
-            // Mark call as active in our DB
-            let appCall = await callLegRepository.findOneOrFail({
-              telnyxCallControlId: call_control_id,
-            });
-            appCall.status = CallLegStatus.ACTIVE;
-            callLegRepository.save(appCall);
-          } catch (e) {
-            console.error(e);
-          }
+          await CallsController.markCallActive(eventPayload);
 
           break;
         }
 
         case 'call.hangup': {
-          try {
-            // Find the leg that hung up, and save it as inactive
-            let appCall = await callLegRepository.findOneOrFail({
-              telnyxCallControlId: call_control_id?.toString(),
-            });
-            appCall.status = CallLegStatus.INACTIVE;
-            callLegRepository.save(appCall);
-          } catch (e) {
-            console.error(e);
-          }
+          await CallsController.markCallInactive(eventPayload);
 
           break;
         }
@@ -642,6 +624,31 @@ class CallsController {
     });
 
     await telnyxCall.hangup();
+  }
+
+  private static async markCallActive(eventPayload: ICallControlEventPayload) {
+    // Access database repository to perform database operations
+    let callLegRepository = getManager().getRepository(CallLeg);
+
+    let appCall = await callLegRepository.findOneOrFail({
+      telnyxCallControlId: eventPayload.call_control_id,
+    });
+    appCall.status = CallLegStatus.ACTIVE;
+    await callLegRepository.save(appCall);
+  }
+
+  private static async markCallInactive(
+    eventPayload: ICallControlEventPayload
+  ) {
+    // Access database repository to perform database operations
+    let callLegRepository = getManager().getRepository(CallLeg);
+
+    // Mark call as active in our DB
+    let appCall = await callLegRepository.findOneOrFail({
+      telnyxCallControlId: eventPayload.call_control_id,
+    });
+    appCall.status = CallLegStatus.INACTIVE;
+    await callLegRepository.save(appCall);
   }
 
   private static createConference = async function ({
