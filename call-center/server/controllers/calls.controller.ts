@@ -452,7 +452,7 @@ class CallsController {
 
         case 'call.speak.ended': {
           if (clientState.appCallState === 'speak_no_available_agents') {
-            await telnyxCall.hangup();
+            await CallsController.hangupCall(eventPayload);
           }
 
           break;
@@ -633,6 +633,15 @@ class CallsController {
 
       await telnyxCall.hangup();
     }
+  }
+
+  private static async hangupCall(eventPayload: ICallControlEventPayload) {
+    // Create a new Telnyx Call in order to issue call control commands
+    let telnyxCall = new telnyx.Call({
+      call_control_id: eventPayload.call_control_id,
+    });
+
+    await telnyxCall.hangup();
   }
 
   private static createConference = async function ({
