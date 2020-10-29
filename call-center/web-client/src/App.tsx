@@ -14,7 +14,6 @@ interface ISessionStorageUser {
 }
 
 function App() {
-  console.log('process.env.REACT_APP_SIP_DOMAIN',process.env.REACT_APP_SIP_DOMAIN)
   const [sessionStorageUser, setSessionStorageUser] = useSessionStorage<
     ISessionStorageUser
   >('call_center_user', {});
