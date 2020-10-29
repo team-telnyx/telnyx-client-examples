@@ -610,11 +610,19 @@ class CallsController {
     // Access database repository to perform database operations
     let callLegRepository = getManager().getRepository(CallLeg);
 
-    let appCall = await callLegRepository.findOneOrFail({
+    let appCall = await callLegRepository.findOne({
       telnyxCallControlId: eventPayload.call_control_id,
+      status: CallLegStatus.NEW,
     });
-    appCall.status = CallLegStatus.ACTIVE;
-    await callLegRepository.save(appCall);
+
+    if (appCall) {
+      appCall.status = CallLegStatus.ACTIVE;
+      await callLegRepository.save(appCall);
+    } else {
+      console.log(
+        `Warning, no call leg with telnyxCallControlId ${eventPayload.call_control_id} found`
+      );
+    }
   }
 
   private static async markCallInactive(
@@ -623,12 +631,19 @@ class CallsController {
     // Access database repository to perform database operations
     let callLegRepository = getManager().getRepository(CallLeg);
 
-    // Mark call as active in our DB
-    let appCall = await callLegRepository.findOneOrFail({
+    let appCall = await callLegRepository.findOne({
       telnyxCallControlId: eventPayload.call_control_id,
+      status: CallLegStatus.ACTIVE,
     });
-    appCall.status = CallLegStatus.INACTIVE;
-    await callLegRepository.save(appCall);
+
+    if (appCall) {
+      appCall.status = CallLegStatus.INACTIVE;
+      await callLegRepository.save(appCall);
+    } else {
+      console.log(
+        `Warning, no call leg with telnyxCallControlId ${eventPayload.call_control_id} found`
+      );
+    }
   }
 
   private static createConference = async function ({
