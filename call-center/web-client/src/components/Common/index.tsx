@@ -148,7 +148,7 @@ function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
 
       setDialingDestination(destination);
 
-      callsService.dial(dialParams);
+      return callsService.dial(dialParams);
     },
     [telnyxClientRef.current]
   );
