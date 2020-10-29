@@ -217,10 +217,10 @@ function ActiveCallConference({
           let agent = agents?.find((agent) =>
             participant.includes(agent.sipUsername)
           );
-
+         
           if (agent) {
             conferenceParticipant.displayName = agent.name || agent.sipUsername;
-            conferenceParticipant.participant = `sip:${agent.sipUsername}@sip.telnyx.com`;
+            conferenceParticipant.participant = `sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`;
           }
 
           return conferenceParticipant;

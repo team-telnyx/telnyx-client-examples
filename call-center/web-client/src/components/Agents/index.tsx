@@ -11,13 +11,13 @@ interface IAgents {
 export default function Agents({ agents, addToCall, transferCall }: IAgents) {
   function addAgent(agent: IAgent) {
     if (addToCall) {
-      return addToCall(`sip:${agent.sipUsername}@sip.telnyx.com`);
+      return addToCall(`sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`);
     }
   }
 
   function transferToAgent(agent: IAgent) {
     if (transferCall) {
-      return transferCall(`sip:${agent.sipUsername}@sip.telnyx.com`);
+      return transferCall(`sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`);
     }
   }
 
