@@ -86,7 +86,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -167,7 +167,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -208,7 +208,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -258,7 +258,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -299,7 +299,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -340,7 +340,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -374,7 +374,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
