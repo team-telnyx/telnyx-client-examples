@@ -332,7 +332,6 @@ function ActiveCallConference({
 function ActiveCall({
   telnyxCallControlId,
   sipUsername,
-  callDirection,
   callDestination,
   callerId,
   callState,
