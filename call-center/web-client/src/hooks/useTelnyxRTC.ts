@@ -5,8 +5,8 @@ import IPartialWebRTCCall from '../interfaces/IPartialWebRTCCall';
 import { updateAgent } from '../services/agentsService';
 
 function useTelnyxRTC(
-  agentId: string,
-  token: string,
+  agentId: string | undefined,
+  token: string | undefined,
   clearDialingDestination: any
 ) {
   // Check if component is mounted before updating state
@@ -27,6 +27,10 @@ function useTelnyxRTC(
 
   useEffect(() => {
     isMountedRef.current = true;
+
+    if (!token || !agentId) {
+      return;
+    }
 
     const telnyxClient = new TelnyxRTC({
       login_token: token,

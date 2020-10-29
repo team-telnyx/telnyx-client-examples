@@ -3,7 +3,7 @@ import { getLoggedInAgents } from '../services/agentsService';
 import IAgent from '../interfaces/IAgent';
 import useInterval from '../hooks/useInterval';
 
-function useAgents(sipUsername: string) {
+function useAgents(sipUsername: string | undefined) {
   let [loading, setLoading] = useState<boolean>(true);
   let [error, setError] = useState<string | undefined>();
   let [agents, setAgents] = useState<IAgent[] | undefined>();

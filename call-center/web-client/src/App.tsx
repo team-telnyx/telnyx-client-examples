@@ -1,11 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import './App.css';
 import Login from './components/Login';
-import Common from './components/Common';
 import { logout } from './services/loginService';
 import { getAgent } from './services/agentsService';
 import { IAgent, ILoggedInAgent } from './interfaces/IAgent';
 import useSessionStorage from './hooks/useSessionStorage';
+
+import * as callsService from './services/callsService';
+import useAgents from './hooks/useAgents';
+import ActiveCall from './components/ActiveCall';
+import Agents from './components/Agents';
+import Dialer from './components/Dialer';
+import LoadingIcon from './components/LoadingIcon';
+import useTelnyxRTC from './hooks/useTelnyxRTC';
 
 interface ISessionStorageUser {
   id?: string;
@@ -20,6 +27,32 @@ function App() {
 
   const [agent, setAgent] = useState<IAgent | undefined>(undefined);
   const [error, setError] = useState<string>('');
+
+  let audioRef = useRef<HTMLAudioElement>(null);
+
+  let [dialingDestination, setDialingDestination] = useState<string | null>();
+
+  let { telnyxClientRef, webRTCall, webRTCClientState } = useTelnyxRTC(
+    agent?.id,
+    sessionStorageUser?.token,
+    setDialingDestination
+  );
+
+  let agentsState = useAgents(agent?.sipUsername);
+
+  const dial = useCallback(
+    (destination) => {
+      let dialParams = {
+        initiatorSipUsername: agent?.sipUsername,
+        to: destination,
+      };
+
+      setDialingDestination(destination);
+
+      callsService.dial(dialParams);
+    },
+    [telnyxClientRef.current]
+  );
 
   const handleLogin = async (loggedInAgent: ILoggedInAgent) => {
     const { token, ...agentProps } = loggedInAgent;
@@ -69,6 +102,11 @@ function App() {
     }
   }, []);
 
+  // Set up remote stream to hear audio from incoming calls
+  if (audioRef.current && webRTCall && webRTCall.remoteStream) {
+    audioRef.current.srcObject = webRTCall.remoteStream;
+  }
+
   return (
     <main className="App">
       {!agent || !sessionStorageUser.token ? (
@@ -82,12 +120,61 @@ function App() {
             </header>
           </div>
           <div className="App-main-content">
-            <Common
-              agentId={agent.id}
-              agentSipUsername={agent.sipUsername}
-              agentName={agent.name}
-              token={sessionStorageUser.token}
-            ></Common>
+            <div>
+              <section
+                className="App-section App-marginTop--small"
+                style={{ textAlign: 'center' }}
+              >
+                WebRTC status: {webRTCClientState}
+              </section>
+
+              <audio
+                ref={audioRef}
+                autoPlay
+                controls={false}
+                aria-label="Active call"
+              />
+
+              {webRTCall && (
+                <ActiveCall
+                  telnyxCallControlId={webRTCall.options.telnyxCallControlId}
+                  sipUsername={agent.sipUsername}
+                  callDirection={webRTCall.direction}
+                  callDestination={
+                    dialingDestination || webRTCall.options.destinationNumber
+                  }
+                  isDialing={Boolean(dialingDestination)}
+                  callerId={
+                    webRTCall.options.remoteCallerName ||
+                    webRTCall.options.remoteCallerNumber
+                  }
+                  callState={webRTCall.state}
+                  answer={webRTCall.answer}
+                  hangup={webRTCall.hangup}
+                />
+              )}
+
+              {!webRTCall && (
+                <div>
+                  <section className="App-section">
+                    <Dialer dial={dial} />
+                  </section>
+
+                  <section className="App-section App-marginTop--big">
+                    <h2 className="App-headline">
+                      Other available agents{' '}
+                      {agentsState.loading && <LoadingIcon />}
+                    </h2>
+
+                    {agentsState.error && (
+                      <p className="App-error">Error: {agentsState.error}</p>
+                    )}
+
+                    <Agents agents={agentsState.agents} />
+                  </section>
+                </div>
+              )}
+            </div>
           </div>
           <footer className="App-content">
             <button
