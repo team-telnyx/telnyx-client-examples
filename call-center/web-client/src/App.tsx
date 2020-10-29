@@ -13,12 +13,7 @@ import Agents from './components/Agents';
 import Dialer from './components/Dialer';
 import LoadingIcon from './components/LoadingIcon';
 import useTelnyxRTC from './hooks/useTelnyxRTC';
-
-interface ISessionStorageUser {
-  id?: string;
-  name?: string;
-  token?: string;
-}
+import ISessionStorageUser from './interfaces/ISessionStorageUser';
 
 function App() {
   const [sessionStorageUser, setSessionStorageUser] = useSessionStorage<

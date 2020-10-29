@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-
-interface IDialer {
-  dial: Function;
-}
+import IDialer from '../interfaces/IDialer';
 
 function Dialer({ dial }: IDialer) {
   let [destination, setDestination] = useState('');
