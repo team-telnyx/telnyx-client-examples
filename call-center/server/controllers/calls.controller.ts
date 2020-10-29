@@ -654,7 +654,7 @@ class CallsController {
     appConference.from = from;
     appConference.to = to;
 
-    return await conferenceRepository.save(appConference);
+    return conferenceRepository.save(appConference);
   };
 
   private static createCall = async function ({
@@ -689,7 +689,7 @@ class CallsController {
       appOutgoingCall.conference = appConference;
     }
 
-    return await callLegRepository.save(appOutgoingCall);
+    return callLegRepository.save(appOutgoingCall);
   };
 
   private static getAvailableAgent = async function () {
