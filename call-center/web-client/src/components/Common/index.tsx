@@ -7,30 +7,9 @@ import ActiveCall from '../ActiveCall';
 import Agents from '../Agents';
 import Dialer from '../Dialer';
 import LoadingIcon from '../LoadingIcon';
+import ICommon from '../../interfaces/ICommon';
+import IPartialWebRTCCall from '../../interfaces/IPartialWebRTCCall';
 
-interface ICommon {
-  agentId: string;
-  agentSipUsername: string;
-  agentName: string;
-  // User's WebRTC JWT
-  token: string;
-}
-
-interface IPartialWebRTCCall {
-  state: string;
-  direction: 'inbound' | 'outbound';
-  options: {
-    remoteCallerName: string;
-    remoteCallerNumber: string;
-    destinationNumber: string;
-    telnyxCallControlId: string;
-  };
-  answer: Function;
-  hangup: Function;
-  remoteStream?: MediaStream;
-  muteAudio: Function;
-  unmuteAudio: Function;
-}
 
 function Common({ agentId, agentSipUsername, agentName, token }: ICommon) {
   // Save the Telnyx WebRTC client as a ref as to persist
