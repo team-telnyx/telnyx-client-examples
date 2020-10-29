@@ -101,7 +101,7 @@ class CallsController {
       // Create a call leg back into our call center
       // IDEA Create a separate phone number or webhook to handle
       // routing calls instead of checking to/from in CC event
-      let appCall = await CallsController.createCall({
+      let appIncomingCall = await CallsController.createCall({
         to: process.env.TELNYX_SIP_OB_NUMBER!,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
@@ -112,19 +112,33 @@ class CallsController {
         },
       });
 
-      let telnyxCall = new telnyx.Call({
-        call_control_id: appCall.telnyxCallControlId,
+      let telnyxIncomingCall = new telnyx.Call({
+        call_control_id: appIncomingCall.telnyxCallControlId,
       });
 
       // NOTE Call must be answered before creating a conference
-      await telnyxCall.answer();
+      await telnyxIncomingCall.answer();
 
       // Create a conference
       let appConference = await CallsController.createConference({
         to,
         from: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         direction: CallLegDirection.OUTGOING,
-        callControlId: appCall.telnyxCallControlId,
+        callControlId: appIncomingCall.telnyxCallControlId,
+      });
+
+      // Create the outgoing call leg
+      let appOutgoingCall = await CallsController.createCall({
+        to,
+        from,
+        connectionId: process.env.TELNYX_CC_APP_ID!,
+        telnyxCallOptions: {
+          client_state: encodeClientState({
+            appCallState: 'join_conference',
+            appConferenceId: appConference.id,
+          }),
+        },
+        appConference,
       });
 
       // Create a call leg for the agent who initiated the call
@@ -139,21 +153,7 @@ class CallsController {
             appConferenceId: appConference.id,
             // Specify that we should hang up on the call center call leg
             // after joining the conference
-            transferrerTelnyxCallControlId: appCall.telnyxCallControlId,
-          }),
-        },
-        appConference,
-      });
-
-      // Create the outgoing call leg
-      let appOutgoingCall = await CallsController.createCall({
-        to,
-        from,
-        connectionId: process.env.TELNYX_CC_APP_ID!,
-        telnyxCallOptions: {
-          client_state: encodeClientState({
-            appCallState: 'join_conference',
-            appConferenceId: appConference.id,
+            transferrerTelnyxCallControlId: appIncomingCall.telnyxCallControlId,
           }),
         },
         appConference,
