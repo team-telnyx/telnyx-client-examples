@@ -1,23 +1,23 @@
 import React from 'react';
+import IAgents from '../../interfaces/IAgents';
 import IAgent from '../../interfaces/IAgent';
-import './styles.css';
 
-interface IAgents {
-  agents?: IAgent[];
-  addToCall?: Function;
-  transferCall?: Function;
-}
+import './styles.css';
 
 export default function Agents({ agents, addToCall, transferCall }: IAgents) {
   function addAgent(agent: IAgent) {
     if (addToCall) {
-      return addToCall(`sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`);
+      return addToCall(
+        `sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`
+      );
     }
   }
 
   function transferToAgent(agent: IAgent) {
     if (transferCall) {
-      return transferCall(`sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`);
+      return transferCall(
+        `sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`
+      );
     }
   }
 

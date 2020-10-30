@@ -1,22 +1,10 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import ICallLeg from '../interfaces/ICallLeg';
 import { BASE_URL } from '../configs/constants';
-
-interface IFindManyParams {
-  limit: number;
-}
-
-interface IActiveCallActionParams {
-  telnyxCallControlId: string;
-}
-
-interface ICallActionsParams {
-  to: string;
-}
-
-interface IConferenceActionsResponse {
-  data: ICallLeg;
-}
+import IFindManyParams from '../interfaces/IFindManyParams';
+import ICallActionsParams from '../interfaces/ICallActionsParams';
+import IActiveCallActionParams from '../interfaces/IActiveCallActionParams';
+import IConferenceActionsResponse from '../interfaces/IConferenceActionsResponse';
 
 export const getCall = async (
   params: Partial<ICallLeg & IFindManyParams>

@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-
-interface IDialer {
-  dial: Function;
-}
+import IDialer from '../interfaces/IDialer';
 
 function Dialer({ dial }: IDialer) {
   let [destination, setDestination] = useState('');
@@ -19,11 +16,12 @@ function Dialer({ dial }: IDialer) {
 
     setServerError('');
 
-    dial(destination).catch((err: any) => {
+    try {
+      dial(destination);
+    } catch (err) {
       console.error(err);
-
       setServerError(err.response?.data?.error || err.message);
-    });
+    }
   };
 
   return (

@@ -37,6 +37,7 @@
 .ActiveCall-participant-row {
   display: grid;
   grid-template-columns: 1fr max-content;
+  grid-column-gap: 10px;
   margin-bottom: 5px;
   align-items: center;
 }
@@ -44,6 +45,7 @@
 .ActiveCall-participant {
   font-size: 30px;
   font-weight: bold;
+  display: flex;
 }
 
 .ActiveCall-participant--inactive {
@@ -54,4 +56,9 @@
   display: inline-block;
   margin-right: 1rem;
   color: #62cbff;
+}
+
+.ActiveCall-participant-name {
+  max-width: 490px;
+  overflow: hidden;
 }

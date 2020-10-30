@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { invite, transfer } from '../services/callsService';
-import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
 import './ActiveCall.css';
 import useAgents from '../hooks/useAgents';
@@ -20,40 +19,10 @@ import {
   CallLegClientCallState,
 } from '../interfaces/ICallLeg';
 
-interface IActiveCall {
-  telnyxCallControlId: string;
-  sipUsername: string;
-  callDirection: string;
-  callDestination: string;
-  callerId: string;
-  // FIXME `IWebRTCCall.state` needs to be updated to be `State`
-  // callState: State;
-  callState: string;
-  isDialing: boolean;
-  answer: Function;
-  hangup: Function;
-}
-
-interface IActiveCallConference {
-  telnyxCallControlId: string;
-  sipUsername: string;
-  callerId: string;
-  agents?: IAgent[];
-}
-
-interface IConferenceParticipant {
-  status: CallLegStatus;
-  displayName: string;
-  muted?: boolean;
-  participantTelnyxCallControlId: string;
-  participant: string;
-}
-
-interface IMuteUnmuteButton {
-  isMuted?: boolean;
-  mute: () => void;
-  unmute: () => void;
-}
+import IActiveCallConference from '../interfaces/IActiveCallConference';
+import IMuteUnmuteButton from '../interfaces/IMuteUnmuteButton';
+import IConferenceParticipant from '../interfaces/IConferenceParticipant';
+import IActiveCall from '../interfaces/IActiveCall';
 
 function getCall(telnyxCallControlId: string) {
   return appGetCall({
@@ -139,9 +108,7 @@ function ActiveCallConference({
   sipUsername,
 }: IActiveCallConference) {
   let { agents } = useAgents(sipUsername);
-  let {
-    conference,
-  } = useActiveConference(telnyxCallControlId);
+  let { conference } = useActiveConference(telnyxCallControlId);
   let [newParticipant, setNewParticipant] = useState('');
 
   const handleChangeDestination = (
@@ -217,7 +184,7 @@ function ActiveCallConference({
           let agent = agents?.find((agent) =>
             participant.includes(agent.sipUsername)
           );
-         
+
           if (agent) {
             conferenceParticipant.displayName = agent.name || agent.sipUsername;
             conferenceParticipant.participant = `sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`;

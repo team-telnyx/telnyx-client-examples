@@ -2,12 +2,7 @@ import React, { FormEvent, useState } from 'react';
 import './Login.css';
 import { AxiosError } from 'axios';
 import { login } from '../services/loginService';
-import { IAgent } from '../interfaces/IAgent';
-
-interface ILogin {
-  agent: IAgent | undefined;
-  onLogin: Function;
-}
+import ILogin from '../interfaces/ILogin';
 
 function Login({ agent, onLogin }: ILogin) {
   const [agentName, setAgentName] = useState('');
