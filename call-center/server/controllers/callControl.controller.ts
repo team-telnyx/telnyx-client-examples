@@ -1,3 +1,13 @@
+/*
+ * Manage calls programmatically using Telnyx Call Control + Conferences
+ *
+ * Note on variable naming: Calls and conferences in the app server database
+ * are prefixed with `app`, ex: `appCall` or `appIncomingCall`. Calls and
+ * conference objects returned by the Telnyx Call Control SDK are prefixed
+ * with `telnyx`, ex: `telnyxConference`.
+ *
+ * To set up Call Control: https://developers.telnyx.com/docs/v2/call-control/quickstart
+ */
 import { Request, Response } from 'express';
 import { getRepository } from 'typeorm';
 import {
@@ -8,61 +18,30 @@ import {
 } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import { Agent } from '../entities/agent.entity';
+import {
+  CallControlEventType,
+  ICallControlEventPayload,
+  ICallControlEvent,
+} from '../interfaces/ICallControlEvent';
 
 let telnyxPackage: any = require('telnyx');
+// Initialize the Telnyx package with your API key when your app
+// starts up. Find your key here: https://portal.telnyx.com/#/app/api-keys
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
-enum CallControlEventType {
-  CALL_INITIATED = 'call.initiated',
-  CALL_ANSWERED = 'call.answered',
-  CALL_SPEAK_ENDED = 'call.speak.ended',
-  CALL_HANGUP = 'call.hangup',
-  CONFERENCE_PARTICIPANT_JOINED = 'conference.participant.joined',
-}
-
-interface ICallControlEventPayload {
-  state: string;
-  call_control_id: string;
-  connection_id: string;
-  from: string;
-  to: string;
-  direction: string;
-  client_state?: string;
-}
-
-interface ICallControlEvent {
-  event_type: CallControlEventType;
-  payload: ICallControlEventPayload;
-}
-
 interface IClientState {
-  // Define your own call states to direct the flow of the call
-  // through your application
+  // Define your own call states with `appCallState` to direct
+  // the flow of the call through your application
   appCallState?: string;
   appConferenceId?: string;
   appConferenceOptions?: object;
   transferrerTelnyxCallControlId?: string;
 }
 
-interface ICreateCallParams {
-  from: string;
-  to: string;
-  connectionId: string;
-  clientCallState?: CallLegClientCallState;
-  telnyxCallOptions?: Object;
-  appConference?: Conference;
-}
-
-interface ICreateConferenceParams {
-  from: string;
-  to: string;
-  direction: string;
-  callControlId: string;
-  telnyxConferenceOptions?: Object;
-}
-
 class CallControlController {
-  // Initiate an outgoing call
+  /*
+   * Creates a conference and invites the specified destination
+   */
   public static dial = async function (req: Request, res: Response) {
     let { initiatorSipUsername, to } = req.body;
 
@@ -142,7 +121,9 @@ class CallControlController {
     }
   };
 
-  // Invite an agent or phone number to join another agent's conference call
+  /*
+   * Adds someone to an existing conference call
+   */
   public static invite = async function (req: Request, res: Response) {
     let { to, telnyxCallControlId } = req.body;
 
@@ -183,7 +164,9 @@ class CallControlController {
     }
   };
 
-  // Transfer the call to an agent or phone number to join
+  /*
+   * Transfers the call specified destination
+   */
   public static transfer = async function (req: Request, res: Response) {
     let { to, telnyxCallControlId } = req.body;
 
@@ -233,8 +216,9 @@ class CallControlController {
     }
   };
 
-  // Mute a call
-  // NOTE call must be active participant in a conference
+  /*
+   * Mutes an active call in a conference
+   */
   public static mute = async function (req: Request, res: Response) {
     let { telnyxCallControlId } = req.body;
 
@@ -274,8 +258,9 @@ class CallControlController {
     }
   };
 
-  // Unmute a call
-  // NOTE call must be active participant in a conference
+  /*
+   * Unmutes an active call in a conference
+   */
   public static unmute = async function (req: Request, res: Response) {
     let { telnyxCallControlId } = req.body;
 
@@ -315,8 +300,10 @@ class CallControlController {
     }
   };
 
-  // Hang up a call by the specified destination, e.g. to remove a number
-  // from a conference call
+  /*
+   * Hangs up a call by the specified destination, e.g. to remove someone
+   * from a conference call
+   */
   public static hangup = async function (req: Request, res: Response) {
     let { telnyxCallControlId } = req.body;
 
@@ -350,7 +337,9 @@ class CallControlController {
   };
 
   /*
-   * Directs the call flow based on the Call Control event type
+   * Webhook callback that directs the call flow
+   *
+   * https://developers.telnyx.com/docs/v2/call-control/receiving-webhooks
    */
   public static callControl = async function (req: Request, res: Response) {
     console.log('\n\n/callbacks | req body', req.body);
@@ -369,7 +358,7 @@ class CallControlController {
         // the call flow for a call coming into our call center application
         // for the very first time
         if (CallControlController.isStartOfIncomingCallFlow(eventPayload)) {
-          await CallControlController.answerIncomingParkedCall(eventPayload);
+          await CallControlController.answerStartOfIncomingCall(eventPayload);
 
           // Find the first available agent and transfer the call to them.
           // You may want more complex functionality here, such as transferring
@@ -421,6 +410,14 @@ class CallControlController {
     res.json({});
   };
 
+  /*
+   * Checks if this is a new incoming call into the call center based
+   * on the event properties
+   *
+   * We need to perform this check because the `call.initiated` event
+   * is generated for each new leg of the call, for example when
+   * transferring a call to a different destination
+   */
   private static isStartOfIncomingCallFlow(
     eventPayload: ICallControlEventPayload
   ) {
@@ -435,7 +432,13 @@ class CallControlController {
     );
   }
 
-  private static async answerIncomingParkedCall(
+  /*
+   * Saves the new incoming call to our call center phone number and
+   * programatically answers it. Note, all calls must be answered
+   * before performing further programatic actions on the call, for
+   * example to transfer the call
+   */
+  private static async answerStartOfIncomingCall(
     eventPayload: ICallControlEventPayload
   ) {
     // Access database repository to perform database operations
@@ -463,6 +466,9 @@ class CallControlController {
     await telnyxCall.answer();
   }
 
+  /*
+   * Start a conference with an agent
+   */
   private static async startConferenceWithAgent(
     eventPayload: ICallControlEventPayload,
     agent: Agent
@@ -514,6 +520,10 @@ class CallControlController {
     });
   }
 
+  /*
+   * Play audio to the caller letting them no that there are no available
+   * agents to take their call
+   */
   private static async speakNoAvailableAgents(
     eventPayload: ICallControlEventPayload
   ) {
@@ -536,6 +546,9 @@ class CallControlController {
     });
   }
 
+  /*
+   * Add an answered call to a conference
+   */
   private static async joinConference(eventPayload: ICallControlEventPayload) {
     let clientState = decodeClientState(eventPayload.client_state);
 
@@ -566,6 +579,9 @@ class CallControlController {
     }
   }
 
+  /*
+   * Programatically hangup a call
+   */
   private static async hangupCall(eventPayload: ICallControlEventPayload) {
     // Create a new Telnyx Call in order to issue call control commands
     let telnyxCall = new telnyx.Call({
@@ -575,6 +591,9 @@ class CallControlController {
     await telnyxCall.hangup();
   }
 
+  /*
+   * Mark a call leg as active
+   */
   private static async markCallActive(eventPayload: ICallControlEventPayload) {
     // Access database repository to perform database operations
     let callLegRepository = getRepository(CallLeg);
@@ -594,6 +613,9 @@ class CallControlController {
     }
   }
 
+  /*
+   * Mark a call leg as inactive
+   */
   private static async markCallInactive(
     eventPayload: ICallControlEventPayload
   ) {
@@ -615,14 +637,25 @@ class CallControlController {
     }
   }
 
+  /*
+   * Create a Telnyx conference and the corresponding database record
+   */
   private static createConference = async function ({
     from,
     to,
     direction,
     callControlId,
     telnyxConferenceOptions,
-  }: ICreateConferenceParams) {
+  }: {
+    from: string;
+    to: string;
+    direction: string;
+    callControlId: string;
+    telnyxConferenceOptions?: Object;
+  }) {
     let conferenceRepository = getRepository(Conference);
+    // For all available options:
+    // https://developers.telnyx.com/docs/api/v2/call-control/Conference-Commands#createConference
     let { data: telnyxConference } = await telnyx.conferences.create({
       name: `Call ${
         direction === CallLegDirection.OUTGOING ? `to ${to}` : `from ${from}`
@@ -641,6 +674,10 @@ class CallControlController {
     return conferenceRepository.save(appConference);
   };
 
+  /*
+   * Create a Telnyx call (i.e. dial some destination) and create the
+   * corresponding database record in our app
+   */
   private static createCall = async function ({
     from,
     to,
@@ -648,13 +685,22 @@ class CallControlController {
     clientCallState,
     telnyxCallOptions,
     appConference,
-  }: ICreateCallParams) {
+  }: {
+    from: string;
+    to: string;
+    connectionId: string;
+    clientCallState?: CallLegClientCallState;
+    telnyxCallOptions?: Object;
+    appConference?: Conference;
+  }) {
     let callLegRepository = getRepository(CallLeg);
 
     let { data: telnyxOutgoingCall } = await telnyx.calls.create({
       to,
       from,
       connection_id: connectionId,
+      // For all available options:
+      // https://developers.telnyx.com/docs/api/v2/call-control/Call-Commands#callDial
       ...telnyxCallOptions,
     });
 
@@ -676,19 +722,20 @@ class CallControlController {
     return callLegRepository.save(appOutgoingCall);
   };
 
+  /*
+   * Get the first available agent
+   *
+   * In production you'll likely want to introduce some other mechanism
+   * for choosing the agent, such as round robin or balancing the load
+   * between agents by hours of calls answered
+   */
   private static getAvailableAgent = async function () {
     let agentRepository = getRepository(Agent);
+    let firstAvailableAgent = await agentRepository.findOne({
+      available: true,
+    });
 
-    async function findFirst() {
-      let firstAvailableAgent = await agentRepository.findOne({
-        available: true,
-      });
-
-      return firstAvailableAgent;
-    }
-
-    // TODO Recursive retry
-    return findFirst();
+    return firstAvailableAgent;
   };
 }
 
