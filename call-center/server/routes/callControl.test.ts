@@ -20,31 +20,6 @@ afterAll(async () => {
   await testFactory.close();
 });
 
-describe('GET /', () => {
-  test('filters results', () =>
-    testFactory.app
-      .get('/call-control?telnyxCallControlId=telnyxCallControlId1')
-      .expect('Content-type', /json/)
-      .expect(200)
-      .then((resp) => {
-        expect(resp.body.calls).toHaveLength(1);
-        expect(resp.body.calls[0]).toEqual(
-          expect.objectContaining({
-            id: 'callLeg1',
-          })
-        );
-      }));
-
-  test('limits results', () =>
-    testFactory.app
-      .get('/call-control?status=active&limit=2')
-      .expect('Content-type', /json/)
-      .expect(200)
-      .then((resp) => {
-        expect(resp.body.calls).toHaveLength(2);
-      }));
-});
-
 describe('POST /actions/dial', () => {
   test('returns the outgoing call', () =>
     testFactory.app
