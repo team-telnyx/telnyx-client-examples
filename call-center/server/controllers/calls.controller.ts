@@ -13,6 +13,29 @@ import { format } from 'path';
 let telnyxPackage: any = require('telnyx');
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
+enum CallControlEventType {
+  CALL_INITIATED = 'call.initiated',
+  CALL_ANSWERED = 'call.answered',
+  CALL_SPEAK_ENDED = 'call.speak.ended',
+  CALL_HANGUP = 'call.hangup',
+  CONFERENCE_PARTICIPANT_JOINED = 'conference.participant.joined',
+}
+
+interface ICallControlEventPayload {
+  state: string;
+  call_control_id: string;
+  connection_id: string;
+  from: string;
+  to: string;
+  direction: string;
+  client_state?: string;
+}
+
+interface ICallControlEvent {
+  event_type: CallControlEventType;
+  payload: ICallControlEventPayload;
+}
+
 interface IClientState {
   // Define your own call states to direct the flow of the call
   // through your application
@@ -63,7 +86,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -78,7 +101,7 @@ class CallsController {
       // Create a call leg back into our call center
       // IDEA Create a separate phone number or webhook to handle
       // routing calls instead of checking to/from in CC event
-      let appCall = await CallsController.createCall({
+      let appIncomingCall = await CallsController.createCall({
         to: process.env.TELNYX_SIP_OB_NUMBER!,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
@@ -89,37 +112,19 @@ class CallsController {
         },
       });
 
-      let telnyxCall = new telnyx.Call({
-        call_control_id: appCall.telnyxCallControlId,
+      let telnyxIncomingCall = new telnyx.Call({
+        call_control_id: appIncomingCall.telnyxCallControlId,
       });
 
       // NOTE Call must be answered before creating a conference
-      await telnyxCall.answer();
+      await telnyxIncomingCall.answer();
 
       // Create a conference
       let appConference = await CallsController.createConference({
         to,
         from: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         direction: CallLegDirection.OUTGOING,
-        callControlId: appCall.telnyxCallControlId,
-      });
-
-      // Create a call leg for the agent who initiated the call
-      await CallsController.createCall({
-        to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
-        from,
-        connectionId: process.env.TELNYX_CC_APP_ID!,
-        clientCallState: CallLegClientCallState.AUTO_ANSWER,
-        telnyxCallOptions: {
-          client_state: encodeClientState({
-            appCallState: 'join_conference',
-            appConferenceId: appConference.id,
-            // Specify that we should hang up on the call center call leg
-            // after joining the conference
-            transferrerTelnyxCallControlId: appCall.telnyxCallControlId,
-          }),
-        },
-        appConference,
+        callControlId: appIncomingCall.telnyxCallControlId,
       });
 
       // Create the outgoing call leg
@@ -136,6 +141,24 @@ class CallsController {
         appConference,
       });
 
+      // Create a call leg for the agent who initiated the call
+      await CallsController.createCall({
+        to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
+        from,
+        connectionId: process.env.TELNYX_CC_APP_ID!,
+        clientCallState: CallLegClientCallState.AUTO_ANSWER,
+        telnyxCallOptions: {
+          client_state: encodeClientState({
+            appCallState: 'join_conference',
+            appConferenceId: appConference.id,
+            // Specify that we should hang up on the call center call leg
+            // after joining the conference
+            transferrerTelnyxCallControlId: appIncomingCall.telnyxCallControlId,
+          }),
+        },
+        appConference,
+      });
+
       res.json({
         data: appOutgoingCall,
       });
@@ -144,7 +167,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -185,7 +208,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -235,7 +258,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -276,7 +299,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -317,7 +340,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -351,7 +374,7 @@ class CallsController {
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
-        .send({ error: e });
+        .send({ error: e.toString() });
     }
   };
 
@@ -362,206 +385,59 @@ class CallsController {
     console.log('\n\n/callbacks/call-control-app | req body', req.body);
 
     try {
-      let event = req.body;
+      let event: ICallControlEvent = req.body.data;
+      let { event_type: eventType, payload: eventPayload } = event;
 
-      let {
-        state,
-        client_state,
-        call_control_id,
-        connection_id,
-        conference_id,
-        from,
-        to,
-        direction,
-        sip_hangup_cause,
-        hangup_source,
-      } = event.data.payload;
+      let { state, client_state, from, to, direction } = eventPayload;
 
       let clientState = decodeClientState(client_state);
 
       console.log('=== clientState ===', clientState);
 
-      let callLegRepository = getManager().getRepository(CallLeg);
-      let conferenceRepository = getManager().getRepository(Conference);
+      if (eventType === CallControlEventType.CALL_INITIATED) {
+        // IDEA Specify a different webhook URL for all subsequent calls,
+        // so that we don't need to check whether this is the start of
+        // the call flow for a call coming into our call center application
+        // for the very first time
+        if (CallsController.isStartOfIncomingCallFlow(eventPayload)) {
+          await CallsController.answerIncomingParkedCall(eventPayload);
 
-      // Create a new Telnyx Call in order to issue call control commands
-      let telnyxCall = new telnyx.Call({
-        call_control_id,
-      });
+          // Find the first available agent and transfer the call to them.
+          // You may want more complex functionality here, such as transferring
+          // the call to multiple available agents and then assigning the call
+          // to the first agent who answers.
+          let availableAgent = await CallsController.getAvailableAgent();
 
-      switch (event.data.event_type) {
-        case 'call.initiated': {
-          /*
-           * Only answering parked calls because we also get the call.initiated
-           * event for the second leg of the call
-           */
-          if (
-            direction === 'incoming' &&
-            state === 'parked' &&
-            !client_state &&
-            // IDEA Create a separate phone number or webhook to handle
-            // routing calls instead of checking to/from in CC event
-            !(from === process.env.TELNYX_SIP_OB_NUMBER && to === from)
-          ) {
-            // Create a new call in our database so that we can retrieve call
-            // information on the frontend
-            let appIncomingCallLeg = new CallLeg();
-            appIncomingCallLeg.from = from;
-            appIncomingCallLeg.to = to;
-            appIncomingCallLeg.direction = CallLegDirection.INCOMING;
-            appIncomingCallLeg.telnyxCallControlId = call_control_id;
-            appIncomingCallLeg.telnyxConnectionId = connection_id;
-            appIncomingCallLeg.clientCallState = CallLegClientCallState.DEFAULT;
-            appIncomingCallLeg.muted = false;
-
-            await callLegRepository.save(appIncomingCallLeg);
-
-            // Answer the call to initiate transfer to agent or speak
-            await telnyxCall.answer();
-
-            // Find the first available agent and transfer the call to them.
-            // You may want more complex functionality here, such as transferring
-            // the call to multiple available agents and then assigning the call
-            // to the first agent who answers.
-            let availableAgent = await CallsController.getAvailableAgent();
-
-            if (availableAgent) {
-              // Create a new Telnyx Conference to organize & issue commands
-              // to multiple call legs at once and save it to our DB
-              let appConference = await CallsController.createConference({
-                from,
-                to,
-                direction,
-                callControlId: call_control_id,
-                telnyxConferenceOptions: {
-                  // Place caller on hold until agent joins the call
-                  hold_audio_url: process.env.HOLD_AUDIO_URL,
-                  start_conference_on_create: false,
-                },
-              });
-
-              // Add call to conference
-              appIncomingCallLeg.conference = appConference;
-              await callLegRepository.save(appIncomingCallLeg);
-
-              // Call the agent to invite them to join the conference call
-              let appOutgoingCall = await CallsController.createCall({
-                to: `sip:${availableAgent.sipUsername}@sip.telnyx.com`,
-                from,
-                connectionId: connection_id,
-                telnyxCallOptions: {
-                  // IDEA Specify a short answer timeout so that you can quickly
-                  // rotate to a different agent if one doesn't answer within X
-                  timeout_secs: 60,
-                  client_state: encodeClientState({
-                    appCallState: 'join_conference',
-                    appConferenceId: appConference.id,
-                    appConferenceOptions: {
-                      // Start the conference upon joining. This will also stop the
-                      // hold music playing for the caller
-                      start_conference_on_enter: true,
-                    },
-                  }),
-                },
-                appConference,
-              });
-            } else {
-              // Handle when no agents are available to transfer the call
-
-              await telnyxCall.speak({
-                // All following fields are required:
-                language: 'en-US',
-                payload:
-                  'Sorry, there are no agents available to take your call.',
-                voice: 'female',
-                // Use client state to let our app know we should hangup after call ends
-                client_state: encodeClientState({
-                  // Include a custom call state so that we know how to direct
-                  // the call flow when handling the `call.speak.ended` event
-                  appCallState: 'speak_no_available_agents',
-                }),
-              });
-            }
-          }
-
-          break;
-        }
-
-        case 'call.answered': {
-          // Handle a call answered from a call center dial
-
-          if (
-            clientState.appCallState === 'join_conference' &&
-            clientState.appConferenceId
-          ) {
-            let appConference = await conferenceRepository.findOneOrFail(
-              clientState.appConferenceId
+          if (availableAgent) {
+            await CallsController.startConferenceWithAgent(
+              eventPayload,
+              availableAgent
             );
+          } else {
+            // Handle when no agents are available to transfer the call
 
-            // Join the conference with the original caller
-            let telnyxConference = await new telnyx.Conference({
-              id: appConference.telnyxConferenceId,
-            });
-
-            await telnyxConference.join({
-              call_control_id,
-              ...clientState.appConferenceOptions,
-            });
+            await CallsController.speakNoAvailableAgents(eventPayload);
           }
-
-          // Check if we should hang up the conference creator
-          // after joining the conference
-          if (clientState.transferrerTelnyxCallControlId) {
-            let telnyxCall = new telnyx.Call({
-              call_control_id: clientState.transferrerTelnyxCallControlId,
-            });
-
-            await telnyxCall.hangup();
-          }
-
-          break;
         }
+      } else if (eventType === CallControlEventType.CALL_ANSWERED) {
+        // Handle a call answered from a call center dial
 
-        case 'call.speak.ended': {
-          if (clientState.appCallState === 'speak_no_available_agents') {
-            await telnyxCall.hangup();
-          }
-
-          break;
+        if (
+          clientState.appCallState === 'join_conference' &&
+          clientState.appConferenceId
+        ) {
+          await CallsController.joinConference(eventPayload);
         }
-
-        case 'conference.participant.joined': {
-          try {
-            // Mark call as active in our DB
-            let appCall = await callLegRepository.findOneOrFail({
-              telnyxCallControlId: call_control_id,
-            });
-            appCall.status = CallLegStatus.ACTIVE;
-            callLegRepository.save(appCall);
-          } catch (e) {
-            console.error(e);
-          }
-
-          break;
+      } else if (eventType === CallControlEventType.CALL_SPEAK_ENDED) {
+        if (clientState.appCallState === 'speak_no_available_agents') {
+          await CallsController.hangupCall(eventPayload);
         }
-
-        case 'call.hangup': {
-          try {
-            // Find the leg that hung up, and save it as inactive
-            let appCall = await callLegRepository.findOneOrFail({
-              telnyxCallControlId: call_control_id?.toString(),
-            });
-            appCall.status = CallLegStatus.INACTIVE;
-            callLegRepository.save(appCall);
-          } catch (e) {
-            console.error(e);
-          }
-
-          break;
-        }
-
-        default:
-          break;
+      } else if (
+        eventType === CallControlEventType.CONFERENCE_PARTICIPANT_JOINED
+      ) {
+        await CallsController.markCallActive(eventPayload);
+      } else if (eventType === CallControlEventType.CALL_HANGUP) {
+        await CallsController.markCallInactive(eventPayload);
       }
     } catch (e) {
       console.error(e);
@@ -575,6 +451,200 @@ class CallsController {
 
     res.json({});
   };
+
+  private static isStartOfIncomingCallFlow(
+    eventPayload: ICallControlEventPayload
+  ) {
+    return (
+      eventPayload.direction === 'incoming' &&
+      eventPayload.state === 'parked' &&
+      !eventPayload.client_state &&
+      !(
+        eventPayload.from === process.env.TELNYX_SIP_OB_NUMBER &&
+        eventPayload.to === eventPayload.from
+      )
+    );
+  }
+
+  private static async answerIncomingParkedCall(
+    eventPayload: ICallControlEventPayload
+  ) {
+    // Access database repository to perform database operations
+    let callLegRepository = getManager().getRepository(CallLeg);
+
+    // Create a new Telnyx Call in order to issue call control commands
+    let telnyxCall = new telnyx.Call({
+      call_control_id: eventPayload.call_control_id,
+    });
+
+    // Create a new call in our database so that we can retrieve call
+    // information on the frontend
+    let appIncomingCallLeg = new CallLeg();
+    appIncomingCallLeg.from = eventPayload.from;
+    appIncomingCallLeg.to = eventPayload.to;
+    appIncomingCallLeg.direction = CallLegDirection.INCOMING;
+    appIncomingCallLeg.telnyxCallControlId = eventPayload.call_control_id;
+    appIncomingCallLeg.telnyxConnectionId = eventPayload.connection_id;
+    appIncomingCallLeg.clientCallState = CallLegClientCallState.DEFAULT;
+    appIncomingCallLeg.muted = false;
+
+    await callLegRepository.save(appIncomingCallLeg);
+
+    // Answer the call to initiate transfer to agent or speak
+    await telnyxCall.answer();
+  }
+
+  private static async startConferenceWithAgent(
+    eventPayload: ICallControlEventPayload,
+    agent: Agent
+  ) {
+    // Access database repository to perform database operations
+    let callLegRepository = getManager().getRepository(CallLeg);
+    let appIncomingCallLeg = await callLegRepository.findOneOrFail({
+      telnyxCallControlId: eventPayload.call_control_id,
+    });
+
+    // Create a new Telnyx Conference to organize & issue commands
+    // to multiple call legs at once and save it to our DB
+    let appConference = await CallsController.createConference({
+      from: eventPayload.from,
+      to: eventPayload.to,
+      direction: eventPayload.direction,
+      callControlId: eventPayload.call_control_id,
+      telnyxConferenceOptions: {
+        // Place caller on hold until agent joins the call
+        hold_audio_url: process.env.HOLD_AUDIO_URL,
+        start_conference_on_create: false,
+      },
+    });
+
+    // Add call to conference
+    appIncomingCallLeg.conference = appConference;
+    await callLegRepository.save(appIncomingCallLeg);
+
+    // Call the agent to invite them to join the conference call
+    await CallsController.createCall({
+      to: `sip:${agent.sipUsername}@sip.telnyx.com`,
+      from: eventPayload.from,
+      connectionId: eventPayload.connection_id,
+      telnyxCallOptions: {
+        // IDEA Specify a short answer timeout so that you can quickly
+        // rotate to a different agent if one doesn't answer within X
+        timeout_secs: 60,
+        client_state: encodeClientState({
+          appCallState: 'join_conference',
+          appConferenceId: appConference.id,
+          appConferenceOptions: {
+            // Start the conference upon joining. This will also stop the
+            // hold music playing for the caller
+            start_conference_on_enter: true,
+          },
+        }),
+      },
+      appConference,
+    });
+  }
+
+  private static async speakNoAvailableAgents(
+    eventPayload: ICallControlEventPayload
+  ) {
+    // Create a new Telnyx Call in order to issue call control commands
+    let telnyxCall = new telnyx.Call({
+      call_control_id: eventPayload.call_control_id,
+    });
+
+    await telnyxCall.speak({
+      // All following fields are required:
+      language: 'en-US',
+      payload: 'Sorry, there are no agents available to take your call.',
+      voice: 'female',
+      // Use client state to let our app know we should hangup after call ends
+      client_state: encodeClientState({
+        // Include a custom call state so that we know how to direct
+        // the call flow when handling the `call.speak.ended` event
+        appCallState: 'speak_no_available_agents',
+      }),
+    });
+  }
+
+  private static async joinConference(eventPayload: ICallControlEventPayload) {
+    let clientState = decodeClientState(eventPayload.client_state);
+
+    // Access database repository to perform database operations
+    let conferenceRepository = getManager().getRepository(Conference);
+    let appConference = await conferenceRepository.findOneOrFail(
+      clientState.appConferenceId
+    );
+
+    // Join the conference with the original caller
+    let telnyxConference = await new telnyx.Conference({
+      id: appConference.telnyxConferenceId,
+    });
+
+    await telnyxConference.join({
+      call_control_id: eventPayload.call_control_id,
+      ...clientState.appConferenceOptions,
+    });
+
+    // Check if we should hang up the conference creator
+    // after joining the conference
+    if (clientState.transferrerTelnyxCallControlId) {
+      let telnyxCall = new telnyx.Call({
+        call_control_id: clientState.transferrerTelnyxCallControlId,
+      });
+
+      await telnyxCall.hangup();
+    }
+  }
+
+  private static async hangupCall(eventPayload: ICallControlEventPayload) {
+    // Create a new Telnyx Call in order to issue call control commands
+    let telnyxCall = new telnyx.Call({
+      call_control_id: eventPayload.call_control_id,
+    });
+
+    await telnyxCall.hangup();
+  }
+
+  private static async markCallActive(eventPayload: ICallControlEventPayload) {
+    // Access database repository to perform database operations
+    let callLegRepository = getManager().getRepository(CallLeg);
+
+    let appCall = await callLegRepository.findOne({
+      telnyxCallControlId: eventPayload.call_control_id,
+      status: CallLegStatus.NEW,
+    });
+
+    if (appCall) {
+      appCall.status = CallLegStatus.ACTIVE;
+      await callLegRepository.save(appCall);
+    } else {
+      console.log(
+        `Warning, no call leg with telnyxCallControlId ${eventPayload.call_control_id} found`
+      );
+    }
+  }
+
+  private static async markCallInactive(
+    eventPayload: ICallControlEventPayload
+  ) {
+    // Access database repository to perform database operations
+    let callLegRepository = getManager().getRepository(CallLeg);
+
+    let appCall = await callLegRepository.findOne({
+      telnyxCallControlId: eventPayload.call_control_id,
+      status: CallLegStatus.ACTIVE,
+    });
+
+    if (appCall) {
+      appCall.status = CallLegStatus.INACTIVE;
+      await callLegRepository.save(appCall);
+    } else {
+      console.log(
+        `Warning, no call leg with telnyxCallControlId ${eventPayload.call_control_id} found`
+      );
+    }
+  }
 
   private static createConference = async function ({
     from,
@@ -599,7 +669,7 @@ class CallsController {
     appConference.from = from;
     appConference.to = to;
 
-    return await conferenceRepository.save(appConference);
+    return conferenceRepository.save(appConference);
   };
 
   private static createCall = async function ({
@@ -634,7 +704,7 @@ class CallsController {
       appOutgoingCall.conference = appConference;
     }
 
-    return await callLegRepository.save(appOutgoingCall);
+    return callLegRepository.save(appOutgoingCall);
   };
 
   private static getAvailableAgent = async function () {

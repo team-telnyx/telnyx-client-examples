@@ -6,6 +6,7 @@ interface IDialer {
 
 function Dialer({ dial }: IDialer) {
   let [destination, setDestination] = useState('');
+  let [serverError, setServerError] = useState('');
 
   const handleChangeDestination = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -16,7 +17,13 @@ function Dialer({ dial }: IDialer) {
   const handleSubmit = (e: any) => {
     e.preventDefault();
 
-    dial(destination);
+    setServerError('');
+
+    dial(destination).catch((err: any) => {
+      console.error(err);
+
+      setServerError(err.response?.data?.error || err.message);
+    });
   };
 
   return (
@@ -32,7 +39,7 @@ function Dialer({ dial }: IDialer) {
             name="destination"
             type="text"
             value={destination}
-            placeholder="Phone number or SIP URI"
+            placeholder="Phone number in +E164 or SIP URI"
             required
             onChange={handleChangeDestination}
           />
@@ -41,6 +48,10 @@ function Dialer({ dial }: IDialer) {
           </button>
         </div>
       </form>
+
+      {serverError && serverError.length > 0 && (
+        <p className="App-error">{serverError}</p>
+      )}
     </section>
   );
 }
