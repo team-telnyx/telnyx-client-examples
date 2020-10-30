@@ -1,14 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
 
-import IPartialWebRTCCall from '../interfaces/IPartialWebRTCCall';
 import { updateAgent } from '../services/agentsService';
+import IPartialWebRTCCall from '../interfaces/IPartialWebRTCCall';
+import IUseTelnyxRTCParams from '../interfaces/IUseTelnyxRTCParams';
 
-function useTelnyxRTC(
-  agentId: string | undefined,
-  token: string | undefined,
-  clearDialingDestination: any
-) {
+function useTelnyxRTC({ agentId, token }: IUseTelnyxRTCParams) {
   // Check if component is mounted before updating state
   // in the Telnyx WebRTC client callbacks
   let isMountedRef = useRef<boolean>(false);
@@ -86,9 +83,6 @@ function useTelnyxRTC(
         } else {
           if (state === 'answering') {
             updateAgent(agentId, { available: false });
-          } else if (state === 'active') {
-            // call this funtion setDialingDestination
-            clearDialingDestination(null);
           }
 
           setWebRTCCall({

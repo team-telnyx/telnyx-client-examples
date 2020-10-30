@@ -14,6 +14,7 @@ import Dialer from './components/Dialer';
 import LoadingIcon from './components/LoadingIcon';
 import useTelnyxRTC from './hooks/useTelnyxRTC';
 import ISessionStorageUser from './interfaces/ISessionStorageUser';
+import IUseTelnyxRTCParams from './interfaces/IUseTelnyxRTCParams';
 
 function App() {
   const [sessionStorageUser, setSessionStorageUser] = useSessionStorage<
@@ -27,10 +28,13 @@ function App() {
 
   let [dialingDestination, setDialingDestination] = useState<string | null>();
 
+  let telnyxRTCParams: IUseTelnyxRTCParams = {
+    agentId: agent?.id,
+    token: sessionStorageUser?.token,
+  };
+
   let { telnyxClientRef, webRTCall, webRTCClientState } = useTelnyxRTC(
-    agent?.id,
-    sessionStorageUser?.token,
-    setDialingDestination
+    telnyxRTCParams
   );
 
   let agentsState = useAgents(agent?.sipUsername);
@@ -78,6 +82,12 @@ function App() {
       }
     }
   };
+
+  useEffect(() => {
+    if (webRTCall?.state === 'active') {
+      setDialingDestination(null);
+    }
+  }, [webRTCall?.state]);
 
   useEffect(() => {
     let { id } = sessionStorageUser;
