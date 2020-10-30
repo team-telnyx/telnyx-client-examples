@@ -2,7 +2,9 @@ import { getRepository } from 'typeorm';
 import { CallLeg, CallLegClientCallState } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import TestFactory from '../TestFactory';
-import CallsController, { encodeClientState } from './calls.controller';
+import CallControlController, {
+  encodeClientState,
+} from './callControl.controller';
 
 const telnyxMock = require('telnyx');
 
@@ -35,7 +37,7 @@ describe('.dial', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.dial(req, mockRes);
+    await CallControlController.dial(req, mockRes);
 
     const call = await getRepository(CallLeg).findOne({
       where: {
@@ -60,7 +62,7 @@ describe('.dial', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.dial(req, mockRes);
+    await CallControlController.dial(req, mockRes);
 
     const conference = await getRepository(Conference).findOne({
       where: {
@@ -123,7 +125,7 @@ describe('.invite', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.invite(req, mockRes);
+    await CallControlController.invite(req, mockRes);
 
     const conference = await getRepository(Conference).findOne('conference1', {
       relations: ['callLegs'],
@@ -171,7 +173,7 @@ describe('.transfer', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.transfer(req, mockRes);
+    await CallControlController.transfer(req, mockRes);
 
     const conference = await getRepository(Conference).findOne('conference1', {
       relations: ['callLegs'],
@@ -218,7 +220,7 @@ describe('.hangup', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.hangup(req, mockRes);
+    await CallControlController.hangup(req, mockRes);
 
     expect(telnyxMock.callMock.hangup).toHaveBeenCalled();
   });
@@ -235,7 +237,7 @@ describe('.mute', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.mute(req, mockRes);
+    await CallControlController.mute(req, mockRes);
 
     expect(telnyxMock.conferenceMock.mute).toHaveBeenCalledWith({
       call_control_ids: ['telnyxCallControlId1'],
@@ -252,7 +254,7 @@ describe('.mute', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.mute(req, mockRes);
+    await CallControlController.mute(req, mockRes);
 
     let call = await getRepository(CallLeg).findOne({
       telnyxCallControlId: req.body.telnyxCallControlId,
@@ -273,7 +275,7 @@ describe('.unmute', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.unmute(req, mockRes);
+    await CallControlController.unmute(req, mockRes);
 
     expect(telnyxMock.conferenceMock.unmute).toHaveBeenCalledWith({
       call_control_ids: ['telnyxCallControlId2'],
@@ -290,7 +292,7 @@ describe('.unmute', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.unmute(req, mockRes);
+    await CallControlController.unmute(req, mockRes);
 
     let call = await getRepository(CallLeg).findOne({
       telnyxCallControlId: req.body.telnyxCallControlId,
@@ -324,7 +326,7 @@ describe('.callControl', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.callControl(req, mockRes);
+    await CallControlController.callControl(req, mockRes);
 
     const conference = await getRepository(Conference).findOne({
       where: {
@@ -375,7 +377,7 @@ describe('.callControl', () => {
     };
     // FIXME Better solution than ignoring dial type
     // @ts-ignore
-    await CallsController.callControl(req, mockRes);
+    await CallControlController.callControl(req, mockRes);
 
     expect(telnyxMock.conferenceMock.join).toHaveBeenCalledWith({
       call_control_id: 'telnyxCallControlId1',

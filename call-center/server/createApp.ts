@@ -6,7 +6,7 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 
-import calls from './routes/calls';
+import calls from './routes/callControl';
 import agents from './routes/agents';
 import conferences from './routes/conferences';
 

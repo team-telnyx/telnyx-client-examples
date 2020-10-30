@@ -62,7 +62,7 @@ interface ICreateConferenceParams {
   telnyxConferenceOptions?: Object;
 }
 
-class CallsController {
+class CallControlController {
   public static get = async function (req: Request, res: Response) {
     let { limit, ...callLegQuery } = req.query;
     let findOpts = {
@@ -101,7 +101,7 @@ class CallsController {
       // Create a call leg back into our call center
       // IDEA Create a separate phone number or webhook to handle
       // routing calls instead of checking to/from in CC event
-      let appIncomingCall = await CallsController.createCall({
+      let appIncomingCall = await CallControlController.createCall({
         to: process.env.TELNYX_SIP_OB_NUMBER!,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
@@ -120,7 +120,7 @@ class CallsController {
       await telnyxIncomingCall.answer();
 
       // Create a conference
-      let appConference = await CallsController.createConference({
+      let appConference = await CallControlController.createConference({
         to,
         from: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         direction: CallLegDirection.OUTGOING,
@@ -128,7 +128,7 @@ class CallsController {
       });
 
       // Create the outgoing call leg
-      let appOutgoingCall = await CallsController.createCall({
+      let appOutgoingCall = await CallControlController.createCall({
         to,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
@@ -142,7 +142,7 @@ class CallsController {
       });
 
       // Create a call leg for the agent who initiated the call
-      await CallsController.createCall({
+      await CallControlController.createCall({
         to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
@@ -187,7 +187,7 @@ class CallsController {
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Call someone to invite them to join the conference call
-      let appOutgoingCall = await CallsController.createCall({
+      let appOutgoingCall = await CallControlController.createCall({
         to,
         from,
         connectionId: appInviterCallLeg.telnyxConnectionId,
@@ -228,7 +228,7 @@ class CallsController {
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Call someone to invite them to join the conference call
-      let appOutgoingCall = await CallsController.createCall({
+      let appOutgoingCall = await CallControlController.createCall({
         to,
         from,
         connectionId: appTransfererCallLeg.telnyxConnectionId,
@@ -399,24 +399,24 @@ class CallsController {
         // so that we don't need to check whether this is the start of
         // the call flow for a call coming into our call center application
         // for the very first time
-        if (CallsController.isStartOfIncomingCallFlow(eventPayload)) {
-          await CallsController.answerIncomingParkedCall(eventPayload);
+        if (CallControlController.isStartOfIncomingCallFlow(eventPayload)) {
+          await CallControlController.answerIncomingParkedCall(eventPayload);
 
           // Find the first available agent and transfer the call to them.
           // You may want more complex functionality here, such as transferring
           // the call to multiple available agents and then assigning the call
           // to the first agent who answers.
-          let availableAgent = await CallsController.getAvailableAgent();
+          let availableAgent = await CallControlController.getAvailableAgent();
 
           if (availableAgent) {
-            await CallsController.startConferenceWithAgent(
+            await CallControlController.startConferenceWithAgent(
               eventPayload,
               availableAgent
             );
           } else {
             // Handle when no agents are available to transfer the call
 
-            await CallsController.speakNoAvailableAgents(eventPayload);
+            await CallControlController.speakNoAvailableAgents(eventPayload);
           }
         }
       } else if (eventType === CallControlEventType.CALL_ANSWERED) {
@@ -426,18 +426,18 @@ class CallsController {
           clientState.appCallState === 'join_conference' &&
           clientState.appConferenceId
         ) {
-          await CallsController.joinConference(eventPayload);
+          await CallControlController.joinConference(eventPayload);
         }
       } else if (eventType === CallControlEventType.CALL_SPEAK_ENDED) {
         if (clientState.appCallState === 'speak_no_available_agents') {
-          await CallsController.hangupCall(eventPayload);
+          await CallControlController.hangupCall(eventPayload);
         }
       } else if (
         eventType === CallControlEventType.CONFERENCE_PARTICIPANT_JOINED
       ) {
-        await CallsController.markCallActive(eventPayload);
+        await CallControlController.markCallActive(eventPayload);
       } else if (eventType === CallControlEventType.CALL_HANGUP) {
-        await CallsController.markCallInactive(eventPayload);
+        await CallControlController.markCallInactive(eventPayload);
       }
     } catch (e) {
       console.error(e);
@@ -506,7 +506,7 @@ class CallsController {
 
     // Create a new Telnyx Conference to organize & issue commands
     // to multiple call legs at once and save it to our DB
-    let appConference = await CallsController.createConference({
+    let appConference = await CallControlController.createConference({
       from: eventPayload.from,
       to: eventPayload.to,
       direction: eventPayload.direction,
@@ -523,7 +523,7 @@ class CallsController {
     await callLegRepository.save(appIncomingCallLeg);
 
     // Call the agent to invite them to join the conference call
-    await CallsController.createCall({
+    await CallControlController.createCall({
       to: `sip:${agent.sipUsername}@sip.telnyx.com`,
       from: eventPayload.from,
       connectionId: eventPayload.connection_id,
@@ -741,4 +741,4 @@ export function decodeClientState(data?: string): Partial<IClientState> {
   return JSON.parse(str);
 }
 
-export default CallsController;
+export default CallControlController;
