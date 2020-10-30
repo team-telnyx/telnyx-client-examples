@@ -20,53 +20,53 @@ export const getCall = async (
 export const dial = async (
   params: ICallActionsParams
 ): Promise<AxiosResponse | AxiosError> => {
-  return await axios
-    .post(`${BASE_URL}/calls/actions/dial`, params, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    .then((resp: AxiosResponse) => resp)
-    .catch((error: AxiosError) => error);
+  return await axios.post(`${BASE_URL}/calls/actions/dial`, params, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 };
 
 export const invite = async (
   params: ICallActionsParams & IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
-  return await axios
-    .post(`${BASE_URL}/calls/actions/conferences/invite`, params, {
+  return await axios.post(
+    `${BASE_URL}/calls/actions/conferences/invite`,
+    params,
+    {
       headers: {
         'Content-Type': 'application/json',
       },
-    })
-    .then((resp: AxiosResponse) => resp)
-    .catch((error: AxiosError) => error);
+    }
+  );
 };
 
 export const transfer = async (
   params: ICallActionsParams & IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
-  return await axios
-    .post(`${BASE_URL}/calls/actions/conferences/transfer`, params, {
+  return await axios.post(
+    `${BASE_URL}/calls/actions/conferences/transfer`,
+    params,
+    {
       headers: {
         'Content-Type': 'application/json',
       },
-    })
-    .then((resp: AxiosResponse) => resp)
-    .catch((error: AxiosError) => error);
+    }
+  );
 };
 
 export const hangup = async (
   params: IActiveCallActionParams
-): Promise<AxiosResponse | AxiosError> => {
-  return await axios
-    .post(`${BASE_URL}/calls/actions/conferences/hangup`, params, {
+): Promise<AxiosResponse<IConferenceActionsResponse> | AxiosError> => {
+  return await axios.post(
+    `${BASE_URL}/calls/actions/conferences/hangup`,
+    params,
+    {
       headers: {
         'Content-Type': 'application/json',
       },
-    })
-    .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
-    .catch((error: AxiosError) => error);
+    }
+  );
 };
 
 export const mute = async (
@@ -84,13 +84,14 @@ export const mute = async (
 
 export const unmute = async (
   params: IActiveCallActionParams
-): Promise<AxiosResponse | AxiosError> => {
-  return await axios
-    .post(`${BASE_URL}/calls/actions/conferences/unmute`, params, {
+): Promise<AxiosResponse<IConferenceActionsResponse> | AxiosError> => {
+  return await axios.post(
+    `${BASE_URL}/calls/actions/conferences/unmute`,
+    params,
+    {
       headers: {
         'Content-Type': 'application/json',
       },
-    })
-    .then((resp: AxiosResponse<IConferenceActionsResponse>) => resp)
-    .catch((error: AxiosError) => error);
+    }
+  );
 };
