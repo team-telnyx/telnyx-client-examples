@@ -73,18 +73,6 @@ describe('.dial', () => {
     expect(conference?.callLegs).toHaveLength(2);
     expect(conference?.callLegs?.[0]).toEqual(
       expect.objectContaining({
-        clientCallState: 'auto_answer',
-        direction: 'outgoing',
-        from: process.env.TELNYX_SIP_OB_NUMBER,
-        muted: false,
-        status: 'new',
-        telnyxCallControlId: 'fake_call_control_id',
-        telnyxConnectionId: process.env.TELNYX_CC_APP_ID,
-        to: 'sip:agent1SipUsername@sip.telnyx.com',
-      })
-    );
-    expect(conference?.callLegs?.[1]).toEqual(
-      expect.objectContaining({
         clientCallState: 'default',
         direction: 'outgoing',
         from: process.env.TELNYX_SIP_OB_NUMBER,
@@ -93,6 +81,18 @@ describe('.dial', () => {
         telnyxCallControlId: 'fake_call_control_id',
         telnyxConnectionId: process.env.TELNYX_CC_APP_ID,
         to: '+15551231234',
+      })
+    );
+    expect(conference?.callLegs?.[1]).toEqual(
+      expect.objectContaining({
+        clientCallState: 'auto_answer',
+        direction: 'outgoing',
+        from: process.env.TELNYX_SIP_OB_NUMBER,
+        muted: false,
+        status: 'new',
+        telnyxCallControlId: 'fake_call_control_id',
+        telnyxConnectionId: process.env.TELNYX_CC_APP_ID,
+        to: 'sip:agent1SipUsername@sip.telnyx.com',
       })
     );
     expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
