@@ -18,25 +18,18 @@ import {
 } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import { Agent } from '../entities/agent.entity';
-import {
+import ICallControlEvent, {
   CallControlEventType,
   ICallControlEventPayload,
-  ICallControlEvent,
 } from '../interfaces/ICallControlEvent';
+import IClientState from '../interfaces/IClientState';
+import ICreateCallParams from '../interfaces/ICreateCallParams';
+import ICreateConferenceParams from '../interfaces/ICreateConferenceParams';
 
 let telnyxPackage: any = require('telnyx');
 // Initialize the Telnyx package with your API key when your app
 // starts up. Find your key here: https://portal.telnyx.com/#/app/api-keys
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
-
-interface IClientState {
-  // Define your own call states with `appCallState` to direct
-  // the flow of the call through your application
-  appCallState?: string;
-  appConferenceId?: string;
-  appConferenceOptions?: object;
-  transferrerTelnyxCallControlId?: string;
-}
 
 class CallControlController {
   /*
@@ -646,21 +639,15 @@ class CallControlController {
     direction,
     callControlId,
     telnyxConferenceOptions,
-  }: {
-    from: string;
-    to: string;
-    direction: string;
-    callControlId: string;
-    telnyxConferenceOptions?: Object;
-  }) {
+  }: ICreateConferenceParams) {
     let conferenceRepository = getRepository(Conference);
-    // For all available options:
-    // https://developers.telnyx.com/docs/api/v2/call-control/Conference-Commands#createConference
     let { data: telnyxConference } = await telnyx.conferences.create({
       name: `Call ${
         direction === CallLegDirection.OUTGOING ? `to ${to}` : `from ${from}`
       } at ${Date.now()}`,
       call_control_id: callControlId,
+      // For all available options:
+      // https://developers.telnyx.com/docs/api/v2/call-control/Conference-Commands#createConference
       ...telnyxConferenceOptions,
     });
 
@@ -685,14 +672,7 @@ class CallControlController {
     clientCallState,
     telnyxCallOptions,
     appConference,
-  }: {
-    from: string;
-    to: string;
-    connectionId: string;
-    clientCallState?: CallLegClientCallState;
-    telnyxCallOptions?: Object;
-    appConference?: Conference;
-  }) {
+  }: ICreateCallParams) {
     let callLegRepository = getRepository(CallLeg);
 
     let { data: telnyxOutgoingCall } = await telnyx.calls.create({
