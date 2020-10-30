@@ -1,14 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { TelnyxRTC } from '@telnyx/webrtc';
-import { IWebRTCCall } from '@telnyx/webrtc/lib/Modules/Verto/webrtc/interfaces';
-import { updateAgent, getLoggedInAgents } from '../../services/agentsService';
+import { updateAgent } from '../../services/agentsService';
 import * as callsService from '../../services/callsService';
 import useAgents from '../../hooks/useAgents';
 import ActiveCall from '../ActiveCall';
 import Agents from '../Agents';
 import Dialer from '../Dialer';
 import LoadingIcon from '../LoadingIcon';
-import { collapseTextChangeRangesAcrossMultipleVersions } from 'typescript';
 
 interface ICommon {
   agentId: string;

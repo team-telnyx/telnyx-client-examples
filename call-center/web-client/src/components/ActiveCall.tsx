@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { invite, transfer } from '../services/callsService';
 import IAgent from '../interfaces/IAgent';
 import Agents from './Agents';
@@ -140,8 +140,6 @@ function ActiveCallConference({
 }: IActiveCallConference) {
   let { agents } = useAgents(sipUsername);
   let {
-    loading: conferenceLoading,
-    error: conferenceError,
     conference,
   } = useActiveConference(telnyxCallControlId);
   let [newParticipant, setNewParticipant] = useState('');
@@ -219,10 +217,10 @@ function ActiveCallConference({
           let agent = agents?.find((agent) =>
             participant.includes(agent.sipUsername)
           );
-
+         
           if (agent) {
             conferenceParticipant.displayName = agent.name || agent.sipUsername;
-            conferenceParticipant.participant = `sip:${agent.sipUsername}@sip.telnyx.com`;
+            conferenceParticipant.participant = `sip:${agent.sipUsername}@${process.env.REACT_APP_SIP_DOMAIN}`;
           }
 
           return conferenceParticipant;
@@ -334,7 +332,6 @@ function ActiveCallConference({
 function ActiveCall({
   telnyxCallControlId,
   sipUsername,
-  callDirection,
   callDestination,
   callerId,
   callState,
