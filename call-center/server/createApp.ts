@@ -6,7 +6,7 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 
-import calls from './routes/callControl';
+import callControl from './routes/callControl';
 import agents from './routes/agents';
 import conferences from './routes/conferences';
 
@@ -19,7 +19,7 @@ function createApp() {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
-  app.use('/calls', calls);
+  app.use('/call-control', callControl);
   app.use('/agents', agents);
   app.use('/conferences', conferences);
 

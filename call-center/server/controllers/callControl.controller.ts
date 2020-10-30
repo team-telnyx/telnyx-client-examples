@@ -382,7 +382,7 @@ class CallControlController {
    * Directs the call flow based on the Call Control event type
    */
   public static callControl = async function (req: Request, res: Response) {
-    console.log('\n\n/callbacks/call-control-app | req body', req.body);
+    console.log('\n\n/callbacks | req body', req.body);
 
     try {
       let event: ICallControlEvent = req.body.data;

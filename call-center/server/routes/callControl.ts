@@ -14,6 +14,6 @@ router.post('/actions/conferences/mute', CallControlController.mute);
 router.post('/actions/conferences/unmute', CallControlController.unmute);
 
 // Callbacks
-router.post('/callbacks/call-control-app', CallControlController.callControl);
+router.post('/callbacks', CallControlController.callControl);
 
 export default router;

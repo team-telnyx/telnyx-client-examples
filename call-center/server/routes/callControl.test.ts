@@ -23,7 +23,7 @@ afterAll(async () => {
 describe('GET /', () => {
   test('filters results', () =>
     testFactory.app
-      .get('/calls?telnyxCallControlId=telnyxCallControlId1')
+      .get('/call-control?telnyxCallControlId=telnyxCallControlId1')
       .expect('Content-type', /json/)
       .expect(200)
       .then((resp) => {
@@ -37,7 +37,7 @@ describe('GET /', () => {
 
   test('limits results', () =>
     testFactory.app
-      .get('/calls?status=active&limit=2')
+      .get('/call-control?status=active&limit=2')
       .expect('Content-type', /json/)
       .expect(200)
       .then((resp) => {
@@ -48,7 +48,7 @@ describe('GET /', () => {
 describe('POST /actions/dial', () => {
   test('returns the outgoing call', () =>
     testFactory.app
-      .post('/calls/actions/dial')
+      .post('/call-control/actions/dial')
       .send({
         to: '+15551231234',
         initiatorSipUsername: 'agent1SipUsername',
@@ -73,7 +73,7 @@ describe('POST /actions/dial', () => {
 describe('POST /actions/invite', () => {
   test('returns the outgoing call when inviting an agent', () =>
     testFactory.app
-      .post('/calls/actions/conferences/invite')
+      .post('/call-control/actions/conferences/invite')
       .send({
         telnyxCallControlId: 'telnyxCallControlId1',
         to: 'sip:agent3SipUsername@sip.telnyx.com',
@@ -97,7 +97,7 @@ describe('POST /actions/invite', () => {
 
   test('returns the outgoing call when inviting a phone number', () =>
     testFactory.app
-      .post('/calls/actions/conferences/invite')
+      .post('/call-control/actions/conferences/invite')
       .send({
         telnyxCallControlId: 'telnyxCallControlId1',
         to: '+115551231234',
@@ -123,7 +123,7 @@ describe('POST /actions/invite', () => {
 describe('POST /actions/conferences/transfer', () => {
   test('returns the outgoing call', () =>
     testFactory.app
-      .post('/calls/actions/conferences/transfer')
+      .post('/call-control/actions/conferences/transfer')
       .send({
         telnyxCallControlId: 'telnyxCallControlId1',
         to: 'sip:agent3SipUsername@sip.telnyx.com',
@@ -149,7 +149,7 @@ describe('POST /actions/conferences/transfer', () => {
 describe('POST /actions/conferences/mute', () => {
   test('returns the muted call', () =>
     testFactory.app
-      .post('/calls/actions/conferences/mute')
+      .post('/call-control/actions/conferences/mute')
       .send({
         telnyxCallControlId: 'telnyxCallControlId4',
       })
@@ -168,7 +168,7 @@ describe('POST /actions/conferences/mute', () => {
 describe('POST /actions/conferences/unmute', () => {
   test('returns the unmuted call', () =>
     testFactory.app
-      .post('/calls/actions/conferences/unmute')
+      .post('/call-control/actions/conferences/unmute')
       .send({
         telnyxCallControlId: 'telnyxCallControlId2',
       })
@@ -187,7 +187,7 @@ describe('POST /actions/conferences/unmute', () => {
 describe('POST /actions/conferences/hangup', () => {
   test('returns the ended call', () =>
     testFactory.app
-      .post('/calls/actions/conferences/hangup')
+      .post('/call-control/actions/conferences/hangup')
       .send({
         telnyxCallControlId: 'telnyxCallControlId2',
       })
@@ -202,10 +202,10 @@ describe('POST /actions/conferences/hangup', () => {
       }));
 });
 
-describe('POST /callbacks/call-control-app', () => {
+describe('POST /callbacks', () => {
   test('empty response', () =>
     testFactory.app
-      .post('/calls/callbacks/call-control-app')
+      .post('/call-control/callbacks')
       .send({
         data: {
           event_type: 'call.initiated',
