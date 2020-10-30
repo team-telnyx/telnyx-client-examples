@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { FindManyOptions, getManager } from 'typeorm';
+import { getRepository } from 'typeorm';
 import {
   CallLeg,
   CallLegStatus,
@@ -8,7 +8,6 @@ import {
 } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import { Agent } from '../entities/agent.entity';
-import { format } from 'path';
 
 let telnyxPackage: any = require('telnyx');
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
@@ -68,7 +67,6 @@ class CallControlController {
     let { initiatorSipUsername, to } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
       let from = process.env.TELNYX_SIP_OB_NUMBER!;
 
       // Create a call leg back into our call center
@@ -149,7 +147,7 @@ class CallControlController {
     let { to, telnyxCallControlId } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
+      let callLegRepository = getRepository(CallLeg);
       let appInviterCallLeg = await callLegRepository.findOneOrFail({
         where: {
           telnyxCallControlId,
@@ -190,7 +188,7 @@ class CallControlController {
     let { to, telnyxCallControlId } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
+      let callLegRepository = getRepository(CallLeg);
       let appTransfererCallLeg = await callLegRepository.findOneOrFail({
         where: {
           telnyxCallControlId,
@@ -241,7 +239,7 @@ class CallControlController {
     let { telnyxCallControlId } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
+      let callLegRepository = getRepository(CallLeg);
       let appCall = await callLegRepository.findOneOrFail({
         where: {
           telnyxCallControlId,
@@ -282,7 +280,7 @@ class CallControlController {
     let { telnyxCallControlId } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
+      let callLegRepository = getRepository(CallLeg);
       let appCall = await callLegRepository.findOneOrFail({
         where: {
           telnyxCallControlId,
@@ -323,7 +321,7 @@ class CallControlController {
     let { telnyxCallControlId } = req.body;
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
+      let callLegRepository = getRepository(CallLeg);
       let appCall = await callLegRepository.findOneOrFail({
         where: {
           telnyxCallControlId,
@@ -361,9 +359,7 @@ class CallControlController {
       let event: ICallControlEvent = req.body.data;
       let { event_type: eventType, payload: eventPayload } = event;
 
-      let { state, client_state, from, to, direction } = eventPayload;
-
-      let clientState = decodeClientState(client_state);
+      let clientState = decodeClientState(eventPayload.client_state);
 
       console.log('=== clientState ===', clientState);
 
@@ -443,7 +439,7 @@ class CallControlController {
     eventPayload: ICallControlEventPayload
   ) {
     // Access database repository to perform database operations
-    let callLegRepository = getManager().getRepository(CallLeg);
+    let callLegRepository = getRepository(CallLeg);
 
     // Create a new Telnyx Call in order to issue call control commands
     let telnyxCall = new telnyx.Call({
@@ -472,7 +468,7 @@ class CallControlController {
     agent: Agent
   ) {
     // Access database repository to perform database operations
-    let callLegRepository = getManager().getRepository(CallLeg);
+    let callLegRepository = getRepository(CallLeg);
     let appIncomingCallLeg = await callLegRepository.findOneOrFail({
       telnyxCallControlId: eventPayload.call_control_id,
     });
@@ -544,7 +540,7 @@ class CallControlController {
     let clientState = decodeClientState(eventPayload.client_state);
 
     // Access database repository to perform database operations
-    let conferenceRepository = getManager().getRepository(Conference);
+    let conferenceRepository = getRepository(Conference);
     let appConference = await conferenceRepository.findOneOrFail(
       clientState.appConferenceId
     );
@@ -581,7 +577,7 @@ class CallControlController {
 
   private static async markCallActive(eventPayload: ICallControlEventPayload) {
     // Access database repository to perform database operations
-    let callLegRepository = getManager().getRepository(CallLeg);
+    let callLegRepository = getRepository(CallLeg);
 
     let appCall = await callLegRepository.findOne({
       telnyxCallControlId: eventPayload.call_control_id,
@@ -602,7 +598,7 @@ class CallControlController {
     eventPayload: ICallControlEventPayload
   ) {
     // Access database repository to perform database operations
-    let callLegRepository = getManager().getRepository(CallLeg);
+    let callLegRepository = getRepository(CallLeg);
 
     let appCall = await callLegRepository.findOne({
       telnyxCallControlId: eventPayload.call_control_id,
@@ -626,7 +622,7 @@ class CallControlController {
     callControlId,
     telnyxConferenceOptions,
   }: ICreateConferenceParams) {
-    let conferenceRepository = getManager().getRepository(Conference);
+    let conferenceRepository = getRepository(Conference);
     let { data: telnyxConference } = await telnyx.conferences.create({
       name: `Call ${
         direction === CallLegDirection.OUTGOING ? `to ${to}` : `from ${from}`
@@ -653,7 +649,7 @@ class CallControlController {
     telnyxCallOptions,
     appConference,
   }: ICreateCallParams) {
-    let callLegRepository = getManager().getRepository(CallLeg);
+    let callLegRepository = getRepository(CallLeg);
 
     let { data: telnyxOutgoingCall } = await telnyx.calls.create({
       to,
@@ -681,7 +677,7 @@ class CallControlController {
   };
 
   private static getAvailableAgent = async function () {
-    let agentRepository = getManager().getRepository(Agent);
+    let agentRepository = getRepository(Agent);
 
     async function findFirst() {
       let firstAvailableAgent = await agentRepository.findOne({

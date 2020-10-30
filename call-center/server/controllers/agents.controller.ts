@@ -3,13 +3,13 @@ import {
   getTelephonyCredentials,
   postTelephonyCredentialsToken,
 } from '../services/telephonyCredentials.service';
-import { getManager } from 'typeorm';
+import { getRepository } from 'typeorm';
 import { Agent } from '../entities/agent.entity';
 
 class AgentsController {
   public static getLoggedIn = async function (req: Request, res: Response) {
     try {
-      let agentRepository = getManager().getRepository(Agent);
+      let agentRepository = getRepository(Agent);
       res.json({
         agents: await agentRepository.find({ loggedIn: true }),
       });
@@ -23,7 +23,7 @@ class AgentsController {
     let id = req.params.id;
 
     try {
-      let agentRepository = getManager().getRepository(Agent);
+      let agentRepository = getRepository(Agent);
       res.json({
         agent: await agentRepository.findOneOrFail(id),
       });
@@ -38,7 +38,7 @@ class AgentsController {
     let id = req.params.id;
 
     try {
-      let agentRepository = getManager().getRepository(Agent);
+      let agentRepository = getRepository(Agent);
       // TODO Better handling of allowed fields
       let {
         id: reqBodyId,
@@ -71,7 +71,7 @@ class AgentsController {
         credential_id: credential.data.data.id,
       });
 
-      let agentRepository = getManager().getRepository(Agent);
+      let agentRepository = getRepository(Agent);
 
       let name = req.body.name || 'Unknown';
       let agent = new Agent();
@@ -97,7 +97,7 @@ class AgentsController {
   public static logout = async function (req: Request, res: Response) {
     try {
       let id = req.body.id;
-      let agentRepository = getManager().getRepository(Agent);
+      let agentRepository = getRepository(Agent);
 
       let loggedAgent = await agentRepository.findOne({ id });
       if (loggedAgent) {

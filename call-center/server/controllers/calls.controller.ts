@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { FindManyOptions, getManager } from 'typeorm';
+import { FindManyOptions, getRepository } from 'typeorm';
 import { CallLeg } from '../entities/callLeg.entity';
 
 class CallsController {
@@ -16,7 +16,7 @@ class CallsController {
     }
 
     try {
-      let callLegRepository = getManager().getRepository(CallLeg);
+      let callLegRepository = getRepository(CallLeg);
 
       res.json({
         calls: await callLegRepository.find(findOpts),
