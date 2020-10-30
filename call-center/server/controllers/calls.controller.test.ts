@@ -303,6 +303,8 @@ describe('.unmute', () => {
 describe('.callControl', () => {
   test('handles new incoming calls', async () => {
     telnyxMock.callMock.answer.mockClear();
+    telnyxMock.callsCreateMock.mockClear();
+    telnyxMock.conferencesCreateMock.mockClear();
 
     const req = {
       body: {
@@ -313,46 +315,8 @@ describe('.callControl', () => {
             client_state: null,
             call_control_id: 'fake_call_control_id__incoming_parked',
             connection_id: 'fake_connection_id',
-            from: 'fake_from',
-            to: 'fake_to',
-            direction: 'incoming',
-          },
-        },
-      },
-    };
-    // FIXME Better solution than ignoring dial type
-    // @ts-ignore
-    await CallsController.callControl(req, mockRes);
-
-    const callLeg = await getRepository(CallLeg).findOne({
-      from: 'fake_from',
-      to: 'fake_to',
-      direction: 'incoming',
-      telnyxCallControlId: 'fake_call_control_id__incoming_parked',
-      telnyxConnectionId: 'fake_connection_id',
-      clientCallState: 'default',
-      muted: false,
-    });
-    expect(callLeg).toBeDefined();
-    expect(telnyxMock.callMock.answer).toHaveBeenCalled();
-  });
-
-  test('handles answered new incoming calls', async () => {
-    telnyxMock.callsCreateMock.mockClear();
-    telnyxMock.conferencesCreateMock.mockClear();
-
-    const req = {
-      body: {
-        data: {
-          event_type: 'call.answered',
-          payload: {
-            client_state: encodeClientState({
-              appCallState: 'answer_incoming_parked',
-            }),
-            call_control_id: 'telnyxCallControlId1',
-            connection_id: 'fake_connection_id',
-            from: 'fake_from',
-            to: 'fake_to',
+            from: 'fake_from__incoming_parked',
+            to: process.env.TELNYX_SIP_OB_NUMBER,
             direction: 'incoming',
           },
         },
@@ -364,8 +328,8 @@ describe('.callControl', () => {
 
     const conference = await getRepository(Conference).findOne({
       where: {
-        from: 'fake_from',
-        to: 'fake_to',
+        from: 'fake_from__incoming_parked',
+        to: process.env.TELNYX_SIP_OB_NUMBER,
       },
       relations: ['callLegs'],
     });
@@ -373,15 +337,17 @@ describe('.callControl', () => {
     expect(conference?.callLegs).toHaveLength(2);
     expect(conference?.callLegs?.[0]).toEqual(
       expect.objectContaining({
-        id: 'callLeg1',
+        to: process.env.TELNYX_SIP_OB_NUMBER,
+        from: 'fake_from__incoming_parked',
       })
     );
     expect(conference?.callLegs?.[1]).toEqual(
       expect.objectContaining({
         to: 'sip:agent1SipUsername@sip.telnyx.com',
-        from: 'fake_from',
+        from: 'fake_from__incoming_parked',
       })
     );
+    expect(telnyxMock.callMock.answer).toHaveBeenCalled();
     expect(telnyxMock.callsCreateMock).toHaveBeenCalled();
     expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
   });

@@ -19,6 +19,7 @@
     "typescript": "^4.0.3"
   },
   "scripts": {
+    "setup": "cp .env.sample .env",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jest-environment-jsdom-sixteen",
