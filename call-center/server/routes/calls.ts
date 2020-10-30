@@ -1,8 +1,8 @@
 import express from 'express';
-import CallControlController from '../controllers/callControl.controller';
+import CallsController from '../controllers/calls.controller';
 
 let router = express.Router();
 
-router.get('/', CallControlController.get);
+router.get('/', CallsController.get);
 
 export default router;
