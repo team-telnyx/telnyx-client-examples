@@ -1,3 +1,10 @@
+/*
+ * The Telnyx WebRTC client uses On-Demand Credentials to register
+ * the client. This allows you to support multiple clients with one
+ * Telnyx SIP Connection.
+ *
+ * To read more about On-Demand Credentials: https://developers.telnyx.com/docs/v2/webrtc
+ */
 import axios from 'axios';
 
 export function getTelephonyCredentials(params: {
