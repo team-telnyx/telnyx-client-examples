@@ -6,6 +6,8 @@ const telnyxMock = require('telnyx');
 
 const testFactory = new TestFactory();
 
+const { TELNYX_SIP_DOMAIN } = process.env;
+
 beforeAll(async () => {
   await testFactory.init();
 });
@@ -37,7 +39,7 @@ describe('POST /actions/dial', () => {
             to: '+15551231234',
             direction: 'outgoing',
             conference: expect.objectContaining({
-              from: 'sip:agent1SipUsername@sip.telnyx.com',
+              from: `sip:agent1SipUsername@${TELNYX_SIP_DOMAIN}`,
               to: '+15551231234',
             }),
           })
@@ -51,7 +53,7 @@ describe('POST /actions/invite', () => {
       .post('/call-control/actions/conferences/invite')
       .send({
         telnyxCallControlId: 'telnyxCallControlId1',
-        to: 'sip:agent3SipUsername@sip.telnyx.com',
+        to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
       })
       .expect('Content-type', /json/)
       .expect(200)
@@ -63,7 +65,7 @@ describe('POST /actions/invite', () => {
         expect(resp.body.data).toEqual(
           expect.objectContaining({
             from: process.env.TELNYX_SIP_OB_NUMBER,
-            to: 'sip:agent3SipUsername@sip.telnyx.com',
+            to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
             direction: 'outgoing',
             conference: expectedConference,
           })
@@ -101,7 +103,7 @@ describe('POST /actions/conferences/transfer', () => {
       .post('/call-control/actions/conferences/transfer')
       .send({
         telnyxCallControlId: 'telnyxCallControlId1',
-        to: 'sip:agent3SipUsername@sip.telnyx.com',
+        to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
       })
       .expect('Content-type', /json/)
       .expect(200)
@@ -113,7 +115,7 @@ describe('POST /actions/conferences/transfer', () => {
         expect(resp.body.data).toEqual(
           expect.objectContaining({
             from: process.env.TELNYX_SIP_OB_NUMBER,
-            to: 'sip:agent3SipUsername@sip.telnyx.com',
+            to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
             direction: 'outgoing',
             conference: expectedConference,
           })

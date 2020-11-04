@@ -31,6 +31,8 @@ let telnyxPackage: any = require('telnyx');
 // starts up. Find your key here: https://portal.telnyx.com/#/app/api-keys
 let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
 
+const { TELNYX_SIP_DOMAIN } = process.env;
+
 class CallControlController {
   /*
    * Creates a conference and invites the specified destination
@@ -65,7 +67,7 @@ class CallControlController {
       // Create a conference
       let appConference = await CallControlController.createConference({
         to,
-        from: `sip:${initiatorSipUsername}@sip.telnyx.com`,
+        from: `sip:${initiatorSipUsername}@${TELNYX_SIP_DOMAIN}`,
         direction: CallLegDirection.OUTGOING,
         callControlId: appIncomingCall.telnyxCallControlId,
       });
@@ -86,7 +88,7 @@ class CallControlController {
 
       // Create a call leg for the agent who initiated the call
       await CallControlController.createCall({
-        to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
+        to: `sip:${initiatorSipUsername}@${TELNYX_SIP_DOMAIN}`,
         from,
         connectionId: process.env.TELNYX_CC_APP_ID!,
         clientCallState: CallLegClientCallState.AUTO_ANSWER,
@@ -492,7 +494,7 @@ class CallControlController {
 
     // Call the agent to invite them to join the conference call
     await CallControlController.createCall({
-      to: `sip:${agent.sipUsername}@sip.telnyx.com`,
+      to: `sip:${agent.sipUsername}@${TELNYX_SIP_DOMAIN}`,
       from: eventPayload.from,
       connectionId: eventPayload.connection_id,
       telnyxCallOptions: {
