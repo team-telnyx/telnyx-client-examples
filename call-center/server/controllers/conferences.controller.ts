@@ -1,6 +1,6 @@
 import { Conference } from '../entities/conference.entity';
 import { Request, Response } from 'express';
-import { getManager, createQueryBuilder } from 'typeorm';
+import { getRepository } from 'typeorm';
 
 class ConferencesController {
   // Find conference by call leg Call Control ID
@@ -8,7 +8,7 @@ class ConferencesController {
     let telnyxCallControlId = req.params.telnyx_call_control_id;
 
     try {
-      let conferenceRepository = getManager().getRepository(Conference);
+      let conferenceRepository = getRepository(Conference);
 
       let appConference = await conferenceRepository
         .createQueryBuilder('conference')

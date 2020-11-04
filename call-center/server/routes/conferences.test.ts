@@ -1,5 +1,3 @@
-import { getManager } from 'typeorm';
-import { CallLeg } from '../entities/callLeg.entity';
 import TestFactory from '../TestFactory';
 
 const telnyxMock = require('telnyx');

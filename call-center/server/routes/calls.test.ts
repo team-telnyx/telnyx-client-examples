@@ -1,5 +1,3 @@
-import { getRepository } from 'typeorm';
-import { Conference } from '../entities/conference.entity';
 import TestFactory from '../TestFactory';
 
 const telnyxMock = require('telnyx');

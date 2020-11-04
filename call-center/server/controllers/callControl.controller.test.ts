@@ -1,5 +1,5 @@
 import { getRepository } from 'typeorm';
-import { CallLeg, CallLegClientCallState } from '../entities/callLeg.entity';
+import { CallLeg } from '../entities/callLeg.entity';
 import { Conference } from '../entities/conference.entity';
 import TestFactory from '../TestFactory';
 import CallControlController, {
