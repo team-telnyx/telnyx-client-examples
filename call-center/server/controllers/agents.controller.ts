@@ -4,6 +4,7 @@ import {
   postTelephonyCredentialsToken,
 } from '../services/telephonyCredentials.service';
 import { getRepository } from 'typeorm';
+import logger from '../helpers/logger';
 import { Agent } from '../entities/agent.entity';
 
 class AgentsController {
@@ -14,7 +15,8 @@ class AgentsController {
         agents: await agentRepository.find({ loggedIn: true }),
       });
     } catch (e) {
-      console.error(e);
+      logger.debug(e);
+
       res.status(500).send({ error: e });
     }
   };
@@ -89,7 +91,6 @@ class AgentsController {
         credential: credential.data.data,
       });
     } catch (e) {
-      if (e.response) console.log(e.response.data);
       res.status(500).send({ error: e });
     }
   };

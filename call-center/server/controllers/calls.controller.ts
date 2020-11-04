@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { FindManyOptions, getRepository } from 'typeorm';
+import logger from '../helpers/logger';
 import { CallLeg } from '../entities/callLeg.entity';
 
 class CallsController {
@@ -22,7 +23,7 @@ class CallsController {
         calls: await callLegRepository.find(findOpts),
       });
     } catch (e) {
-      console.error(e);
+      logger.debug(e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
