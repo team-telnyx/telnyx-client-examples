@@ -5,11 +5,14 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import morgan from 'morgan';
 
 import callControl from './routes/callControl';
 import calls from './routes/calls';
 import agents from './routes/agents';
 import conferences from './routes/conferences';
+
+const { NODE_ENV } = process.env;
 
 function createApp() {
   let app = express();
@@ -19,6 +22,9 @@ function createApp() {
 
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
+
+  // Enable HTTP logging middleware
+  app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev'));
 
   app.use('/call-control', callControl);
   app.use('/calls', calls);
