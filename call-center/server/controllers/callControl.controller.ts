@@ -107,7 +107,7 @@ class CallControlController {
         data: appOutgoingCall,
       });
     } catch (e) {
-      logger.debug(e);
+      logger.debug('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -150,7 +150,7 @@ class CallControlController {
         data: appOutgoingCall,
       });
     } catch (e) {
-      logger.debug(e);
+      logger.debug('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -202,7 +202,7 @@ class CallControlController {
         data: appOutgoingCall,
       });
     } catch (e) {
-      logger.debug(e);
+      logger.debug('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -244,7 +244,7 @@ class CallControlController {
         data: appCall,
       });
     } catch (e) {
-      logger.debug(e);
+      logger.debug('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -286,7 +286,7 @@ class CallControlController {
         data: appCall,
       });
     } catch (e) {
-      logger.debug(e);
+      logger.debug('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -322,7 +322,7 @@ class CallControlController {
         data: appCall,
       });
     } catch (e) {
-      logger.debug(e);
+      logger.debug('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -397,7 +397,7 @@ class CallControlController {
         await CallControlController.markCallInactive(eventPayload);
       }
     } catch (e) {
-      logger.debug(e);
+      logger.debug('Error details:', e);
 
       res.status(500).json({ error: e });
     }

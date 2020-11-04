@@ -15,7 +15,7 @@ class AgentsController {
         agents: await agentRepository.find({ loggedIn: true }),
       });
     } catch (e) {
-      logger.debug(e);
+      logger.debug('Error details:', e);
 
       res.status(500).send({ error: e });
     }
@@ -30,6 +30,8 @@ class AgentsController {
         agent: await agentRepository.findOneOrFail(id),
       });
     } catch (e) {
+      logger.debug('Error details:', e);
+
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
         .send({ error: e });
@@ -91,6 +93,8 @@ class AgentsController {
         credential: credential.data.data,
       });
     } catch (e) {
+      logger.debug('Error details:', e);
+
       res.status(500).send({ error: e });
     }
   };
@@ -110,6 +114,8 @@ class AgentsController {
         agent: loggedAgent,
       });
     } catch (e) {
+      logger.debug('Error details:', e);
+
       res.status(500).json({ error: e });
     }
   };
