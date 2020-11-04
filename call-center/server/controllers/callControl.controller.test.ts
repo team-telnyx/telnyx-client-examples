@@ -11,8 +11,6 @@ const telnyxMock = require('telnyx');
 const testFactory = new TestFactory();
 const mockRes = { json: () => {} };
 
-const { TELNYX_SIP_DOMAIN } = process.env;
-
 beforeAll(async () => {
   await testFactory.init();
 });
@@ -69,7 +67,7 @@ describe('.dial', () => {
     const conference = await getRepository(Conference).findOne({
       where: {
         to: '+15551231234',
-        from: `sip:agent1SipUsername@${TELNYX_SIP_DOMAIN}`,
+        from: 'sip:agent1SipUsername@sip.telnyx.com',
       },
       relations: ['callLegs'],
     });
@@ -96,14 +94,14 @@ describe('.dial', () => {
         status: 'new',
         telnyxCallControlId: 'fake_call_control_id',
         telnyxConnectionId: process.env.TELNYX_CC_APP_ID,
-        to: `sip:agent1SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent1SipUsername@sip.telnyx.com',
       })
     );
     expect(telnyxMock.conferencesCreateMock).toHaveBeenCalled();
     expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         from: process.env.TELNYX_SIP_OB_NUMBER,
-        to: `sip:agent1SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent1SipUsername@sip.telnyx.com',
       })
     );
     expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
@@ -121,7 +119,7 @@ describe('.invite', () => {
 
     const req = {
       body: {
-        to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent3SipUsername@sip.telnyx.com',
         telnyxCallControlId: 'telnyxCallControlId1',
       },
     };
@@ -138,7 +136,7 @@ describe('.invite', () => {
       expect.objectContaining({
         clientCallState: 'default',
         direction: 'incoming',
-        to: `sip:agent1SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent1SipUsername@sip.telnyx.com',
       })
     );
     expect(conference?.callLegs?.[1]).toEqual(
@@ -150,13 +148,13 @@ describe('.invite', () => {
         status: 'new',
         telnyxCallControlId: 'fake_call_control_id',
         telnyxConnectionId: 'telnyxConnectionId1',
-        to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent3SipUsername@sip.telnyx.com',
       })
     );
     expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         from: process.env.TELNYX_SIP_OB_NUMBER,
-        to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent3SipUsername@sip.telnyx.com',
       })
     );
   });
@@ -169,7 +167,7 @@ describe('.transfer', () => {
 
     const req = {
       body: {
-        to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent3SipUsername@sip.telnyx.com',
         telnyxCallControlId: 'telnyxCallControlId1',
       },
     };
@@ -186,7 +184,7 @@ describe('.transfer', () => {
       expect.objectContaining({
         clientCallState: 'default',
         direction: 'incoming',
-        to: `sip:agent1SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent1SipUsername@sip.telnyx.com',
       })
     );
     expect(conference?.callLegs?.[1]).toEqual(
@@ -198,14 +196,14 @@ describe('.transfer', () => {
         status: 'new',
         telnyxCallControlId: 'fake_call_control_id',
         telnyxConnectionId: 'telnyxConnectionId1',
-        to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent3SipUsername@sip.telnyx.com',
       })
     );
     expect(telnyxMock.callMock.hangup).toHaveBeenCalled();
     expect(telnyxMock.callsCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         from: process.env.TELNYX_SIP_OB_NUMBER,
-        to: `sip:agent3SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent3SipUsername@sip.telnyx.com',
       })
     );
   });
@@ -347,7 +345,7 @@ describe('.callControl', () => {
     );
     expect(conference?.callLegs?.[1]).toEqual(
       expect.objectContaining({
-        to: `sip:agent1SipUsername@${TELNYX_SIP_DOMAIN}`,
+        to: 'sip:agent1SipUsername@sip.telnyx.com',
         from: 'fake_from__incoming_parked',
       })
     );
