@@ -14,7 +14,7 @@ async function prestart() {
     );
 
     await callControlApp.update({
-      webhook_event_url: `https://${process.env.NGROK_SUBDOMAIN}.ngrok.io/calls/callbacks/call-control-app`,
+      webhook_event_url: `https://${process.env.NGROK_SUBDOMAIN}.ngrok.io/call-control/callbacks`,
     });
   } catch (err) {
     console.error(err);

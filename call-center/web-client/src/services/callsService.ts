@@ -20,7 +20,7 @@ export const getCall = async (
 export const dial = async (
   params: ICallActionsParams
 ): Promise<AxiosResponse | AxiosError> => {
-  return await axios.post(`${BASE_URL}/calls/actions/dial`, params, {
+  return await axios.post(`${BASE_URL}/call-control/actions/dial`, params, {
     headers: {
       'Content-Type': 'application/json',
     },
@@ -31,7 +31,7 @@ export const invite = async (
   params: ICallActionsParams & IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios.post(
-    `${BASE_URL}/calls/actions/conferences/invite`,
+    `${BASE_URL}/call-control/actions/conferences/invite`,
     params,
     {
       headers: {
@@ -45,7 +45,7 @@ export const transfer = async (
   params: ICallActionsParams & IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios.post(
-    `${BASE_URL}/calls/actions/conferences/transfer`,
+    `${BASE_URL}/call-control/actions/conferences/transfer`,
     params,
     {
       headers: {
@@ -59,7 +59,7 @@ export const hangup = async (
   params: IActiveCallActionParams
 ): Promise<AxiosResponse<IConferenceActionsResponse> | AxiosError> => {
   return await axios.post(
-    `${BASE_URL}/calls/actions/conferences/hangup`,
+    `${BASE_URL}/call-control/actions/conferences/hangup`,
     params,
     {
       headers: {
@@ -73,7 +73,7 @@ export const mute = async (
   params: IActiveCallActionParams
 ): Promise<AxiosResponse | AxiosError> => {
   return await axios
-    .post(`${BASE_URL}/calls/actions/conferences/mute`, params, {
+    .post(`${BASE_URL}/call-control/actions/conferences/mute`, params, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -86,7 +86,7 @@ export const unmute = async (
   params: IActiveCallActionParams
 ): Promise<AxiosResponse<IConferenceActionsResponse> | AxiosError> => {
   return await axios.post(
-    `${BASE_URL}/calls/actions/conferences/unmute`,
+    `${BASE_URL}/call-control/actions/conferences/unmute`,
     params,
     {
       headers: {

@@ -17,7 +17,7 @@ async function setup() {
         data: callControlApp,
       } = await telnyx.callControlApplications.create({
         application_name: appName,
-        webhook_event_url: `https://${process.env.NGROK_SUBDOMAIN}.ngrok.io/calls/callbacks/call-control-app`,
+        webhook_event_url: `https://${process.env.NGROK_SUBDOMAIN}.ngrok.io/call-control/callbacks`,
         webhook_api_version: '2',
         // Hangup after default timeout of 30 seconds
         // Prevents long calls during development

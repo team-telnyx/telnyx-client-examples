@@ -48,7 +48,7 @@ You will need it to be able to receive websocket requests from the Call Control 
 
 Create a [Call Control App](https://portal.telnyx.com/#/app/call-control/applications/new).
 
-Set the required webhook URL to `https://your-ngrok-forwarding-id.ngrok.io/calls/callbacks/call-control-app`.
+Set the required webhook URL to `https://your-ngrok-forwarding-id.ngrok.io/call-control/callbacks`.
 
 Make note of the ID of your new Call Control App.
 
@@ -95,7 +95,7 @@ Make note of the Outbound Voice Profile ID.
    This will start an Express app on port specified as the `TELNYX_SERVER_APP_PORT` environment variable (defaults to `8000`).
 
 3. Log in as a call center agent in the browser. Open the ngrok Web Interface (ex: <http://127.0.0.1:4040/inspect/http>) in a separate tab. You should see `/login` request.
-4. Call your Call Center phone number from your personal device or a web dialer. You should see requests to `POST /calls/callbacks/call-control-app` come through.
+4. Call your Call Center phone number from your personal device or a web dialer. You should see requests to `POST /call-control/callbacks` come through.
 
 ---
 
