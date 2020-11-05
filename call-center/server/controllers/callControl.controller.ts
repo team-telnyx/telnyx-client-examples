@@ -26,10 +26,18 @@ import IClientState from '../interfaces/IClientState';
 import ICreateCallParams from '../interfaces/ICreateCallParams';
 import ICreateConferenceParams from '../interfaces/ICreateConferenceParams';
 
+const {
+  TELNYX_API_KEY,
+  TELNYX_CC_APP_ID,
+  TELNYX_HOLD_AUDIO_URL,
+  TELNYX_SIP_DOMAIN,
+  TELNYX_SIP_OB_NUMBER,
+} = process.env;
+
 let telnyxPackage: any = require('telnyx');
 // Initialize the Telnyx package with your API key when your app
 // starts up. Find your key here: https://portal.telnyx.com/#/app/api-keys
-let telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
+let telnyx = telnyxPackage(TELNYX_API_KEY);
 
 class CallControlController {
   /*
@@ -39,15 +47,15 @@ class CallControlController {
     let { initiatorSipUsername, to } = req.body;
 
     try {
-      let from = process.env.TELNYX_SIP_OB_NUMBER!;
+      let from = TELNYX_SIP_OB_NUMBER!;
 
       // Create a call leg back into our call center
       // IDEA Create a separate phone number or webhook to handle
       // routing calls instead of checking to/from in CC event
       let appIncomingCall = await CallControlController.createCall({
-        to: process.env.TELNYX_SIP_OB_NUMBER!,
+        to: TELNYX_SIP_OB_NUMBER!,
         from,
-        connectionId: process.env.TELNYX_CC_APP_ID!,
+        connectionId: TELNYX_CC_APP_ID!,
         telnyxCallOptions: {
           client_state: encodeClientState({
             appCallState: 'initiate_dial',
@@ -65,7 +73,7 @@ class CallControlController {
       // Create a conference
       let appConference = await CallControlController.createConference({
         to,
-        from: `sip:${initiatorSipUsername}@sip.telnyx.com`,
+        from: `sip:${initiatorSipUsername}@${TELNYX_SIP_DOMAIN}`,
         direction: CallLegDirection.OUTGOING,
         callControlId: appIncomingCall.telnyxCallControlId,
       });
@@ -74,7 +82,7 @@ class CallControlController {
       let appOutgoingCall = await CallControlController.createCall({
         to,
         from,
-        connectionId: process.env.TELNYX_CC_APP_ID!,
+        connectionId: TELNYX_CC_APP_ID!,
         telnyxCallOptions: {
           client_state: encodeClientState({
             appCallState: 'join_conference',
@@ -86,9 +94,9 @@ class CallControlController {
 
       // Create a call leg for the agent who initiated the call
       await CallControlController.createCall({
-        to: `sip:${initiatorSipUsername}@sip.telnyx.com`,
+        to: `sip:${initiatorSipUsername}@${TELNYX_SIP_DOMAIN}`,
         from,
-        connectionId: process.env.TELNYX_CC_APP_ID!,
+        connectionId: TELNYX_CC_APP_ID!,
         clientCallState: CallLegClientCallState.AUTO_ANSWER,
         telnyxCallOptions: {
           client_state: encodeClientState({
@@ -129,7 +137,7 @@ class CallControlController {
         relations: ['conference'],
       });
 
-      let from = process.env.TELNYX_SIP_OB_NUMBER!;
+      let from = TELNYX_SIP_OB_NUMBER!;
 
       // Call someone to invite them to join the conference call
       let appOutgoingCall = await CallControlController.createCall({
@@ -172,7 +180,7 @@ class CallControlController {
         relations: ['conference'],
       });
 
-      let from = process.env.TELNYX_SIP_OB_NUMBER!;
+      let from = TELNYX_SIP_OB_NUMBER!;
 
       // Call someone to invite them to join the conference call
       let appOutgoingCall = await CallControlController.createCall({
@@ -419,7 +427,7 @@ class CallControlController {
       eventPayload.state === 'parked' &&
       !eventPayload.client_state &&
       !(
-        eventPayload.from === process.env.TELNYX_SIP_OB_NUMBER &&
+        eventPayload.from === TELNYX_SIP_OB_NUMBER &&
         eventPayload.to === eventPayload.from
       )
     );
@@ -481,7 +489,7 @@ class CallControlController {
       callControlId: eventPayload.call_control_id,
       telnyxConferenceOptions: {
         // Place caller on hold until agent joins the call
-        hold_audio_url: process.env.HOLD_AUDIO_URL,
+        hold_audio_url: TELNYX_HOLD_AUDIO_URL,
         start_conference_on_create: false,
       },
     });
@@ -492,7 +500,7 @@ class CallControlController {
 
     // Call the agent to invite them to join the conference call
     await CallControlController.createCall({
-      to: `sip:${agent.sipUsername}@sip.telnyx.com`,
+      to: `sip:${agent.sipUsername}@${TELNYX_SIP_DOMAIN}`,
       from: eventPayload.from,
       connectionId: eventPayload.connection_id,
       telnyxCallOptions: {
