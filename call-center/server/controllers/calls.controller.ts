@@ -23,7 +23,7 @@ class CallsController {
         calls: await callLegRepository.find(findOpts),
       });
     } catch (e) {
-      logger.debug('Error details:', e);
+      logger.warn('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
