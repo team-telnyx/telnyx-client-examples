@@ -8,7 +8,7 @@ npm run setup
 npm start
 ```
 
-This will start an Express app on port specified as the `TELNYX_SERVER_APP_PORT` environment variable (defaults to `8000`).
+This will start a development Express app on port specified as the `TELNYX_SERVER_APP_PORT` environment variable (defaults to `8000`).
 
 ## App configuration
 
@@ -30,3 +30,7 @@ You can use the [Telnyx RTC Web Dialer Demo](https://webrtc.telnyx.com/rtc/index
 
 1. Use token returned from `POST /agents/login` as the "Login Token" to authenticate the web dialer
 1. Set "Caller ID Number" to your Call Center phone number.
+
+## Production
+
+This sample app is meant to be used in development only. Before going to production, make sure you set the `NODE_ENV` to `production` and switch from the in-memory database to a [production database](https://foalts.gitbook.io/docs/topic-guides/databases).

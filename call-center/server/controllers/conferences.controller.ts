@@ -1,6 +1,7 @@
 import { Conference } from '../entities/conference.entity';
 import { Request, Response } from 'express';
 import { getRepository } from 'typeorm';
+import logger from '../helpers/logger';
 
 class ConferencesController {
   // Find conference by call leg Call Control ID
@@ -30,7 +31,7 @@ class ConferencesController {
         conference: appConference,
       });
     } catch (e) {
-      console.error(e);
+      logger.warn('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)

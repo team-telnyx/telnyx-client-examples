@@ -10,6 +10,7 @@
  */
 import { Request, Response } from 'express';
 import { getRepository } from 'typeorm';
+import logger from '../helpers/logger';
 import {
   CallLeg,
   CallLegStatus,
@@ -114,7 +115,7 @@ class CallControlController {
         data: appOutgoingCall,
       });
     } catch (e) {
-      console.error(e);
+      logger.warn('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -157,7 +158,7 @@ class CallControlController {
         data: appOutgoingCall,
       });
     } catch (e) {
-      console.error(e);
+      logger.warn('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -209,7 +210,7 @@ class CallControlController {
         data: appOutgoingCall,
       });
     } catch (e) {
-      console.error(e);
+      logger.warn('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -251,7 +252,7 @@ class CallControlController {
         data: appCall,
       });
     } catch (e) {
-      console.error(e);
+      logger.warn('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -293,7 +294,7 @@ class CallControlController {
         data: appCall,
       });
     } catch (e) {
-      console.error(e);
+      logger.warn('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -329,7 +330,7 @@ class CallControlController {
         data: appCall,
       });
     } catch (e) {
-      console.error(e);
+      logger.warn('Error details:', e);
 
       res
         .status(e && e.name === 'EntityNotFound' ? 404 : 500)
@@ -343,15 +344,20 @@ class CallControlController {
    * https://developers.telnyx.com/docs/v2/call-control/receiving-webhooks
    */
   public static callControl = async function (req: Request, res: Response) {
-    console.log('\n\n/callbacks | req body', req.body);
-
     try {
       let event: ICallControlEvent = req.body.data;
       let { event_type: eventType, payload: eventPayload } = event;
 
       let clientState = decodeClientState(eventPayload.client_state);
 
-      console.log('=== clientState ===', clientState);
+      logger.debug(
+        'Webhook received | Event type: %s\nEvent payload: %O',
+        eventType,
+        {
+          ...event.payload,
+          client_state: clientState,
+        }
+      );
 
       if (eventType === CallControlEventType.CALL_INITIATED) {
         // IDEA Specify a different webhook URL for all subsequent calls,
@@ -399,11 +405,7 @@ class CallControlController {
         await CallControlController.markCallInactive(eventPayload);
       }
     } catch (e) {
-      console.error(e);
-
-      if (e?.raw?.errors) {
-        console.error(e.raw.errors);
-      }
+      logger.warn('Error details:', e);
 
       res.status(500).json({ error: e });
     }
@@ -608,8 +610,8 @@ class CallControlController {
       appCall.status = CallLegStatus.ACTIVE;
       await callLegRepository.save(appCall);
     } else {
-      console.log(
-        `Warning, no call leg with telnyxCallControlId ${eventPayload.call_control_id} found`
+      logger.warn(
+        `No call leg with telnyxCallControlId ${eventPayload.call_control_id} found`
       );
     }
   }
@@ -632,8 +634,8 @@ class CallControlController {
       appCall.status = CallLegStatus.INACTIVE;
       await callLegRepository.save(appCall);
     } else {
-      console.log(
-        `Warning, no call leg with telnyxCallControlId ${eventPayload.call_control_id} found`
+      logger.warn(
+        `No call leg with telnyxCallControlId ${eventPayload.call_control_id} found`
       );
     }
   }

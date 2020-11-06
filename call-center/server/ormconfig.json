@@ -3,5 +3,5 @@
   "database": ":memory:",
   "entities": ["./entities/*.ts"],
   "synchronize": true,
-  "logging": true
+  "logging": ["error"]
 }
