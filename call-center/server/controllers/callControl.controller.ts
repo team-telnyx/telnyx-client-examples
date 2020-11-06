@@ -35,6 +35,9 @@ const {
   TELNYX_SIP_OB_NUMBER,
 } = process.env;
 
+// NOTE We need to import the Telnyx node SDK with `require` here because
+// the package does not currently export TypeScript types. For JS projects
+// you are able to do `import telnyxPackage from 'telnyxPackage'`
 let telnyxPackage: any = require('telnyx');
 // Initialize the Telnyx package with your API key when your app
 // starts up. Find your key here: https://portal.telnyx.com/#/app/api-keys
