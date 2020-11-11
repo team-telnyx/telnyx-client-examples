@@ -1,14 +1,17 @@
 import axios from "axios";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { TelnyxRTC } from "@telnyx/webrtc";
+import { useTelnyxRTC } from "@telnyx/react-client";
 
 export default function Home({ token }) {
   let telnyxRTCRef = useRef(undefined);
 
   useEffect(() => {
-    telnyxRTCRef.current = new TelnyxRTC({
+    let { telnyxClientRef } = useTelnyxRTC({
       login_token: token,
     });
+
+    telnyxRTCRef.current = telnyxClientRef;
 
     telnyxRTCRef.current.connect();
 
