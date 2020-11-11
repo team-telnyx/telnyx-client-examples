@@ -1,19 +1,25 @@
 import axios from "axios";
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { TelnyxRTC } from "@telnyx/webrtc";
 
 export default function Home({ token }) {
   let telnyxRTCRef = useRef(undefined);
 
-  useLayoutEffect(() => {
-    console.log("running effect");
+  useEffect(() => {
     telnyxRTCRef.current = new TelnyxRTC({
       login_token: token,
     });
 
     telnyxRTCRef.current.connect();
 
-    telnyxRTCRef.current.on("telnyx.ready", () => console.log("ready"));
+    telnyxRTCRef.current.on("telnyx.ready", () => {
+      telnyxRTCRef.current.enableMicrophone();
+      telnyxRTCRef.current.enableWebcam();
+
+      telnyxRTCRef.current.newCall({
+        destinationNumber: "",
+      });
+    });
     telnyxRTCRef.current.on("telnyx.error", (error) =>
       console.log("error", error)
     );
