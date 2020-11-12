@@ -1,34 +1,99 @@
 import axios from "axios";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { TelnyxRTC } from "@telnyx/webrtc";
-import { useTelnyxRTC } from "@telnyx/react-client";
+
+let INITIAL_STATE = {
+  name: "INITIAL",
+  data: undefined,
+};
 
 export default function Home({ token }) {
+  let [state, setState] = useState(INITIAL_STATE);
   let telnyxRTCRef = useRef(undefined);
+  let videoLocalRef = useRef();
+  let videoRemoteRef = useRef();
 
   useEffect(() => {
-    let { telnyxClientRef } = useTelnyxRTC({
+    telnyxRTCRef.current = new TelnyxRTC({
       login_token: token,
     });
-
-    telnyxRTCRef.current = telnyxClientRef;
-
     telnyxRTCRef.current.connect();
+
+    setState({
+      name: "RTC_CONNECTING",
+    });
 
     telnyxRTCRef.current.on("telnyx.ready", () => {
       telnyxRTCRef.current.enableMicrophone();
       telnyxRTCRef.current.enableWebcam();
 
-      telnyxRTCRef.current.newCall({
-        destinationNumber: "",
+      setState({
+        name: "RTC_READY",
       });
     });
-    telnyxRTCRef.current.on("telnyx.error", (error) =>
-      console.log("error", error)
-    );
+
+    telnyxRTCRef.current.on("telnyx.error", (error) => {
+      console.log("error", error);
+
+      setState({
+        name: "RTC_ERROR",
+        data: { error },
+      });
+    });
+
+    telnyxRTCRef.current.on("telnyx.notification", (notification) => {
+      switch (notification.type) {
+        case "callUpdate":
+          if (state.data?.call) {
+            setState({
+              ...state,
+              data: {
+                ...state.data,
+                call: state.data.call,
+              },
+            });
+            break;
+          }
+      }
+    });
   }, []);
 
-  return <span>Home</span>;
+  let handleCallButtonClick = useCallback(() => {
+    telnyxRTCRef.current?.newCall({
+      destinationNumber: process.env.NEXT_PUBLIC_TELNYX_CALL_CONTROL_ADDRESS,
+      audio: true,
+      video: true,
+    });
+
+    setState({
+      name: "RTC_CALLING",
+      data: { call: {} },
+    });
+  }, [telnyxRTCRef.current]);
+
+  let handleHangupClick = useCallback(() => {
+    let calls = Object.values(telnyxRTCRef.current?.calls);
+    calls?.[0]?.hangup?.();
+  });
+
+  return (
+    <div>
+      <h1>Telnyx Video Conference</h1>
+      <button type="button" onClick={handleCallButtonClick}>
+        Call
+      </button>
+      <button type="button" onClick={handleHangupClick}>
+        Hangup
+      </button>
+      {state.name === "RTC_CALLING" ? (
+        <div>
+          <video ref={videoLocalRef} playsInline />
+          <video ref={videoRemoteRef} playsInline />
+        </div>
+      ) : null}
+      <pre>{state.name}</pre>
+    </div>
+  );
 }
 
 export async function getStaticProps() {
