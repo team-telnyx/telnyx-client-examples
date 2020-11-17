@@ -44,19 +44,40 @@ export default function Home({ token }) {
     telnyxRTCRef.current.on("telnyx.notification", (notification) => {
       switch (notification.type) {
         case "callUpdate":
-          if (state.data?.call) {
-            setState({
-              ...state,
-              data: {
-                ...state.data,
-                call: state.data.call,
-              },
-            });
-            break;
-          }
+          console.log(notification);
+          setState({
+            ...state,
+            data: {
+              ...(state.data || {}),
+              call: notification.call,
+            },
+          });
+          break;
+        case "participantData":
+          break;
+        case "userMediaError":
+          setState({
+            name: "USER_MEDIA_ERROR",
+            data: { notification },
+          });
+          break;
       }
     });
   }, []);
+
+  // Update remote video stream
+  useEffect(() => {
+    if (videoRemoteRef.current) {
+      videoRemoteRef.current.srcObject = state.data?.call?.remoteStream;
+    }
+  }, [state.data?.call?.remoteStream]);
+
+  // Update local video stream
+  useEffect(() => {
+    if (videoLocalRef.current) {
+      videoLocalRef.current.srcObject = state.data?.call?.localStream;
+    }
+  }, [state.data?.call?.localStream]);
 
   let handleCallButtonClick = useCallback(() => {
     telnyxRTCRef.current?.newCall({
@@ -64,17 +85,11 @@ export default function Home({ token }) {
       audio: true,
       video: true,
     });
-
-    setState({
-      name: "RTC_CALLING",
-      data: { call: {} },
-    });
   }, [telnyxRTCRef.current]);
 
   let handleHangupClick = useCallback(() => {
-    let calls = Object.values(telnyxRTCRef.current?.calls);
-    calls?.[0]?.hangup?.();
-  });
+    state.data?.call?.hangup?.();
+  }, [state.data?.call]);
 
   return (
     <div>
@@ -85,12 +100,26 @@ export default function Home({ token }) {
       <button type="button" onClick={handleHangupClick}>
         Hangup
       </button>
-      {state.name === "RTC_CALLING" ? (
+      <div>
         <div>
-          <video ref={videoLocalRef} playsInline />
-          <video ref={videoRemoteRef} playsInline />
+          <h2>Local</h2>
+          <video
+            ref={videoLocalRef}
+            playsInline
+            autoPlay
+            style={{ background: "black" }}
+          />
         </div>
-      ) : null}
+        <div>
+          <h2>Remote</h2>
+          <video
+            ref={videoRemoteRef}
+            playsInline
+            autoPlay
+            style={{ background: "black" }}
+          />
+        </div>
+      </div>
       <pre>{state.name}</pre>
     </div>
   );
