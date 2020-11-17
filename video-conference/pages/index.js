@@ -93,34 +93,103 @@ export default function Home({ token }) {
 
   return (
     <div>
-      <h1>Telnyx Video Conference</h1>
-      <button type="button" onClick={handleCallButtonClick}>
-        Call
-      </button>
-      <button type="button" onClick={handleHangupClick}>
-        Hangup
-      </button>
-      <div>
-        <div>
-          <h2>Local</h2>
+      <style jsx global>{`
+        body,
+        html {
+          min-height: 100vh;
+          background: black;
+          color: white;
+          font-family: sans-serif;
+        }
+      `}</style>
+
+      <style jsx>{`
+        .no-call {
+        }
+        .no-call h1 {
+          text-align: center;
+        }
+
+        .no-call .button-wrapper {
+          display: flex;
+          width: 100%;
+          justify-content: center;
+        }
+
+        .no-call .button-wrapper button {
+          padding: 10px 20px;
+          font-size: 20px;
+        }
+      `}</style>
+
+      <style jsx>{`
+        .active-call .hangup-button {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translateX(-50%) translateY(-50%);
+
+          padding: 10px 20px;
+          font-size: 20px;
+
+          background: red;
+          color: white;
+          z-index: 2;
+          border: none;
+        }
+
+        .video {
+          height: 50vh;
+          position: fixed;
+          left: 50%;
+          transform: translateX(-50%);
+          background: darkgray;
+        }
+
+        .local-video {
+          top: 0px;
+        }
+
+        .remote-video {
+          bottom: 0px;
+        }
+      `}</style>
+
+      {!state.data?.call ? (
+        <div className="no-call">
+          <h1>Telnyx Video Conference</h1>
+          <div className="button-wrapper">
+            <button type="button" onClick={handleCallButtonClick}>
+              Call
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="active-call">
+          <button
+            className="hangup-button"
+            type="button"
+            onClick={handleHangupClick}
+          >
+            Hangup
+          </button>
+
           <video
+            className="video local-video"
             ref={videoLocalRef}
             playsInline
             autoPlay
             style={{ background: "black" }}
           />
-        </div>
-        <div>
-          <h2>Remote</h2>
           <video
+            className="video remote-video"
             ref={videoRemoteRef}
             playsInline
             autoPlay
             style={{ background: "black" }}
           />
         </div>
-      </div>
-      <pre>{state.name}</pre>
+      )}
     </div>
   );
 }
