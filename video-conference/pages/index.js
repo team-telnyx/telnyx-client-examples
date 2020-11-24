@@ -16,6 +16,7 @@ export default function Home({ token }) {
   useEffect(() => {
     telnyxRTCRef.current = new TelnyxRTC({
       login_token: token,
+      env: "development",
     });
     telnyxRTCRef.current.connect();
 
@@ -44,11 +45,16 @@ export default function Home({ token }) {
     telnyxRTCRef.current.on("telnyx.notification", (notification) => {
       switch (notification.type) {
         case "callUpdate":
-          console.log(notification);
+          if (notification.call.state === "destroy") {
+            setState({
+              name: "RTC_READY",
+            });
+            break;
+          }
+
           setState({
-            ...state,
+            name: "CALL_IN_PROGRESS",
             data: {
-              ...(state.data || {}),
               call: notification.call,
             },
           });
@@ -200,7 +206,7 @@ export async function getStaticProps() {
 
   let onDemandCredentialResponse = await axios({
     method: "POST",
-    url: "https://api.telnyx.com/v2/telephony_credentials",
+    url: "https://apidev.telnyx.com/v2/telephony_credentials",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
@@ -212,7 +218,7 @@ export async function getStaticProps() {
 
   let tokenResponse = await axios({
     method: "POST",
-    url: `https://api.telnyx.com/v2/telephony_credentials/${onDemandCredentialResponse.data.data.id}/token`,
+    url: `https://apidev.telnyx.com/v2/telephony_credentials/${onDemandCredentialResponse.data.data.id}/token`,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
