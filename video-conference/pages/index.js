@@ -2,6 +2,7 @@ import axios from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TelnyxRTC } from "@telnyx/webrtc";
 import { Video } from "@telnyx/react-client";
+import { useCopyToClipboard } from "react-use";
 
 let INITIAL_STATE = {
   name: "INITIAL",
@@ -11,6 +12,7 @@ let INITIAL_STATE = {
 export default function Home({ token }) {
   let [state, setState] = useState(INITIAL_STATE);
   let telnyxRTCRef = useRef(undefined);
+  let [copyState, copyToClipboard] = useCopyToClipboard();
 
   useEffect(() => {
     telnyxRTCRef.current = new TelnyxRTC({
@@ -92,6 +94,7 @@ export default function Home({ token }) {
           background: #272739;
           color: white;
           font-family: sans-serif;
+          font-weight: 400;
           margin: 0;
         }
       `}</style>
@@ -113,12 +116,28 @@ export default function Home({ token }) {
         }
 
         .Body-video {
-          height: 100%;
+          display: grid;
+          grid-gap: 10px;
+          grid-auto-flow: column;
+          justify-content: center;
+          width: 100%;
+        }
+
+        .Body-video > * {
+          width: 640px;
+          height: 480px;
         }
 
         .Body-connect {
           background: #32973c;
           color: white;
+
+          cursor: pointer;
+          border-radius: 5px;
+          font-size: 16px;
+          border: 0;
+          appearance: none;
+          padding: 10px;
         }
 
         .ControlBar {
@@ -140,7 +159,20 @@ export default function Home({ token }) {
           display: grid;
           grid-auto-flow: column;
           grid-gap: 10px;
+          align-items: center;
           justify-content: center;
+        }
+
+        .JoinLink-copy-button {
+          background: transparent;
+          color: #32973c;
+          text-decoration: underline;
+
+          cursor: pointer;
+          font-size: 16px;
+          border: 0;
+          appearance: none;
+          padding: 10px;
         }
 
         .CallControls {
@@ -153,6 +185,13 @@ export default function Home({ token }) {
         .CallControls-button.isHangup {
           background: red;
           color: white;
+
+          cursor: pointer;
+          border-radius: 5px;
+          font-size: 16px;
+          border: 0;
+          appearance: none;
+          padding: 10px;
         }
       `}</style>
       <div className="Body">
@@ -189,7 +228,14 @@ export default function Home({ token }) {
             https://video.telnyx.com/?room=1234234555123
           </span>
           <span className="JoinLink-copy">
-            <button className="JoinLink-copy-button">copy</button>
+            <button
+              className="JoinLink-copy-button"
+              onClick={() =>
+                copyToClipboard("https://video.telnyx.com/?room=1234234555123")
+              }
+            >
+              copy
+            </button>
           </span>
         </div>
         <div className="CallControls">
