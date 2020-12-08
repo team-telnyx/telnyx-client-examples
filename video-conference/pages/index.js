@@ -105,13 +105,13 @@ export default function Home({ token }) {
     console.log(micId);
 
     if (micId) {
-      telnyxRTCRef.current?.unmuteAudio();
+      telnyxRTCRef.current?.enableMicrophone();
       telnyxRTCRef.current?.setAudioSettings({
         micId,
         echoCancellation: true,
       });
     } else {
-      telnyxRTCRef.current?.muteAudio();
+      telnyxRTCRef.current?.disableMicrophone();
     }
   });
 
@@ -122,12 +122,12 @@ export default function Home({ token }) {
     console.log(camId);
 
     if (camId) {
-      telnyxRTCRef.current?.unmuteVideo();
+      telnyxRTCRef.current?.enableWebcam();
       telnyxRTCRef.current?.setVideoSettings({
         camId,
       });
     } else {
-      telnyxRTCRef.current?.muteVideo();
+      telnyxRTCRef.current?.disableWebcam();
     }
   });
 
@@ -270,7 +270,9 @@ export default function Home({ token }) {
               </option>
             ))}
 
-            <option key="mute">Mute</option>
+            <option key="mute" value="">
+              Mute
+            </option>
           </select>
 
           <select
@@ -283,7 +285,9 @@ export default function Home({ token }) {
                 {device.label}
               </option>
             ))}
-            <option key="stop">Stop Video</option>
+            <option key="stop" value="">
+              Stop Video
+            </option>
           </select>
         </div>
         <div className="JoinLink">
