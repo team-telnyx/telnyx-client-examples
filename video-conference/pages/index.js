@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TelnyxRTC } from "@telnyx/webrtc";
+import { Video } from "@telnyx/react-client";
 
 let INITIAL_STATE = {
   name: "INITIAL",
@@ -10,80 +11,65 @@ let INITIAL_STATE = {
 export default function Home({ token }) {
   let [state, setState] = useState(INITIAL_STATE);
   let telnyxRTCRef = useRef(undefined);
-  let videoLocalRef = useRef();
-  let videoRemoteRef = useRef();
 
-  // useEffect(() => {
-  //   telnyxRTCRef.current = new TelnyxRTC({
-  //     login_token: token,
-  //     host: "wss://rtcdev.telnyx.tech:443",
-  //   });
-  //   telnyxRTCRef.current.connect();
-
-  //   setState({
-  //     name: "RTC_CONNECTING",
-  //   });
-
-  //   telnyxRTCRef.current.on("telnyx.ready", () => {
-  //     telnyxRTCRef.current.enableMicrophone();
-  //     telnyxRTCRef.current.enableWebcam();
-
-  //     setState({
-  //       name: "RTC_READY",
-  //     });
-  //   });
-
-  //   telnyxRTCRef.current.on("telnyx.error", (error) => {
-  //     console.log("error", error);
-
-  //     setState({
-  //       name: "RTC_ERROR",
-  //       data: { error },
-  //     });
-  //   });
-
-  //   telnyxRTCRef.current.on("telnyx.notification", (notification) => {
-  //     switch (notification.type) {
-  //       case "callUpdate":
-  //         if (notification.call.state === "destroy") {
-  //           setState({
-  //             name: "RTC_READY",
-  //           });
-  //           break;
-  //         }
-
-  //         setState({
-  //           name: "CALL_IN_PROGRESS",
-  //           data: {
-  //             call: notification.call,
-  //           },
-  //         });
-  //         break;
-  //       case "participantData":
-  //         break;
-  //       case "userMediaError":
-  //         setState({
-  //           name: "USER_MEDIA_ERROR",
-  //           data: { notification },
-  //         });
-  //         break;
-  //     }
-  //   });
-  // }, []);
-
-  // Update remote video stream
   useEffect(() => {
-    if (videoRemoteRef.current) {
-      videoRemoteRef.current.srcObject = state.data?.call?.remoteStream;
-    }
-  }, [state.data?.call?.remoteStream]);
+    telnyxRTCRef.current = new TelnyxRTC({
+      login_token: token,
+      env: "development",
+      // host: "wss://rtcdev.telnyx.tech:443",
+    });
+    telnyxRTCRef.current.connect();
 
-  // Update local video stream
-  useEffect(() => {
-    if (videoLocalRef.current) {
-      videoLocalRef.current.srcObject = state.data?.call?.localStream;
-    }
-  }, [state.data?.call?.localStream]);
+    setState({
+      name: "RTC_CONNECTING",
+    });
+
+    telnyxRTCRef.current.on("telnyx.ready", () => {
+      telnyxRTCRef.current.enableMicrophone();
+      telnyxRTCRef.current.enableWebcam();
+
+      setState({
+        name: "RTC_READY",
+      });
+    });
+
+    telnyxRTCRef.current.on("telnyx.error", (error) => {
+      console.log("error", error);
+
+      setState({
+        name: "RTC_ERROR",
+        data: { error },
+      });
+    });
+
+    telnyxRTCRef.current.on("telnyx.notification", (notification) => {
+      switch (notification.type) {
+        case "callUpdate":
+          if (notification.call.state === "destroy") {
+            setState({
+              name: "RTC_READY",
+            });
+            break;
+          }
+
+          setState({
+            name: "CALL_IN_PROGRESS",
+            data: {
+              call: notification.call,
+            },
+          });
+          break;
+        case "participantData":
+          break;
+        case "userMediaError":
+          setState({
+            name: "USER_MEDIA_ERROR",
+            data: { notification },
+          });
+          break;
+      }
+    });
+  }, []);
 
   let handleCallButtonClick = useCallback(() => {
     telnyxRTCRef.current?.newCall({
@@ -103,7 +89,7 @@ export default function Home({ token }) {
         body,
         html {
           min-height: 100vh;
-          background: black;
+          background: #272739;
           color: white;
           font-family: sans-serif;
           margin: 0;
@@ -119,11 +105,20 @@ export default function Home({ token }) {
         }
 
         .Body {
+          display: flex;
+          width: 100%;
           height: 100%;
+          justify-content: center;
+          align-items: center;
         }
 
         .Body-video {
           height: 100%;
+        }
+
+        .Body-connect {
+          background: #32973c;
+          color: white;
         }
 
         .ControlBar {
@@ -161,7 +156,16 @@ export default function Home({ token }) {
         }
       `}</style>
       <div className="Body">
-        <div className="Body-video"></div>
+        {state.data?.call ? (
+          <div className="Body-video">
+            <Video stream={state.data?.call?.localStream} />
+            <Video stream={state.data?.call?.remoteStream} />
+          </div>
+        ) : (
+          <button className="Body-connect" onClick={handleCallButtonClick}>
+            Connect
+          </button>
+        )}
       </div>
 
       <div className="ControlBar">
@@ -189,7 +193,12 @@ export default function Home({ token }) {
           </span>
         </div>
         <div className="CallControls">
-          <button className="CallControls-button isHangup">Hangup</button>
+          <button
+            className="CallControls-button isHangup"
+            onClick={handleHangupClick}
+          >
+            Hangup
+          </button>
         </div>
       </div>
     </div>
