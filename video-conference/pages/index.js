@@ -105,10 +105,13 @@ export default function Home({ token }) {
     console.log(micId);
 
     if (micId) {
+      telnyxRTCRef.current?.unmuteAudio();
       telnyxRTCRef.current?.setAudioSettings({
         micId,
         echoCancellation: true,
       });
+    } else {
+      telnyxRTCRef.current?.muteAudio();
     }
   });
 
@@ -119,9 +122,12 @@ export default function Home({ token }) {
     console.log(camId);
 
     if (camId) {
+      telnyxRTCRef.current?.unmuteVideo();
       telnyxRTCRef.current?.setVideoSettings({
         camId,
       });
+    } else {
+      telnyxRTCRef.current?.muteVideo();
     }
   });
 
