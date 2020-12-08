@@ -13,63 +13,63 @@ export default function Home({ token }) {
   let videoLocalRef = useRef();
   let videoRemoteRef = useRef();
 
-  useEffect(() => {
-    telnyxRTCRef.current = new TelnyxRTC({
-      login_token: token,
-      env: "development",
-    });
-    telnyxRTCRef.current.connect();
+  // useEffect(() => {
+  //   telnyxRTCRef.current = new TelnyxRTC({
+  //     login_token: token,
+  //     host: "wss://rtcdev.telnyx.tech:443",
+  //   });
+  //   telnyxRTCRef.current.connect();
 
-    setState({
-      name: "RTC_CONNECTING",
-    });
+  //   setState({
+  //     name: "RTC_CONNECTING",
+  //   });
 
-    telnyxRTCRef.current.on("telnyx.ready", () => {
-      telnyxRTCRef.current.enableMicrophone();
-      telnyxRTCRef.current.enableWebcam();
+  //   telnyxRTCRef.current.on("telnyx.ready", () => {
+  //     telnyxRTCRef.current.enableMicrophone();
+  //     telnyxRTCRef.current.enableWebcam();
 
-      setState({
-        name: "RTC_READY",
-      });
-    });
+  //     setState({
+  //       name: "RTC_READY",
+  //     });
+  //   });
 
-    telnyxRTCRef.current.on("telnyx.error", (error) => {
-      console.log("error", error);
+  //   telnyxRTCRef.current.on("telnyx.error", (error) => {
+  //     console.log("error", error);
 
-      setState({
-        name: "RTC_ERROR",
-        data: { error },
-      });
-    });
+  //     setState({
+  //       name: "RTC_ERROR",
+  //       data: { error },
+  //     });
+  //   });
 
-    telnyxRTCRef.current.on("telnyx.notification", (notification) => {
-      switch (notification.type) {
-        case "callUpdate":
-          if (notification.call.state === "destroy") {
-            setState({
-              name: "RTC_READY",
-            });
-            break;
-          }
+  //   telnyxRTCRef.current.on("telnyx.notification", (notification) => {
+  //     switch (notification.type) {
+  //       case "callUpdate":
+  //         if (notification.call.state === "destroy") {
+  //           setState({
+  //             name: "RTC_READY",
+  //           });
+  //           break;
+  //         }
 
-          setState({
-            name: "CALL_IN_PROGRESS",
-            data: {
-              call: notification.call,
-            },
-          });
-          break;
-        case "participantData":
-          break;
-        case "userMediaError":
-          setState({
-            name: "USER_MEDIA_ERROR",
-            data: { notification },
-          });
-          break;
-      }
-    });
-  }, []);
+  //         setState({
+  //           name: "CALL_IN_PROGRESS",
+  //           data: {
+  //             call: notification.call,
+  //           },
+  //         });
+  //         break;
+  //       case "participantData":
+  //         break;
+  //       case "userMediaError":
+  //         setState({
+  //           name: "USER_MEDIA_ERROR",
+  //           data: { notification },
+  //         });
+  //         break;
+  //     }
+  //   });
+  // }, []);
 
   // Update remote video stream
   useEffect(() => {
@@ -98,7 +98,7 @@ export default function Home({ token }) {
   }, [state.data?.call]);
 
   return (
-    <div>
+    <div className="Root">
       <style jsx global>{`
         body,
         html {
@@ -106,96 +106,92 @@ export default function Home({ token }) {
           background: black;
           color: white;
           font-family: sans-serif;
+          margin: 0;
         }
       `}</style>
 
       <style jsx>{`
-        .no-call {
-        }
-        .no-call h1 {
-          text-align: center;
+        .Root {
+          display: grid;
+          grid-template-columns: 100%;
+          grid-template-rows: 1fr 80px;
+          height: 100vh;
         }
 
-        .no-call .button-wrapper {
-          display: flex;
-          width: 100%;
+        .Body {
+          height: 100%;
+        }
+
+        .Body-video {
+          height: 100%;
+        }
+
+        .ControlBar {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          align-items: center;
+          background: #04041a;
+          padding: 20px;
+        }
+
+        .AVControls {
+          display: grid;
+          grid-auto-flow: column;
+          justify-content: start;
+          grid-gap: 10px;
+        }
+
+        .JoinLink {
+          display: grid;
+          grid-auto-flow: column;
+          grid-gap: 10px;
           justify-content: center;
         }
 
-        .no-call .button-wrapper button {
-          padding: 10px 20px;
-          font-size: 20px;
+        .CallControls {
+          display: grid;
+          grid-auto-flow: column;
+          justify-content: end;
+          grid-gap: 10px;
         }
-      `}</style>
 
-      <style jsx>{`
-        .active-call .hangup-button {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translateX(-50%) translateY(-50%);
-
-          padding: 10px 20px;
-          font-size: 20px;
-
+        .CallControls-button.isHangup {
           background: red;
           color: white;
-          z-index: 2;
-          border: none;
-        }
-
-        .video {
-          height: 50vh;
-          position: fixed;
-          left: 50%;
-          transform: translateX(-50%);
-          background: darkgray;
-        }
-
-        .local-video {
-          top: 0px;
-        }
-
-        .remote-video {
-          bottom: 0px;
         }
       `}</style>
+      <div className="Body">
+        <div className="Body-video"></div>
+      </div>
 
-      {!state.data?.call ? (
-        <div className="no-call">
-          <h1>Telnyx Video Conference</h1>
-          <div className="button-wrapper">
-            <button type="button" onClick={handleCallButtonClick}>
-              Call
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="active-call">
-          <button
-            className="hangup-button"
-            type="button"
-            onClick={handleHangupClick}
-          >
-            Hangup
-          </button>
+      <div className="ControlBar">
+        <div className="AVControls">
+          <select className="AVControls-select">
+            <option>Mic Option #1</option>
+            <option>Mic Option #2</option>
+            <option>Mic Option #3</option>
+            <option>Mute</option>
+          </select>
 
-          <video
-            className="video local-video"
-            ref={videoLocalRef}
-            playsInline
-            autoPlay
-            style={{ background: "black" }}
-          />
-          <video
-            className="video remote-video"
-            ref={videoRemoteRef}
-            playsInline
-            autoPlay
-            style={{ background: "black" }}
-          />
+          <select className="AVControls-select">
+            <option>Video Option #1</option>
+            <option>Video Option #2</option>
+            <option>Video Option #3</option>
+            <option>Stop Video</option>
+          </select>
         </div>
-      )}
+        <div className="JoinLink">
+          <span className="JoinLink-text">
+            https://video.telnyx.com/?room=1234234555123
+          </span>
+          <span className="JoinLink-copy">
+            <button className="JoinLink-copy-button">copy</button>
+          </span>
+        </div>
+        <div className="CallControls">
+          <button className="CallControls-button isHangup">Hangup</button>
+        </div>
+      </div>
     </div>
   );
 }
