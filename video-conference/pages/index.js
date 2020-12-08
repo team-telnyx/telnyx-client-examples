@@ -102,7 +102,9 @@ export default function Home({ token }) {
 
   let handleCallButtonClick = useCallback(() => {
     telnyxRTCRef.current?.newCall({
-      destinationNumber: process.env.NEXT_PUBLIC_TELNYX_CALL_CONTROL_ADDRESS,
+      destinationNumber: `sip:${roomId || "telnyx"}@${
+        process.env.NEXT_PUBLIC_TELNYX_CALL_CONTROL_ADDRESS
+      }`,
       audio: true,
       video: true,
     });
@@ -313,15 +315,12 @@ export default function Home({ token }) {
         </div>
         <div className="JoinLink">
           <span className="JoinLink-text">
-            <span>https://video.telnyx.com/?room=</span>
-            <span>{roomId}</span>
+            <span>{window.location.href}</span>
           </span>
           <span className="JoinLink-copy">
             <button
               className="JoinLink-copy-button"
-              onClick={() =>
-                copyToClipboard(`https://video.telnyx.com/?room=${roomId}`)
-              }
+              onClick={() => copyToClipboard(window.location.href)}
             >
               copy
             </button>
