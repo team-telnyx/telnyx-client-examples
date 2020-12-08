@@ -13,6 +13,11 @@ export default function Home({ token }) {
   let [state, setState] = useState(INITIAL_STATE);
   let telnyxRTCRef = useRef(undefined);
   let [copyState, copyToClipboard] = useCopyToClipboard();
+  let [audioInDevices, setAudioInDevices] = useState([]);
+  let [videoDevices, setVideoDevices] = useState([]);
+
+  let [selectedAudioIn, setSelectedAudioIn] = useState();
+  let [selectedVideo, setSelectedVideo] = useState();
 
   useEffect(() => {
     telnyxRTCRef.current = new TelnyxRTC({
@@ -29,6 +34,14 @@ export default function Home({ token }) {
     telnyxRTCRef.current.on("telnyx.ready", () => {
       telnyxRTCRef.current.enableMicrophone();
       telnyxRTCRef.current.enableWebcam();
+
+      telnyxRTCRef.current
+        .getAudioInDevices()
+        .then((devices) => setAudioInDevices(devices));
+
+      telnyxRTCRef.current
+        .getVideoDevices()
+        .then((devices) => setVideoDevices(devices));
 
       setState({
         name: "RTC_READY",
@@ -84,6 +97,33 @@ export default function Home({ token }) {
   let handleHangupClick = useCallback(() => {
     state.data?.call?.hangup?.();
   }, [state.data?.call]);
+
+  let handleChangeAudioIn = useCallback((event) => {
+    let micId = event.target.value;
+    setSelectedVideo(micId);
+
+    console.log(micId);
+
+    if (micId) {
+      telnyxRTCRef.current?.setAudioSettings({
+        micId,
+        echoCancellation: true,
+      });
+    }
+  });
+
+  let handleChangeVideo = useCallback((event) => {
+    let camId = event.target.value;
+    setSelectedVideo(camId);
+
+    console.log(camId);
+
+    if (camId) {
+      telnyxRTCRef.current?.setVideoSettings({
+        camId,
+      });
+    }
+  });
 
   return (
     <div className="Root">
@@ -155,6 +195,10 @@ export default function Home({ token }) {
           grid-gap: 10px;
         }
 
+        .AVControls-select {
+          width: 14ch;
+        }
+
         .JoinLink {
           display: grid;
           grid-auto-flow: column;
@@ -209,18 +253,31 @@ export default function Home({ token }) {
 
       <div className="ControlBar">
         <div className="AVControls">
-          <select className="AVControls-select">
-            <option>Mic Option #1</option>
-            <option>Mic Option #2</option>
-            <option>Mic Option #3</option>
-            <option>Mute</option>
+          <select
+            className="AVControls-select"
+            onChange={handleChangeAudioIn}
+            value={selectedAudioIn}
+          >
+            {audioInDevices.map((device) => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label}
+              </option>
+            ))}
+
+            <option key="mute">Mute</option>
           </select>
 
-          <select className="AVControls-select">
-            <option>Video Option #1</option>
-            <option>Video Option #2</option>
-            <option>Video Option #3</option>
-            <option>Stop Video</option>
+          <select
+            className="AVControls-select"
+            onChange={handleChangeVideo}
+            value={selectedVideo}
+          >
+            {videoDevices.map((device) => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label}
+              </option>
+            ))}
+            <option key="stop">Stop Video</option>
           </select>
         </div>
         <div className="JoinLink">
