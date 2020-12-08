@@ -2,7 +2,8 @@ import axios from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TelnyxRTC } from "@telnyx/webrtc";
 import { Video } from "@telnyx/react-client";
-import { useCopyToClipboard } from "react-use";
+import { useCopyToClipboard, useSearchParam } from "react-use";
+import { v4 as uuidv4 } from "uuid";
 
 let INITIAL_STATE = {
   name: "INITIAL",
@@ -18,6 +19,19 @@ export default function Home({ token }) {
 
   let [selectedAudioIn, setSelectedAudioIn] = useState();
   let [selectedVideo, setSelectedVideo] = useState();
+
+  let roomId = useSearchParam("room");
+
+  useEffect(() => {
+    if (!roomId) {
+      let newRoomId = uuidv4();
+      window.history.pushState(
+        {},
+        "",
+        `${location.pathname}?room=${newRoomId}`
+      );
+    }
+  }, [roomId]);
 
   useEffect(() => {
     telnyxRTCRef.current = new TelnyxRTC({
@@ -100,7 +114,7 @@ export default function Home({ token }) {
 
   let handleChangeAudioIn = useCallback((event) => {
     let micId = event.target.value;
-    setSelectedVideo(micId);
+    setSelectedAudioIn(micId);
 
     console.log(micId);
 
@@ -213,6 +227,13 @@ export default function Home({ token }) {
           justify-content: center;
         }
 
+        .JoinLink-text {
+          max-width: 39ch;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
         .JoinLink-copy-button {
           background: transparent;
           color: #32973c;
@@ -292,13 +313,14 @@ export default function Home({ token }) {
         </div>
         <div className="JoinLink">
           <span className="JoinLink-text">
-            https://video.telnyx.com/?room=1234234555123
+            <span>https://video.telnyx.com/?room=</span>
+            <span>{roomId}</span>
           </span>
           <span className="JoinLink-copy">
             <button
               className="JoinLink-copy-button"
               onClick={() =>
-                copyToClipboard("https://video.telnyx.com/?room=1234234555123")
+                copyToClipboard(`https://video.telnyx.com/?room=${roomId}`)
               }
             >
               copy
