@@ -270,7 +270,7 @@ export default function Home({ token }) {
       <div className="Body">
         {state.data?.call ? (
           <div className="Body-video">
-            <Video stream={state.data?.call?.localStream} />
+            <Video muted stream={state.data?.call?.localStream} />
             <Video stream={state.data?.call?.remoteStream} />
           </div>
         ) : (
@@ -315,12 +315,12 @@ export default function Home({ token }) {
         </div>
         <div className="JoinLink">
           <span className="JoinLink-text">
-            <span>{window.location.href}</span>
+            <span></span>
           </span>
           <span className="JoinLink-copy">
             <button
               className="JoinLink-copy-button"
-              onClick={() => copyToClipboard(window.location.href)}
+              onClick={() => copyToClipboard()}
             >
               copy
             </button>
