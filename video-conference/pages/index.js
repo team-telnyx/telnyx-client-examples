@@ -19,6 +19,8 @@ export default function Home({ token }) {
 
   let [selectedAudioIn, setSelectedAudioIn] = useState();
   let [selectedVideo, setSelectedVideo] = useState();
+  let [localStream, setLocalStream] = useState();
+  let [remoteStream, setRemoteStream] = useState();
 
   let roomId = useSearchParam("room");
 
@@ -87,6 +89,9 @@ export default function Home({ token }) {
               call: notification.call,
             },
           });
+
+          setLocalStream(notification.call.localStream);
+          setRemoteStream(notification.call.remoteStream);
           break;
         case "participantData":
           break;
@@ -108,44 +113,62 @@ export default function Home({ token }) {
       audio: true,
       video: true,
     });
-  }, [telnyxRTCRef.current]);
+
+    changeAudioIn(audioInDevices[0]?.deviceId);
+    changeVideo(videoDevices[0]?.deviceId);
+  }, [telnyxRTCRef.current, audioInDevices, videoDevices]);
 
   let handleHangupClick = useCallback(() => {
     state.data?.call?.hangup?.();
   }, [state.data?.call]);
 
-  let handleChangeAudioIn = useCallback((event) => {
-    let micId = event.target.value;
-    setSelectedAudioIn(micId);
+  let changeAudioIn = useCallback(
+    (micId) => {
+      setSelectedAudioIn(micId);
+      console.log(micId);
 
-    console.log(micId);
+      if (micId) {
+        telnyxRTCRef.current?.enableMicrophone();
+        telnyxRTCRef.current?.setAudioSettings({
+          micId,
+          echoCancellation: true,
+        });
 
-    if (micId) {
-      telnyxRTCRef.current?.enableMicrophone();
-      telnyxRTCRef.current?.setAudioSettings({
-        micId,
-        echoCancellation: true,
-      });
-    } else {
-      telnyxRTCRef.current?.disableMicrophone();
-    }
-  });
+        state.data?.call?.unmuteAudio();
+        state.data?.call?.setAudioInDevice(micId)?.then?.(() => {
+          setLocalStream(state.data?.call?.localStream);
+        });
+      } else {
+        telnyxRTCRef.current?.disableMicrophone();
+        state.data?.call?.muteAudio();
+      }
+    },
+    [telnyxRTCRef.current, state.data?.call, setSelectedAudioIn]
+  );
 
-  let handleChangeVideo = useCallback((event) => {
-    let camId = event.target.value;
-    setSelectedVideo(camId);
+  let changeVideo = useCallback(
+    (camId) => {
+      setSelectedVideo(camId);
+      console.log(camId);
 
-    console.log(camId);
+      if (camId) {
+        telnyxRTCRef.current?.enableWebcam();
+        telnyxRTCRef.current?.setVideoSettings({
+          camId,
+        });
 
-    if (camId) {
-      telnyxRTCRef.current?.enableWebcam();
-      telnyxRTCRef.current?.setVideoSettings({
-        camId,
-      });
-    } else {
-      telnyxRTCRef.current?.disableWebcam();
-    }
-  });
+        state.data?.call?.unmuteVideo();
+        state.data?.call?.setVideoDevice(camId)?.then?.(() => {
+          setLocalStream(state.data?.call?.localStream);
+        });
+      } else {
+        telnyxRTCRef.current?.disableWebcam();
+        state.data?.call?.muteVideo();
+      }
+      setLocalStream(state.data?.call?.localStream);
+    },
+    [telnyxRTCRef.current, state.data?.call, setSelectedVideo]
+  );
 
   return (
     <div className="Root">
@@ -270,8 +293,8 @@ export default function Home({ token }) {
       <div className="Body">
         {state.data?.call ? (
           <div className="Body-video">
-            <Video muted stream={state.data?.call?.localStream} />
-            <Video stream={state.data?.call?.remoteStream} />
+            <Video muted stream={localStream} />
+            <Video stream={remoteStream} />
           </div>
         ) : (
           <button className="Body-connect" onClick={handleCallButtonClick}>
@@ -284,7 +307,9 @@ export default function Home({ token }) {
         <div className="AVControls">
           <select
             className="AVControls-select"
-            onChange={handleChangeAudioIn}
+            onChange={(event) => {
+              changeAudioIn(event.target.value);
+            }}
             value={selectedAudioIn}
           >
             {audioInDevices.map((device) => (
@@ -300,7 +325,9 @@ export default function Home({ token }) {
 
           <select
             className="AVControls-select"
-            onChange={handleChangeVideo}
+            onChange={(event) => {
+              changeVideo(event.target.value);
+            }}
             value={selectedVideo}
           >
             {videoDevices.map((device) => (
@@ -340,9 +367,6 @@ export default function Home({ token }) {
 }
 
 export async function getStaticProps() {
-  console.log(process.env.TELNYX_API_KEY);
-  console.log(process.env.TELNYX_SIP_CONNECTION_ID);
-
   let onDemandCredentialResponse = await axios({
     method: "POST",
     url: "https://apidev.telnyx.com/v2/telephony_credentials",
@@ -354,6 +378,7 @@ export async function getStaticProps() {
   });
 
   console.log(onDemandCredentialResponse.data);
+  await sleep(200);
 
   let tokenResponse = await axios({
     method: "POST",
@@ -371,4 +396,12 @@ export async function getStaticProps() {
       token: tokenResponse.data,
     },
   };
+}
+
+function sleep(num) {
+  return new Promise((resolve) => {
+    setTimeout(function () {
+      resolve();
+    }, num);
+  });
 }
