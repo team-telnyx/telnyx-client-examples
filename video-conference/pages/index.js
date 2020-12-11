@@ -13,7 +13,10 @@ let INITIAL_STATE = {
 export default function Home({ token }) {
   let [state, setState] = useState(INITIAL_STATE);
   let telnyxRTCRef = useRef(undefined);
+
   let [copyState, copyToClipboard] = useCopyToClipboard();
+  let [joinLink, setJoinLink] = useState();
+
   let [audioInDevices, setAudioInDevices] = useState([]);
   let [videoDevices, setVideoDevices] = useState([]);
 
@@ -33,6 +36,8 @@ export default function Home({ token }) {
         `${location.pathname}?room=${newRoomId}`
       );
     }
+
+    setJoinLink(window.location.href);
   }, [roomId]);
 
   useEffect(() => {
@@ -342,12 +347,12 @@ export default function Home({ token }) {
         </div>
         <div className="JoinLink">
           <span className="JoinLink-text">
-            <span></span>
+            <span>{joinLink}</span>
           </span>
           <span className="JoinLink-copy">
             <button
               className="JoinLink-copy-button"
-              onClick={() => copyToClipboard()}
+              onClick={() => copyToClipboard(joinLink)}
             >
               copy
             </button>
@@ -380,7 +385,6 @@ export async function getStaticProps() {
   });
 
   console.log(onDemandCredentialResponse.data);
-  await sleep(200);
 
   let tokenResponse = await axios({
     method: "POST",
@@ -398,12 +402,4 @@ export async function getStaticProps() {
       token: tokenResponse.data,
     },
   };
-}
-
-function sleep(num) {
-  return new Promise((resolve) => {
-    setTimeout(function () {
-      resolve();
-    }, num);
-  });
 }
