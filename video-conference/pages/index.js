@@ -354,12 +354,14 @@ export default function Home({ token }) {
           </span>
         </div>
         <div className="CallControls">
-          <button
-            className="CallControls-button isHangup"
-            onClick={handleHangupClick}
-          >
-            Hangup
-          </button>
+          {state.data?.call ? (
+            <button
+              className="CallControls-button isHangup"
+              onClick={handleHangupClick}
+            >
+              Hangup
+            </button>
+          ) : null}
         </div>
       </div>
     </div>
