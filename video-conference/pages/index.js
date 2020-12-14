@@ -20,6 +20,8 @@ export default function Home({ token }) {
   let [audioInDevices, setAudioInDevices] = useState([]);
   let [videoDevices, setVideoDevices] = useState([]);
 
+  let [displayDevices, setDisplayDevice] = useState([]);
+
   let [selectedAudioIn, setSelectedAudioIn] = useState();
   let [selectedVideo, setSelectedVideo] = useState();
   let [localStream, setLocalStream] = useState();
@@ -95,7 +97,9 @@ export default function Home({ token }) {
             },
           });
 
-          setLocalStream(notification.call.localStream);
+          console.log("set local stream 1");
+          console.log(notification.call.localStream);
+          // setLocalStream(notification.call.localStream);
           setRemoteStream(notification.call.remoteStream);
           break;
         case "participantData":
@@ -119,8 +123,19 @@ export default function Home({ token }) {
       video: true,
     });
 
+    navigator.mediaDevices
+      .getDisplayMedia({ video: true, audio: false })
+      .then((displayStream) => {
+        changeScreenSharing(displayStream);
+      })
+      .catch((err) => {
+        console.error("Error:" + err);
+        return null;
+      });
+
     changeAudioIn(audioInDevices[0]?.deviceId);
-    changeVideo(videoDevices[0]?.deviceId);
+
+    // changeVideo(videoDevices[0]?.deviceId);
   }, [telnyxRTCRef.current, audioInDevices, videoDevices]);
 
   let handleHangupClick = useCallback(() => {
@@ -153,6 +168,7 @@ export default function Home({ token }) {
 
   let changeVideo = useCallback(
     (camId) => {
+      console.log("change video");
       setSelectedVideo(camId);
       console.log(camId);
 
@@ -173,6 +189,15 @@ export default function Home({ token }) {
       setLocalStream(state.data?.call?.localStream);
     },
     [telnyxRTCRef.current, state.data?.call, setSelectedVideo]
+  );
+
+  let changeScreenSharing = useCallback(
+    (displayStream) => {
+      console.log("change screen");
+      console.log(displayStream);
+      setLocalStream(displayStream);
+    },
+    [telnyxRTCRef.current, state.data?.call]
   );
 
   return (
@@ -374,6 +399,7 @@ export default function Home({ token }) {
 }
 
 export async function getStaticProps() {
+  console.log(process.env.TELNYX_SIP_CONNECTION_ID);
   let onDemandCredentialResponse = await axios({
     method: "POST",
     url: "https://apidev.telnyx.com/v2/telephony_credentials",
