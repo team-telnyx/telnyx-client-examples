@@ -9,7 +9,7 @@ export default (req, res) => {
   let xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
   <Response>
       <Dial>
-          <Conference videoLayoutName="group:grid_zoom" statusCallback="https://e95c25777e39.ngrok.io/api/log" statusCallbackEvent="start,end,join,leave">Video Conference ${req.body.To}</Conference>
+          <Conference videoLayoutName="group:grid" statusCallback="https://e95c25777e39.ngrok.io/api/log" statusCallbackEvent="start,end,join,leave">Video Conference ${req.body.To}</Conference>
       </Dial>
   </Response>`;
   res.send(xmlResponse);
