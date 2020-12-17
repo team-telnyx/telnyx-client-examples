@@ -187,6 +187,20 @@ export default function Home({ token }) {
           font-weight: 400;
           margin: 0;
         }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        .Body-video-local {
+          width: auto;
+          height: 100%;
+        }
+
+        .Body-video-remote {
+          width: 100%;
+          height: 100%;
+        }
       `}</style>
 
       <style jsx>{`
@@ -206,16 +220,16 @@ export default function Home({ token }) {
         }
 
         .Body-video {
+          background: black;
           display: grid;
-          grid-gap: 10px;
-          grid-auto-flow: column;
+          padding: 20px;
+          grid-gap: 20px;
+          grid-template-columns: 100%;
+          grid-template-rows: 300px 1fr;
           justify-content: center;
+          justify-items: center;
           width: 100%;
-        }
-
-        .Body-video > * {
-          width: 640px;
-          height: 480px;
+          height: 100%;
         }
 
         .Body-connect {
@@ -298,8 +312,8 @@ export default function Home({ token }) {
       <div className="Body">
         {state.data?.call ? (
           <div className="Body-video">
-            <Video muted stream={localStream} />
-            <Video stream={remoteStream} />
+            <Video muted stream={localStream} className="Body-video-local" />
+            <Video stream={remoteStream} className="Body-video-remote" />
           </div>
         ) : (
           <button className="Body-connect" onClick={handleCallButtonClick}>
