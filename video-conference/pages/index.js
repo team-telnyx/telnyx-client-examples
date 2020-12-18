@@ -4,6 +4,7 @@ import { TelnyxRTC } from "@telnyx/webrtc";
 import { Video } from "@telnyx/react-client";
 import { useCopyToClipboard, useSearchParam } from "react-use";
 import { v4 as uuidv4 } from "uuid";
+import * as Icons from "heroicons-react";
 
 let INITIAL_STATE = {
   name: "INITIAL",
@@ -24,6 +25,9 @@ export default function Home({ token }) {
   let [selectedVideo, setSelectedVideo] = useState();
   let [localStream, setLocalStream] = useState();
   let [remoteStream, setRemoteStream] = useState();
+
+  let [isAudioMuted, setIsAudioMuted] = useState(false);
+  let [isVideoMuted, setIsVideoMuted] = useState(false);
 
   let roomId = useSearchParam("room");
 
@@ -119,6 +123,8 @@ export default function Home({ token }) {
       video: true,
     });
 
+    setIsAudioMuted(false);
+    setIsVideoMuted(false);
     changeAudioIn(audioInDevices[0]?.deviceId);
     changeVideo(videoDevices[0]?.deviceId);
   }, [telnyxRTCRef.current, audioInDevices, videoDevices]);
@@ -130,23 +136,17 @@ export default function Home({ token }) {
   let changeAudioIn = useCallback(
     (micId) => {
       setSelectedAudioIn(micId);
-      console.log(micId);
 
-      if (micId) {
-        telnyxRTCRef.current?.enableMicrophone();
-        telnyxRTCRef.current?.setAudioSettings({
-          micId,
-          echoCancellation: true,
-        });
+      telnyxRTCRef.current?.enableMicrophone();
+      telnyxRTCRef.current?.setAudioSettings({
+        micId,
+        echoCancellation: true,
+      });
 
-        state.data?.call?.unmuteAudio();
-        state.data?.call?.setAudioInDevice(micId)?.then?.(() => {
-          setLocalStream(state.data?.call?.localStream);
-        });
-      } else {
-        telnyxRTCRef.current?.disableMicrophone();
-        state.data?.call?.muteAudio();
-      }
+      state.data?.call?.unmuteAudio();
+      state.data?.call?.setAudioInDevice(micId)?.then?.(() => {
+        setLocalStream(state.data?.call?.localStream);
+      });
     },
     [telnyxRTCRef.current, state.data?.call, setSelectedAudioIn]
   );
@@ -154,26 +154,57 @@ export default function Home({ token }) {
   let changeVideo = useCallback(
     (camId) => {
       setSelectedVideo(camId);
-      console.log(camId);
 
-      if (camId) {
-        telnyxRTCRef.current?.enableWebcam();
-        telnyxRTCRef.current?.setVideoSettings({
-          camId,
-        });
+      telnyxRTCRef.current?.enableWebcam();
+      telnyxRTCRef.current?.setVideoSettings({
+        camId,
+      });
 
-        state.data?.call?.unmuteVideo();
-        state.data?.call?.setVideoDevice(camId)?.then?.(() => {
-          setLocalStream(state.data?.call?.localStream);
-        });
-      } else {
-        telnyxRTCRef.current?.disableWebcam();
-        state.data?.call?.muteVideo();
-      }
-      setLocalStream(state.data?.call?.localStream);
+      state.data?.call?.unmuteVideo();
+      state.data?.call?.setVideoDevice(camId)?.then?.(() => {
+        setLocalStream(state.data?.call?.localStream);
+      });
     },
     [telnyxRTCRef.current, state.data?.call, setSelectedVideo]
   );
+
+  let toggleMuteAudio = useCallback(() => {
+    if (isAudioMuted) {
+      telnyxRTCRef.current?.enableMicrophone();
+      state.data?.call?.unmuteAudio();
+      setIsAudioMuted(false);
+    } else {
+      telnyxRTCRef.current?.disableMicrophone();
+      state.data?.call?.muteAudio();
+      setIsAudioMuted(true);
+    }
+  }, [
+    isAudioMuted,
+    setIsAudioMuted,
+    state.data?.call?.unmuteAudio,
+    state.data?.call?.muteAudio,
+    telnyxRTCRef.current?.enableMicrophone,
+    telnyxRTCRef.current?.disableMicrophone,
+  ]);
+
+  let toggleMuteVideo = useCallback(() => {
+    if (isVideoMuted) {
+      telnyxRTCRef.current?.enableWebcam();
+      state.data?.call?.unmuteVideo();
+      setIsVideoMuted(false);
+    } else {
+      telnyxRTCRef.current?.disableWebcam();
+      state.data?.call?.muteVideo();
+      setIsVideoMuted(true);
+    }
+  }, [
+    isVideoMuted,
+    setIsVideoMuted,
+    state.data?.call?.unmuteVideo,
+    state.data?.call?.muteVideo,
+    telnyxRTCRef.current?.enableWebcam,
+    telnyxRTCRef.current?.disableWebcam,
+  ]);
 
   return (
     <div className="Root">
@@ -207,7 +238,7 @@ export default function Home({ token }) {
         .Root {
           display: grid;
           grid-template-columns: 100%;
-          grid-template-rows: 1fr 80px;
+          grid-template-rows: 1fr auto;
           height: 100vh;
         }
 
@@ -225,7 +256,7 @@ export default function Home({ token }) {
           padding: 20px;
           grid-gap: 20px;
           grid-template-columns: 100%;
-          grid-template-rows: 300px 1fr;
+          grid-template-rows: 1fr 4fr;
           justify-content: center;
           justify-items: center;
           width: 100%;
@@ -259,8 +290,73 @@ export default function Home({ token }) {
           grid-gap: 10px;
         }
 
+        .AVControls-control {
+          position: relative;
+          cursor: pointer;
+        }
+
+        .AVControls-control.isMuted:before {
+          content: "";
+          display: block;
+          width: 40px;
+          height: 2px;
+          background: red;
+          transform: translateY(-50%) translateX(-50%) rotate(45deg);
+          position: absolute;
+          top: 50%;
+          left: 50%;
+
+          pointer-events: none;
+        }
+
         .AVControls-select {
-          width: 14ch;
+          position: absolute;
+          top: 2px;
+          right: 2px;
+
+          display: flex;
+          padding: 2px;
+          border-radius: 5px;
+          background: transparent;
+        }
+
+        .AVControls-select:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        .AVControls-button {
+          appearance: none;
+          background: rgba(255, 255, 255, 0.1);
+          padding: 10px 15px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+
+          border-radius: 5px;
+          border: none;
+        }
+
+        .AVControls-button:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        .AVControls-select-icon {
+        }
+
+        .AVControls-select-select {
+          position: absolute;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          right: 0;
+          width: 100%;
+          height: 15px;
+          background: transparent;
+          color: transparent;
+          border: none;
+          outline: none;
+          appearance: none;
         }
 
         .JoinLink {
@@ -272,7 +368,7 @@ export default function Home({ token }) {
         }
 
         .JoinLink-text {
-          max-width: 39ch;
+          max-width: 30ch;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -324,40 +420,53 @@ export default function Home({ token }) {
 
       <div className="ControlBar">
         <div className="AVControls">
-          <select
-            className="AVControls-select"
-            onChange={(event) => {
-              changeAudioIn(event.target.value);
-            }}
-            value={selectedAudioIn}
+          <div
+            className={`AVControls-control ${isAudioMuted ? "isMuted" : ""}`}
           >
-            {audioInDevices.map((device) => (
-              <option key={device.deviceId} value={device.deviceId}>
-                {device.label}
-              </option>
-            ))}
+            <button className="AVControls-button" onClick={toggleMuteAudio}>
+              <Icons.Microphone size={30} />
+            </button>
+            <label className="AVControls-select">
+              <Icons.Menu className="AVControls-select-icon" size={15} />
+              <select
+                className="AVControls-select-select"
+                onChange={(event) => {
+                  changeAudioIn(event.target.value);
+                }}
+                value={selectedAudioIn}
+              >
+                {audioInDevices.map((device) => (
+                  <option key={device.deviceId} value={device.deviceId}>
+                    {device.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-            <option key="mute" value="">
-              Mute
-            </option>
-          </select>
-
-          <select
-            className="AVControls-select"
-            onChange={(event) => {
-              changeVideo(event.target.value);
-            }}
-            value={selectedVideo}
+          <div
+            className={`AVControls-control ${isVideoMuted ? "isMuted" : ""}`}
           >
-            {videoDevices.map((device) => (
-              <option key={device.deviceId} value={device.deviceId}>
-                {device.label}
-              </option>
-            ))}
-            <option key="stop" value="">
-              Stop Video
-            </option>
-          </select>
+            <button className="AVControls-button" onClick={toggleMuteVideo}>
+              <Icons.VideoCamera size={30} />
+            </button>
+            <label className="AVControls-select">
+              <Icons.Menu className="AVControls-select-icon" size={15} />
+              <select
+                className="AVControls-select-select"
+                onChange={(event) => {
+                  changeVideo(event.target.value);
+                }}
+                value={selectedVideo}
+              >
+                {videoDevices.map((device) => (
+                  <option key={device.deviceId} value={device.deviceId}>
+                    {device.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
         <div className="JoinLink">
           <span className="JoinLink-text">
@@ -368,7 +477,7 @@ export default function Home({ token }) {
               className="JoinLink-copy-button"
               onClick={() => copyToClipboard(joinLink)}
             >
-              copy
+              copy invitation link
             </button>
           </span>
         </div>
