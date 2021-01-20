@@ -1,12 +1,18 @@
-import { Anchor, Box } from 'grommet';
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import useCachedToken from '../utils/useCachedToken';
 import Page from '../components/Page';
 
 export default function Home() {
-  return (
-    <Page title="Home">
-      <Box>
-        <Anchor label="Login" href="/login" />
-      </Box>
-    </Page>
-  );
+  const router = useRouter();
+  const [token] = useCachedToken();
+
+  useEffect(() => {
+    if (token === null) {
+      // Redirect to login page
+      router.push('/login');
+    }
+  }, [token]);
+
+  return <Page title="Home">Video</Page>;
 }
