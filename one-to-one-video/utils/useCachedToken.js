@@ -25,7 +25,7 @@ export default function useCachedToken() {
 
   function saveToken(value) {
     if (window !== 'undefined') {
-      return window.sessionStorage.setItem('telnyx_token', value);
+      window.sessionStorage.setItem('telnyx_token', value);
     }
 
     setToken(value);

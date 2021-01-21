@@ -1,40 +1,50 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useEffect, memo } from 'react';
 import { useSession, signIn } from 'next-auth/client';
+import { TelnyxRTCProvider } from '@telnyx/react-client';
 import { Box, Button } from 'grommet';
 import { Github } from 'grommet-icons';
 import useCachedToken from '../utils/useCachedToken';
-import Page from '../components/Page';
+import Layout from '../components/Layout';
+import VideoCall from '../components/VideoCall';
+
+// Memoize the `VideoCallWrapper` to prevent re-rendering
+// `TelnyxRTCProvider` unless the token changes
+// FIXME handle rerenders in webrtc package
+const VideoCallWrapper = memo(({ token }) => {
+  return (
+    <TelnyxRTCProvider
+      credential={{ login_token: token }}
+      // TODO remove
+      options={{ env: 'development' }}
+    >
+      <VideoCall />
+    </TelnyxRTCProvider>
+  );
+});
 
 export default function Home() {
-  const router = useRouter();
   const [session, loading] = useSession();
   const [cachedToken, setCachedToken] = useCachedToken();
+  const isSessionStarted = Boolean(session);
 
   useEffect(() => {
-    console.log('session:', session);
-
     if (session && cachedToken === null) {
-      console.log('generate new token');
-
       // Generate and cache a new Telnyx token
       // TODO Check expiry
       fetch('/api/generate_token', {
         method: 'POST',
       })
         .then((resp) => resp.text())
-        .then(setCachedToken);
+        .then((token) => {
+          setCachedToken(token);
+        })
+        .catch(console.error);
     }
-  }, [Boolean(session)]);
+  }, [isSessionStarted]);
 
   return (
-    <Page title="Home">
-      {session && (
-        <Box>
-          <Button primary size="large" label="Invite someone to video chat" />
-          <Button size="large" label="Check your video" />
-        </Box>
-      )}
+    <Layout title="Home">
+      {session && cachedToken && <VideoCallWrapper token={cachedToken} />}
       {!session && !loading && (
         <Box width="medium">
           <Button
@@ -46,6 +56,6 @@ export default function Home() {
           />
         </Box>
       )}
-    </Page>
+    </Layout>
   );
 }
