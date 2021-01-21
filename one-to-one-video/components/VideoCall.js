@@ -1,16 +1,18 @@
 import { useContext, useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { TelnyxRTCContext } from '@telnyx/react-client';
 import { Box, Button, Paragraph, Video } from 'grommet';
 import { Video as VideoIcon } from 'grommet-icons';
 import EmailSignIn from './EmailSignIn';
 
 export default function VideoCall() {
+  const router = useRouter();
   const telnyxClient = useContext(TelnyxRTCContext);
   const localVideoEl = useRef(null);
   const remoteVideoEl = useRef(null);
   const [isWebcamAvailable, setIsWebcamAvailable] = useState();
   const [isWebcamOn, setIsWebcamOn] = useState();
-  const [sentInvite, setSentInvite] = useState();
+  const [invitedEmail, setInvitedEmail] = useState(router.query.invitedEmail);
   const [remoteVideoStream, setRemoteVideoStream] = useState();
 
   // const notification = useNotification();
@@ -51,6 +53,13 @@ export default function VideoCall() {
     }
   };
 
+  const handleInviteSubmit = ({ email }) => {
+    setInvitedEmail(email);
+
+    // Save email in query string
+    router.push({ query: { invitedEmail: email } });
+  };
+
   return (
     <Box direction="row" gap="medium" align="center">
       <Box background="light-2" width="640px" height="400px">
@@ -82,7 +91,7 @@ export default function VideoCall() {
       </Box>
 
       <Box background="neutral-2" width="640px" height="400px">
-        {sentInvite && remoteVideoStream && (
+        {invitedEmail && remoteVideoStream && (
           <Video
             ref={remoteVideoEl}
             controls={false}
@@ -92,13 +101,13 @@ export default function VideoCall() {
           />
         )}
 
-        {sentInvite && !remoteVideoStream && (
+        {invitedEmail && !remoteVideoStream && (
           <Box fill align="center" justify="center">
-            <Paragraph>Waiting for invited to join...</Paragraph>
+            <Paragraph>Waiting for {invitedEmail} to join...</Paragraph>
           </Box>
         )}
 
-        {!sentInvite && (
+        {!invitedEmail && (
           <Box fill align="center" justify="center">
             {isWebcamOn && (
               <Paragraph>
@@ -109,7 +118,7 @@ export default function VideoCall() {
             <EmailSignIn
               emailLabel="Enter email to invite"
               submitLabel="Send link to chat"
-              onSubmit={() => setSentInvite(true)}
+              onSubmit={handleInviteSubmit}
             />
           </Box>
         )}

@@ -40,14 +40,14 @@ export default function EmailSignIn({ onSubmit, emailLabel, submitLabel }) {
     const res = await fetch(`/api/auth/signin/email`, fetchOptions);
     const data = await res.json();
 
+    setIsSending(false);
+
     if (onSubmit) {
       onSubmit({
         email,
         success: Boolean(data && data.url),
       });
     }
-
-    setIsSending(false);
   };
 
   return (

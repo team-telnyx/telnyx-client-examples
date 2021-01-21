@@ -43,12 +43,8 @@ export default function Page({ title, children }) {
               <Nav direction="row" align="center">
                 {session.user && (
                   <Box direction="row" align="center" gap="small">
-                    <Avatar
-                      src={session.user.image}
-                      background="accent-2"
-                      color="accent-1"
-                    >
-                      {!session.user.image && <Emoji color="accent-1" />}
+                    <Avatar src={session.user.image} background="accent-2">
+                      {!session.user.image && <Emoji color="accent-3" />}
                     </Avatar>
                   </Box>
                 )}
