@@ -3,15 +3,16 @@ import Head from 'next/head';
 import { useSession, signOut } from 'next-auth/client';
 import {
   Grommet,
-  Header,
+  Anchor,
+  Avatar,
   Box,
   Button,
+  Header,
   Main,
   Nav,
-  Anchor,
   Footer,
 } from 'grommet';
-import { Github } from 'grommet-icons';
+import { Emoji, Github } from 'grommet-icons';
 import useCachedToken from '../utils/useCachedToken';
 
 export default function Page({ title, children }) {
@@ -34,14 +35,26 @@ export default function Page({ title, children }) {
 
       <Grommet full plain>
         <Box fill>
-          <Header pad="small">
+          <Header pad={{ horizontal: 'medium', vertical: 'small' }}>
             <Nav direction="row">
               <Anchor label="Home" href="/" />
             </Nav>
             {session && (
-              <Box>
+              <Nav direction="row" align="center">
+                {session.user && (
+                  <Box direction="row" align="center" gap="small">
+                    <Avatar
+                      src={session.user.image}
+                      background="accent-2"
+                      color="accent-1"
+                    >
+                      {!session.user.image && <Emoji color="accent-1" />}
+                    </Avatar>
+                  </Box>
+                )}
+
                 <Button label="Logout" onClick={logout} />
-              </Box>
+              </Nav>
             )}
           </Header>
 

@@ -29,7 +29,12 @@ export default function Home() {
 
   return (
     <Page title="Home">
-      {session && <p>Signed in as {session.user.name}</p>}
+      {session && (
+        <Box>
+          <Button primary size="large" label="Invite someone to video chat" />
+          <Button size="large" label="Check your video" />
+        </Box>
+      )}
       {!session && !loading && (
         <Box width="medium">
           <Button
