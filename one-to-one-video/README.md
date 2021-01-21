@@ -1,4 +1,6 @@
-# One-to-One Video
+# Magic link video chat
+
+One-to-one video chat using magic links to sign in
 
 ## Quick start
 
