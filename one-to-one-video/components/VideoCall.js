@@ -2,6 +2,7 @@ import { useContext, useState, useRef, useEffect } from 'react';
 import { TelnyxRTCContext } from '@telnyx/react-client';
 import { Box, Button, Paragraph, Form, TextInput, Video } from 'grommet';
 import { Mail, Send, Video as VideoIcon } from 'grommet-icons';
+import { signIn } from 'next-auth/client';
 
 export default function VideoCall() {
   const telnyxClient = useContext(TelnyxRTCContext);
@@ -47,6 +48,12 @@ export default function VideoCall() {
     } else {
       setIsWebcamAvailable(false);
     }
+  };
+
+  const sendInvite = ({ value }) => {
+    // TODO do in popup, nextjs-auth redirects
+    // https://github.com/nextauthjs/next-auth/issues/922
+    signIn('email', { email: value.invite_email });
   };
 
   return (
@@ -97,10 +104,11 @@ export default function VideoCall() {
               </Paragraph>
             )}
 
-            <Form onSubmit={console.log}>
+            <Form onSubmit={sendInvite}>
               <Box gap="small" align="center" width="medium">
                 <TextInput
                   type="email"
+                  name="invite_email"
                   icon={<Mail />}
                   placeholder="Enter email to invite"
                   required
