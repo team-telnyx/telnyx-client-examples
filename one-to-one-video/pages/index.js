@@ -1,11 +1,12 @@
-import { useEffect, memo } from 'react';
-import { useSession, signIn } from 'next-auth/client';
+import { useEffect, useState, memo, Fragment } from 'react';
+import { useSession } from 'next-auth/client';
 import { TelnyxRTCProvider } from '@telnyx/react-client';
-import { Box, Button } from 'grommet';
-import { Github } from 'grommet-icons';
+import { Box, Paragraph } from 'grommet';
+import { Magic } from 'grommet-icons';
 import useCachedToken from '../utils/useCachedToken';
 import Layout from '../components/Layout';
 import VideoCall from '../components/VideoCall';
+import EmailSignIn from '../components/EmailSignIn';
 
 // Memoize the `VideoCallWrapper` to prevent re-rendering
 // `TelnyxRTCProvider` unless the token changes
@@ -25,6 +26,7 @@ const VideoCallWrapper = memo(({ token }) => {
 export default function Home() {
   const [session, loading] = useSession();
   const [cachedToken, setCachedToken] = useCachedToken();
+  const [signInEmail, setSignInEmail] = useState();
   const isSessionStarted = Boolean(session);
 
   useEffect(() => {
@@ -47,12 +49,28 @@ export default function Home() {
       {session && cachedToken && <VideoCallWrapper token={cachedToken} />}
       {!session && !loading && (
         <Box width="medium">
-          <Button
-            primary
-            size="large"
-            icon={<Github />}
-            label="Sign in with GitHub"
-            onClick={() => signIn('github')}
+          {signInEmail && (
+            <Fragment>
+              <Paragraph
+                size="xxlarge"
+                color="brand"
+                margin={{ bottom: '0px' }}
+              >
+                Sent. <Magic color="brand" size="32px" />
+              </Paragraph>
+              <Paragraph size="large">Check your inbox.</Paragraph>
+            </Fragment>
+          )}
+
+          {!signInEmail && (
+            <Paragraph size="xlarge">
+              Sign-in with a magic link sent to your email.
+            </Paragraph>
+          )}
+
+          <EmailSignIn
+            submitLabel={signInEmail && 'Send again'}
+            onSubmit={({ email }) => setSignInEmail(email)}
           />
         </Box>
       )}

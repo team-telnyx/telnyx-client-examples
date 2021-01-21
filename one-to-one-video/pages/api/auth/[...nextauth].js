@@ -1,20 +1,12 @@
 import NextAuth from 'next-auth';
 import Providers from 'next-auth/providers';
+import sendVerificationRequest from '../../../utils/sendVerificationRequest';
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
 const options = {
   // https://next-auth.js.org/configuration/providers
   providers: [
-    // Use GitHub to log the caller in. You can easily swap
-    // this out for another OAuth provider.
-    // Setup guides for GH:
-    // - https://next-auth.js.org/configuration/providers#using-a-built-in-oauth-provider
-    // - https://docs.github.com/en/developers/apps/creating-an-oauth-app
-    Providers.GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-    }),
     // Set up email provider to send magic link invitiations
     // Setup guides for email:
     // - https://next-auth.js.org/providers/email
@@ -25,6 +17,7 @@ const options = {
     Providers.Email({
       server: process.env.EMAIL_SERVER,
       from: process.env.EMAIL_FROM,
+      sendVerificationRequest,
     }),
   ],
   // Database optional. MySQL, Maria DB, Postgres and MongoDB are supported.
