@@ -11,6 +11,7 @@ import {
   Main,
   Nav,
   Footer,
+  Text,
 } from 'grommet';
 import { Emoji, Github } from 'grommet-icons';
 import useCachedToken from '../utils/useCachedToken';
@@ -42,10 +43,13 @@ export default function Page({ title, children }) {
             {session && (
               <Nav direction="row" align="center">
                 {session.user && (
-                  <Box direction="row" align="center" gap="small">
+                  <Box direction="row" align="center" gap="xsmall">
                     <Avatar src={session.user.image} background="accent-2">
                       {!session.user.image && <Emoji color="accent-3" />}
-                    </Avatar>
+                    </Avatar>{' '}
+                    <Text color="brand">
+                      {session.user.name || session.user.email}
+                    </Text>
                   </Box>
                 )}
 
