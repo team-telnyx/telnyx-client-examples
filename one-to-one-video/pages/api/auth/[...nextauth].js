@@ -16,8 +16,10 @@ const options = {
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
     }),
     // Set up email provider to send magic link invitiations
-    // Setup guides for email, using Gmail for this example:
+    // Setup guides for email:
     // - https://next-auth.js.org/providers/email
+    // If using gmail as your SMTP server, make sure to create
+    // an App Password so gmail doesn't reject your emails:
     // - https://support.google.com/mail/answer/7126229
     // - https://support.google.com/accounts/answer/185833
     Providers.Email({
