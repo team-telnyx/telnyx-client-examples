@@ -1,6 +1,7 @@
 import { useContext, useState, useRef, useEffect } from 'react';
 import { TelnyxRTCContext } from '@telnyx/react-client';
-import { Box, Button, Paragraph, Video } from 'grommet';
+import { Box, Button, Paragraph, Form, TextInput, Video } from 'grommet';
+import { Mail, Send, Video as VideoIcon } from 'grommet-icons';
 
 export default function VideoCall() {
   const telnyxClient = useContext(TelnyxRTCContext);
@@ -68,12 +69,17 @@ export default function VideoCall() {
             {isWebcamAvailable === false && (
               <Paragraph>No webcam detected. Is it on?</Paragraph>
             )}
-            <Button size="large" label="Test your video" onClick={checkVideo} />
+            <Button
+              size="large"
+              icon={<VideoIcon />}
+              label="Test your video"
+              onClick={checkVideo}
+            />
           </Box>
         )}
       </Box>
 
-      <Box background="accent-1" width="640px" height="400px">
+      <Box background="neutral-2" width="640px" height="400px">
         {remoteVideoStream && (
           <Video
             ref={remoteVideoEl}
@@ -85,9 +91,29 @@ export default function VideoCall() {
         )}
         {!remoteVideoStream && (
           <Box fill align="center" justify="center">
-            {isWebcamOn && <Paragraph>You look great!</Paragraph>}
+            {isWebcamOn && (
+              <Paragraph>
+                You look great! Now, invite someone to video chat
+              </Paragraph>
+            )}
 
-            <Button primary size="large" label="Invite someone to chat" />
+            <Form onSubmit={console.log}>
+              <Box gap="small" align="center" width="medium">
+                <TextInput
+                  type="email"
+                  icon={<Mail />}
+                  placeholder="Enter email to invite"
+                  required
+                />
+                <Button
+                  type="submit"
+                  primary
+                  icon={<Send />}
+                  size="large"
+                  label="Send invitation"
+                />
+              </Box>
+            </Form>
           </Box>
         )}
       </Box>
