@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 function getStorageValue() {
-  if (window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     return window.sessionStorage.getItem('telnyx_token');
   }
 }
@@ -24,7 +24,7 @@ export default function useCachedToken() {
   }, []);
 
   function saveToken(value) {
-    if (window !== 'undefined') {
+    if (typeof window !== 'undefined') {
       window.sessionStorage.setItem('telnyx_token', value);
     }
 

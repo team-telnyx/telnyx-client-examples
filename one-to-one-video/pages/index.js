@@ -27,26 +27,30 @@ export default function Home() {
   const [session, loading] = useSession();
   const [cachedToken, setCachedToken] = useCachedToken();
   const [signInEmail, setSignInEmail] = useState();
-  const isSessionStarted = Boolean(session);
+  const isSessionReady = Boolean(session);
 
   useEffect(() => {
-    if (session && cachedToken === null) {
-      // Generate and cache a new Telnyx token
-      // TODO Check expiry
-      fetch('/api/generate_token', {
-        method: 'POST',
-      })
-        .then((resp) => resp.text())
-        .then((token) => {
-          setCachedToken(token);
+    if (isSessionReady) {
+      if (cachedToken === null) {
+        // Generate and cache a new Telnyx token
+        // TODO consolidate refresh token
+        fetch('/api/generate_token', {
+          method: 'POST',
         })
-        .catch(console.error);
+          .then((resp) => resp.text())
+          .then((token) => {
+            setCachedToken(token);
+          })
+          .catch(console.error);
+      }
     }
-  }, [isSessionStarted]);
+  }, [isSessionReady, cachedToken]);
 
   return (
     <Layout title="Home">
-      {session && cachedToken && <VideoCallWrapper token={cachedToken} />}
+      {isSessionReady && cachedToken && (
+        <VideoCallWrapper token={cachedToken} />
+      )}
       {!session && !loading && (
         <Box width="medium">
           {signInEmail && (

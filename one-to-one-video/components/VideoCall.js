@@ -1,12 +1,18 @@
 import { useContext, useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { TelnyxRTCContext } from '@telnyx/react-client';
+import { useSession } from 'next-auth/client';
+import { TelnyxRTCContext, useCallbacks } from '@telnyx/react-client';
 import { Box, Button, Paragraph, Video } from 'grommet';
 import { Video as VideoIcon } from 'grommet-icons';
+import useCachedToken from '../utils/useCachedToken';
+import useWebSocket from '../utils/useWebSocket';
 import EmailSignIn from './EmailSignIn';
 
 export default function VideoCall() {
+  const [session] = useSession();
+  const [cachedToken, setCachedToken] = useCachedToken();
   const router = useRouter();
+  const ws = useWebSocket();
   const telnyxClient = useContext(TelnyxRTCContext);
   const localVideoEl = useRef(null);
   const remoteVideoEl = useRef(null);
@@ -14,6 +20,31 @@ export default function VideoCall() {
   const [isWebcamOn, setIsWebcamOn] = useState();
   const [invitedEmail, setInvitedEmail] = useState(router.query.invitedEmail);
   const [remoteVideoStream, setRemoteVideoStream] = useState();
+
+  useCallbacks({
+    onReady: () => {
+      console.log('ready');
+      ws.send({ status: 'webrtc_ready', email: session.user.email });
+    },
+    onError: (err) => {
+      console.error(err);
+
+      if (err.code === -32000) {
+        // Generate and cache a new Telnyx token
+        // TODO consolidate refresh token
+        fetch('/api/generate_token', {
+          method: 'POST',
+        })
+          .then((resp) => resp.text())
+          .then((token) => {
+            setCachedToken(token);
+
+            // TODO reconnect client
+          })
+          .catch(console.error);
+      }
+    },
+  });
 
   // const notification = useNotification();
 
