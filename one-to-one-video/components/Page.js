@@ -1,9 +1,30 @@
 import { Fragment } from 'react';
 import Head from 'next/head';
-import { Grommet, Header, Box, Main, Nav, Anchor, Footer } from 'grommet';
+import { useSession, signOut } from 'next-auth/client';
+import {
+  Grommet,
+  Header,
+  Box,
+  Button,
+  Main,
+  Nav,
+  Anchor,
+  Footer,
+} from 'grommet';
 import { Github } from 'grommet-icons';
+import useCachedToken from '../utils/useCachedToken';
 
 export default function Page({ title, children }) {
+  const [session] = useSession();
+  const [, setCachedToken] = useCachedToken();
+
+  function logout() {
+    // Remove cached Telnyx token
+    setCachedToken(null);
+    // Sign out of OAuth session
+    signOut();
+  }
+
   return (
     <Fragment>
       <Head>
@@ -17,6 +38,11 @@ export default function Page({ title, children }) {
             <Nav direction="row">
               <Anchor label="Home" href="/" />
             </Nav>
+            {session && (
+              <Box>
+                <Button label="Logout" onClick={logout} />
+              </Box>
+            )}
           </Header>
 
           <Main fill={false} align="center" justify="center">

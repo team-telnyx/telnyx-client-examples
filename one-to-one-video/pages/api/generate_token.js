@@ -1,12 +1,13 @@
 import fetch from 'node-fetch';
 
+const TELNYX_API_URL = process.env.TELNYX_API_URL || 'https://api.telnyx.com';
+
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
-      // Generate on-demand credential.
-      // By default, on-demand credentials expire after 24 hours
+      // Generate on-demand credential and token
       const credResponse = await fetch(
-        'https://api.telnyx.com/v2/telephony_credentials',
+        `${TELNYX_API_URL}/v2/telephony_credentials`,
         {
           method: 'POST',
           body: JSON.stringify({
@@ -19,11 +20,15 @@ export default async (req, res) => {
         }
       );
 
-      const { data: credData } = await credResponse.json();
+      const credData = await credResponse.json();
+
+      if (!credData.data || credData.errors) {
+        throw new Error('Error retrieving credentials');
+      }
 
       // Generate a token that can be saved in browser storage
       const tokenResponse = await fetch(
-        `https://api.telnyx.com/v2/telephony_credentials/${credData.id}/token`,
+        `${TELNYX_API_URL}/v2/telephony_credentials/${credData.data.id}/token`,
         {
           method: 'POST',
           headers: {
@@ -32,10 +37,10 @@ export default async (req, res) => {
         }
       );
 
-      console.log('tokenResponse:', tokenResponse);
+      const tokenStr = await tokenResponse.text();
 
       res.statusCode = 200;
-      res.json({ token: tokenResponse, expires_at: credData.expires_at });
+      res.send(tokenStr);
     } else {
       res.statusCode = 405;
       res.json({ error: 'Method Not Allowed' });

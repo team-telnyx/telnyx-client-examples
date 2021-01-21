@@ -9,16 +9,23 @@ import Page from '../components/Page';
 export default function Home() {
   const router = useRouter();
   const [session, loading] = useSession();
-  const [token] = useCachedToken();
+  const [cachedToken, setCachedToken] = useCachedToken();
 
-  // useEffect(() => {
-  //   if (token === null) {
-  //     // Redirect to login page
-  //     router.push('/login');
-  //   }
-  // }, [token]);
+  useEffect(() => {
+    console.log('session:', session);
 
-  console.log(session);
+    if (session && cachedToken === null) {
+      console.log('generate new token');
+
+      // Generate and cache a new Telnyx token
+      // TODO Check expiry
+      fetch('/api/generate_token', {
+        method: 'POST',
+      })
+        .then((resp) => resp.text())
+        .then(setCachedToken);
+    }
+  }, [Boolean(session)]);
 
   return (
     <Page title="Home">

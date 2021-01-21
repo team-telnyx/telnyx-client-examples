@@ -1,24 +1,31 @@
 import { useState, useEffect } from 'react';
 
-function getLocalStorageValue() {
+function getStorageValue() {
   if (window !== 'undefined') {
-    return window.localStorage.getItem('telnyx_token');
+    return window.sessionStorage.getItem('telnyx_token');
   }
 }
 
+/**
+ * Stores Telnyx token in session storage to persist
+ * the token as long as the tab or browser is open.
+ *
+ * You can choose another client storage mechanism if
+ * you want, such as `localStorage`.
+ */
 export default function useCachedToken() {
   const [token, setToken] = useState();
 
-  // Check for token in local storage on page load
+  // Check for token in session storage on page load
   useEffect(() => {
-    const cachedValue = getLocalStorageValue();
+    const cachedValue = getStorageValue();
 
     setToken(cachedValue || null);
   }, []);
 
   function saveToken(value) {
     if (window !== 'undefined') {
-      return window.localStorage.setItem('telnyx_token', value);
+      return window.sessionStorage.setItem('telnyx_token', value);
     }
 
     setToken(value);
