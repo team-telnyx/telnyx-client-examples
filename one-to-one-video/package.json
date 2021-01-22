@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"nodemon ./wsServer.js\" \"next dev\"",
+    "dev": "concurrently \"NODE_ENV=local nodemon ./wsServer.js\" \"next dev\"",
     "build": "next build",
     "start": "next start",
     "start:wss": "node ./wsServer.js",

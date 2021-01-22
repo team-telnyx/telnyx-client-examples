@@ -2,7 +2,15 @@
  * Create a Websocket server for the video call data channel,
  * e.g. when someone joins the video chat
  */
+const path = require('path');
 const WebSocket = require('ws');
+
+require('dotenv').config({
+  path: path.resolve(
+    process.cwd(),
+    process.env.NODE_ENV === 'local' ? '.env.local' : '.env'
+  ),
+});
 
 function noop() {}
 
@@ -10,8 +18,9 @@ function heartbeat() {
   this.isAlive = true;
 }
 
-// TODO custom port
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = process.env.NEXT_PUBLIC_WS_SERVER_URL
+  ? new WebSocket(process.env.NEXT_PUBLIC_WS_SERVER_URL)
+  : new WebSocket.Server({ port: process.env.NEXT_PUBLIC_WS_SERVER_PORT });
 
 wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(data) {
