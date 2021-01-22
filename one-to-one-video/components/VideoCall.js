@@ -14,6 +14,7 @@ export default function VideoCall() {
   const router = useRouter();
   const ws = useWebSocket();
   const telnyxClient = useContext(TelnyxRTCContext);
+  const [isTelnyxClientReady, setIsTelnyxClientReady] = useState();
   const localVideoEl = useRef(null);
   const remoteVideoEl = useRef(null);
   const [isWebcamAvailable, setIsWebcamAvailable] = useState();
@@ -23,9 +24,7 @@ export default function VideoCall() {
 
   useCallbacks({
     onReady: () => {
-      ws.send(
-        JSON.stringify({ status: 'webrtc_ready', email: session.user.email })
-      );
+      setIsTelnyxClientReady(true);
     },
     onError: (err) => {
       console.error('VideoCall:', err);
@@ -47,21 +46,29 @@ export default function VideoCall() {
     },
   });
 
-  // const notification = useNotification();
-
-  // console.log('notification:', notification);
+  useEffect(() => {
+    if (isTelnyxClientReady && cachedCredentials) {
+      ws.send(
+        JSON.stringify({
+          status: 'webrtc_ready',
+          user_email: session.user.email,
+          sip_username: cachedCredentials.sip_username,
+        })
+      );
+    }
+  }, [isTelnyxClientReady, cachedCredentials]);
 
   useEffect(() => {
-    ws.addEventListener('message', ({ data }) => {
-      console.log('VideoCall message:', data);
-      const messageEmail = JSON.parse(data).email;
-
-      if (messageEmail === invitedEmail) {
-        // TODO make call
-        console.log('call from ', cachedCredentials.sip_username);
-      }
-    });
-  }, [invitedEmail]);
+    if (invitedEmail) {
+      ws.send(
+        JSON.stringify({
+          status: 'invited_email',
+          user_email: session.user.email,
+          invite_email: invitedEmail,
+        })
+      );
+    }
+  }, [ws, invitedEmail]);
 
   useEffect(() => {
     if (isWebcamAvailable) {
