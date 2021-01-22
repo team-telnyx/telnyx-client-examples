@@ -4,13 +4,13 @@ import { useSession } from 'next-auth/client';
 import { TelnyxRTCContext, useCallbacks } from '@telnyx/react-client';
 import { Box, Button, Paragraph, Video } from 'grommet';
 import { Video as VideoIcon } from 'grommet-icons';
-import useCachedToken from '../utils/useCachedToken';
+import useCachedCredentials from '../utils/useCachedCredentials';
 import useWebSocket from '../utils/useWebSocket';
 import EmailSignIn from './EmailSignIn';
 
 export default function VideoCall() {
   const [session] = useSession();
-  const [cachedToken, setCachedToken] = useCachedToken();
+  const [cachedCredentials, setCachedCredentials] = useCachedCredentials();
   const router = useRouter();
   const ws = useWebSocket();
   const telnyxClient = useContext(TelnyxRTCContext);
@@ -23,25 +23,26 @@ export default function VideoCall() {
 
   useCallbacks({
     onReady: () => {
-      console.log('ready');
-      ws.send({ status: 'webrtc_ready', email: session.user.email });
+      ws.send(
+        JSON.stringify({ status: 'webrtc_ready', email: session.user.email })
+      );
     },
     onError: (err) => {
-      console.error(err);
+      console.error('VideoCall:', err);
 
       if (err.code === -32000) {
         // Generate and cache a new Telnyx token
         // TODO consolidate refresh token
-        fetch('/api/generate_token', {
-          method: 'POST',
-        })
+        fetch('/api/rtc/credentials')
           .then((resp) => resp.text())
-          .then((token) => {
-            setCachedToken(token);
+          .then((creds) => {
+            setCachedCredentials(creds);
 
             // TODO reconnect client
           })
-          .catch(console.error);
+          .catch((err) => {
+            console.error('VideoCall fetch /api/rtc/credentials', err);
+          });
       }
     },
   });
@@ -49,6 +50,18 @@ export default function VideoCall() {
   // const notification = useNotification();
 
   // console.log('notification:', notification);
+
+  useEffect(() => {
+    ws.addEventListener('message', ({ data }) => {
+      console.log('VideoCall message:', data);
+      const messageEmail = JSON.parse(data).email;
+
+      if (messageEmail === invitedEmail) {
+        // TODO make call
+        console.log('call from ', cachedCredentials.sip_username);
+      }
+    });
+  }, [invitedEmail]);
 
   useEffect(() => {
     if (isWebcamAvailable) {

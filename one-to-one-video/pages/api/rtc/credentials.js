@@ -4,7 +4,7 @@ const TELNYX_API_URL = process.env.TELNYX_API_URL || 'https://api.telnyx.com';
 
 export default async (req, res) => {
   try {
-    if (req.method === 'POST') {
+    if (req.method === 'GET') {
       // Generate on-demand credential and token
       const credResponse = await fetch(
         `${TELNYX_API_URL}/v2/telephony_credentials`,
@@ -40,12 +40,17 @@ export default async (req, res) => {
       const tokenStr = await tokenResponse.text();
 
       res.statusCode = 200;
-      res.send(tokenStr);
+      res.send({
+        sip_username: credData.data.sip_username,
+        login_token: tokenStr,
+      });
     } else {
       res.statusCode = 405;
       res.json({ error: 'Method Not Allowed' });
     }
   } catch (e) {
+    console.log('api/rtc/credentials: ', e);
+
     res.statusCode = 500;
     res.json({ error: 'Internal Server Error' });
   }

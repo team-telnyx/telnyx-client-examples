@@ -12,26 +12,22 @@ require('dotenv').config({
   ),
 });
 
-function noop() {}
-
-function heartbeat() {
-  this.isAlive = true;
-}
-
+// Create or connect to WS server
 const wss = process.env.NEXT_PUBLIC_WS_SERVER_URL
   ? new WebSocket(process.env.NEXT_PUBLIC_WS_SERVER_URL)
   : new WebSocket.Server({ port: process.env.NEXT_PUBLIC_WS_SERVER_PORT });
 
 wss.on('connection', function connection(ws) {
-  ws.on('message', function incoming(data) {
-    console.log(data.status);
+  ws.on('message', function incoming(dataStr) {
+    const data = JSON.parse(dataStr);
 
-    // Handle clients waiting for invited email to join
     if (data.status === 'webrtc_ready') {
-      // TODO don't send all
+      // Notify all Websocket clients that someone has logged in
+      // In production, you'll want to add some sort of segmentation logic
+      // to only notify clients that are waiting for an accepted invite
       wss.clients.forEach(function each(client) {
         if (client.readyState === WebSocket.OPEN) {
-          client.send(data);
+          client.send(JSON.stringify(data));
         }
       });
     }
@@ -54,3 +50,10 @@ const interval = setInterval(function ping() {
 wss.on('close', function close() {
   clearInterval(interval);
 });
+
+// Utils for heartbeat
+function noop() {}
+
+function heartbeat() {
+  this.isAlive = true;
+}
