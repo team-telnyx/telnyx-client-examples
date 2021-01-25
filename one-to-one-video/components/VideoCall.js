@@ -12,7 +12,11 @@ export default function VideoCall() {
   const [session] = useSession();
   const [cachedCredentials, setCachedCredentials] = useCachedCredentials();
   const router = useRouter();
-  const ws = useWebSocket();
+  const {
+    isReady: isWsReady,
+    message: wsMessage,
+    sendMessage: sendWsMessage,
+  } = useWebSocket();
   const telnyxClient = useContext(TelnyxRTCContext);
   const [isTelnyxClientReady, setIsTelnyxClientReady] = useState();
   const localVideoEl = useRef(null);
@@ -23,17 +27,20 @@ export default function VideoCall() {
   const [remoteVideoStream, setRemoteVideoStream] = useState();
 
   useCallbacks({
+    onNotification: (notification) => {
+      console.log('VideoCall onNotification: ', notification);
+    },
     onReady: () => {
       setIsTelnyxClientReady(true);
     },
     onError: (err) => {
-      console.error('VideoCall:', err);
+      console.error('VideoCall err:', err);
 
       if (err.code === -32000) {
         // Generate and cache a new Telnyx token
         // TODO consolidate refresh token
         fetch('/api/rtc/credentials')
-          .then((resp) => resp.text())
+          .then((resp) => resp.json())
           .then((creds) => {
             setCachedCredentials(creds);
 
@@ -47,8 +54,8 @@ export default function VideoCall() {
   });
 
   useEffect(() => {
-    if (isTelnyxClientReady && cachedCredentials) {
-      ws.send(
+    if (isTelnyxClientReady && isWsReady && cachedCredentials) {
+      sendWsMessage(
         JSON.stringify({
           status: 'webrtc_ready',
           user_email: session.user.email,
@@ -56,11 +63,12 @@ export default function VideoCall() {
         })
       );
     }
-  }, [isTelnyxClientReady, cachedCredentials]);
+  }, [isTelnyxClientReady, isWsReady, cachedCredentials]);
 
   useEffect(() => {
-    if (invitedEmail) {
-      ws.send(
+    console.log(isTelnyxClientReady, isWsReady, invitedEmail);
+    if (isTelnyxClientReady && isWsReady && invitedEmail) {
+      sendWsMessage(
         JSON.stringify({
           status: 'invited_email',
           user_email: session.user.email,
@@ -68,7 +76,23 @@ export default function VideoCall() {
         })
       );
     }
-  }, [ws, invitedEmail]);
+  }, [isTelnyxClientReady, isWsReady, invitedEmail]);
+
+  useEffect(() => {
+    console.log('VideoCall wsMessage:', wsMessage);
+
+    if (wsMessage && wsMessage.status === 'initiate_dial') {
+      telnyxClient.newCall({
+        destinationNumber: `sip:${wsMessage.to_sip_username}@${
+          process.env.NEXT_PUBLIC_TELNYX_SIP_DOMAIN
+        }?x-toSipUsername=${
+          wsMessage.to_sip_username
+        }&x-fromEmail=${encodeURIComponent(session.user.email)}`,
+        audio: true,
+        video: true,
+      });
+    }
+  }, [wsMessage]);
 
   useEffect(() => {
     if (isWebcamAvailable) {
@@ -114,15 +138,8 @@ export default function VideoCall() {
   return (
     <Box direction="row" gap="medium" align="center">
       <Box background="light-2" width="640px" height="400px">
-        {isWebcamAvailable && (
-          <Video
-            ref={localVideoEl}
-            controls={false}
-            fit="cover"
-            autoPlay
-            mute
-          />
-        )}
+        <Video ref={localVideoEl} controls={false} fit="cover" autoPlay mute />
+
         {!isWebcamAvailable && (
           <Box fill align="center" justify="center">
             {isWebcamAvailable === undefined && (

@@ -20,12 +20,19 @@ export default function useCachedCredentials() {
   useEffect(() => {
     const cachedValue = getStorageValue();
 
-    setCredentials(cachedValue ? JSON.parse(cachedValue) : null);
+    setCredentials(
+      cachedValue && cachedValue.startsWith('{')
+        ? JSON.parse(cachedValue)
+        : null
+    );
   }, []);
 
   function saveCredentials(value) {
     if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem('telnyx_credentials', value);
+      window.sessionStorage.setItem(
+        'telnyx_credentials',
+        typeof value === 'object' ? JSON.stringify(value) : value
+      );
     }
 
     setCredentials(value);

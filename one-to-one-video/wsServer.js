@@ -1,10 +1,8 @@
 /**
- * Create a Websocket server for the video call data channel,
- * e.g. when someone joins the video chat
+ * Create a Websocket server to handle video data events,
+ * e.g. to initiate a call when someone logs in
  */
 const path = require('path');
-const WebSocket = require('ws');
-const { v4: uuidv4 } = require('uuid');
 
 require('dotenv').config({
   path: path.resolve(
@@ -13,9 +11,8 @@ require('dotenv').config({
   ),
 });
 
-function callUser(sipUsername) {
-  console.log('TODO call ', sipUsername);
-}
+const WebSocket = require('ws');
+const { v4: uuidv4 } = require('uuid');
 
 // Create or connect to WS server
 const wss = process.env.NEXT_PUBLIC_WS_SERVER_URL
@@ -64,19 +61,27 @@ wss.on('connection', function connection(ws) {
     }
 
     if (msg.status === 'webrtc_ready') {
-      const wsClientData = clientsDB.get(msg.user_email);
+      const clientData = clientsDB.get(msg.user_email);
 
-      if (wsClientData.invited_by) {
+      if (clientData.invited_by) {
         // Notify inviter Websocket client that invitee has logged in
-        const clientData = clientsDB.get(wsClientData.invited_by);
+        const inviterClientData = clientsDB.get(clientData.invited_by);
 
-        if (clientData) {
-          // Call the inviter
-          callUser(clientData.sip_username);
+        if (inviterClientData) {
+          wss.clients.forEach(function (client) {
+            if (
+              client.uuid === inviterClientData.ws_id &&
+              client.readyState === WebSocket.OPEN
+            ) {
+              client.send(
+                JSON.stringify({
+                  status: 'initiate_dial',
+                  to_sip_username: clientData.sip_username,
+                })
+              );
+            }
+          });
         }
-
-        // Call the invitee
-        callUser(wsClientData.sip_username);
       }
     }
   });

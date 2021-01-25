@@ -35,7 +35,7 @@ export default function Home() {
         // Generate and cache a new Telnyx token
         // TODO consolidate refresh token
         fetch('/api/rtc/credentials')
-          .then((resp) => resp.text())
+          .then((resp) => resp.json())
           .then((creds) => {
             setCachedCredentials(creds);
           })
