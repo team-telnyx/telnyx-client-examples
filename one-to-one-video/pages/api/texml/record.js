@@ -6,7 +6,7 @@ export default (req, res) => {
 
   const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
   <Response>
-      <Gather action="/record" numDigits="1" timeout="1" />
+      <Record playBeep="true" finishOnKey="1" />
   </Response>`;
 
   res.send(xmlResponse);
