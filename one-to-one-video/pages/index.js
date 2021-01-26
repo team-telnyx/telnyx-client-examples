@@ -3,7 +3,7 @@ import { useSession } from 'next-auth/client';
 import { TelnyxRTCProvider } from '@telnyx/react-client';
 import { Box, Paragraph } from 'grommet';
 import { Magic } from 'grommet-icons';
-import useCachedCredentials from '../utils/useCachedCredentials';
+import useCredentials from '../utils/useCredentials';
 import Layout from '../components/Layout';
 import VideoCall from '../components/VideoCall';
 import EmailSignIn from '../components/EmailSignIn';
@@ -25,31 +25,14 @@ const VideoCallWrapper = memo(({ token }) => {
 
 export default function Home() {
   const [session, loading] = useSession();
-  const [cachedCredentials, setCachedCredentials] = useCachedCredentials();
+  const [credentials] = useCredentials();
   const [signInEmail, setSignInEmail] = useState();
   const isSessionReady = Boolean(session);
 
-  useEffect(() => {
-    if (isSessionReady) {
-      if (cachedCredentials === null) {
-        // Generate and cache a new Telnyx token
-        // TODO consolidate refresh token
-        fetch('/api/rtc/credentials')
-          .then((resp) => resp.json())
-          .then((creds) => {
-            setCachedCredentials(creds);
-          })
-          .catch((err) => {
-            console.error('Home fetch /api/rtc/credentials', err);
-          });
-      }
-    }
-  }, [isSessionReady, cachedCredentials]);
-
   return (
     <Layout title="Home">
-      {isSessionReady && cachedCredentials && (
-        <VideoCallWrapper token={cachedCredentials.login_token} />
+      {isSessionReady && credentials && (
+        <VideoCallWrapper token={credentials.login_token} />
       )}
       {!session && !loading && (
         <Box width="medium">

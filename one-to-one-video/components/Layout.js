@@ -14,15 +14,15 @@ import {
   Text,
 } from 'grommet';
 import { Emoji, Github } from 'grommet-icons';
-import useCachedCredentials from '../utils/useCachedCredentials';
+import useCredentials from '../utils/useCredentials';
 
 export default function Page({ title, children }) {
   const [session] = useSession();
-  const [, setCachedCredentials] = useCachedCredentials();
+  const [, storeCredentials] = useCredentials();
 
   function logout() {
-    // Remove cached Telnyx token
-    setCachedCredentials(null);
+    // Remove cached Telnyx credentials
+    storeCredentials(null);
     // Sign out of OAuth session
     signOut();
   }

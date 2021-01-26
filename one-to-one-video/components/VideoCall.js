@@ -4,13 +4,13 @@ import { useSession } from 'next-auth/client';
 import { TelnyxRTCContext, useCallbacks } from '@telnyx/react-client';
 import { Box, Button, Paragraph, Video } from 'grommet';
 import { Video as VideoIcon } from 'grommet-icons';
-import useCachedCredentials from '../utils/useCachedCredentials';
+import useCredentials from '../utils/useCredentials';
 import useWebSocket from '../utils/useWebSocket';
 import EmailSignIn from './EmailSignIn';
 
 export default function VideoCall() {
   const [session] = useSession();
-  const [cachedCredentials, setCachedCredentials] = useCachedCredentials();
+  const [credentials] = useCredentials();
   const router = useRouter();
   const {
     isReady: isWsReady,
@@ -37,33 +37,22 @@ export default function VideoCall() {
       console.error('VideoCall err:', err);
 
       if (err.code === -32000) {
-        // Generate and cache a new Telnyx token
-        // TODO consolidate refresh token
-        fetch('/api/rtc/credentials')
-          .then((resp) => resp.json())
-          .then((creds) => {
-            setCachedCredentials(creds);
-
-            // TODO reconnect client
-          })
-          .catch((err) => {
-            console.error('VideoCall fetch /api/rtc/credentials', err);
-          });
+        // TODO Generate and cache a new Telnyx token
       }
     },
   });
 
   useEffect(() => {
-    if (isTelnyxClientReady && isWsReady && cachedCredentials) {
+    if (isTelnyxClientReady && isWsReady && credentials) {
       sendWsMessage(
         JSON.stringify({
           status: 'webrtc_ready',
           user_email: session.user.email,
-          sip_username: cachedCredentials.sip_username,
+          sip_username: credentials.sip_username,
         })
       );
     }
-  }, [isTelnyxClientReady, isWsReady, cachedCredentials]);
+  }, [isTelnyxClientReady, isWsReady, credentials]);
 
   useEffect(() => {
     console.log(isTelnyxClientReady, isWsReady, invitedEmail);
