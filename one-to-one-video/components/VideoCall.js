@@ -1,24 +1,17 @@
-import { useContext, useState, useRef, useEffect } from 'react';
+import React, { useContext, useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/client';
 import { TelnyxRTCContext, useCallbacks } from '@telnyx/react-client';
 import { Box, Button, Paragraph, Video } from 'grommet';
 import { Video as VideoIcon } from 'grommet-icons';
-import useCredentials from '../utils/useCredentials';
-import useWebSocket from '../utils/useWebSocket';
-import EmailSignIn from './EmailSignIn';
+import InviteEmailForm from './InviteEmailForm';
 
-export default function VideoCall() {
-  const [session] = useSession();
-  const [credentials] = useCredentials();
+export default function VideoCall({
+  serverMessage,
+  onTelnyxReady,
+  onEmailInvite,
+}) {
   const router = useRouter();
-  const {
-    isReady: isWsReady,
-    message: wsMessage,
-    sendMessage: sendWsMessage,
-  } = useWebSocket();
   const telnyxClient = useContext(TelnyxRTCContext);
-  const [isTelnyxClientReady, setIsTelnyxClientReady] = useState();
   const localVideoEl = useRef(null);
   const remoteVideoEl = useRef(null);
   const [isWebcamAvailable, setIsWebcamAvailable] = useState();
@@ -31,57 +24,24 @@ export default function VideoCall() {
       console.log('VideoCall onNotification: ', notification);
     },
     onReady: () => {
-      setIsTelnyxClientReady(true);
+      onTelnyxReady();
     },
     onError: (err) => {
       console.error('VideoCall err:', err);
-
-      if (err.code === -32000) {
-        // TODO Generate and cache a new Telnyx token
-      }
     },
   });
 
   useEffect(() => {
-    if (isTelnyxClientReady && isWsReady && credentials) {
-      sendWsMessage(
-        JSON.stringify({
-          status: 'webrtc_ready',
-          user_email: session.user.email,
-          sip_username: credentials.sip_username,
-        })
-      );
-    }
-  }, [isTelnyxClientReady, isWsReady, credentials]);
+    console.log('VideoCall serverMessage:', serverMessage);
 
-  useEffect(() => {
-    console.log(isTelnyxClientReady, isWsReady, invitedEmail);
-    if (isTelnyxClientReady && isWsReady && invitedEmail) {
-      sendWsMessage(
-        JSON.stringify({
-          status: 'invited_email',
-          user_email: session.user.email,
-          invite_email: invitedEmail,
-        })
-      );
-    }
-  }, [isTelnyxClientReady, isWsReady, invitedEmail]);
-
-  useEffect(() => {
-    console.log('VideoCall wsMessage:', wsMessage);
-
-    if (wsMessage && wsMessage.status === 'initiate_dial') {
+    if (serverMessage && serverMessage.status === 'initiate_dial') {
       telnyxClient.newCall({
-        destinationNumber: `sip:${wsMessage.to_sip_username}@${
-          process.env.NEXT_PUBLIC_TELNYX_SIP_DOMAIN
-        }?x-toSipUsername=${
-          wsMessage.to_sip_username
-        }&x-fromEmail=${encodeURIComponent(session.user.email)}`,
+        destinationNumber: `sip:${serverMessage.to_sip_username}@${process.env.NEXT_PUBLIC_TELNYX_SIP_DOMAIN}`,
         audio: true,
         video: true,
       });
     }
-  }, [wsMessage]);
+  }, [serverMessage]);
 
   useEffect(() => {
     if (isWebcamAvailable) {
@@ -122,6 +82,8 @@ export default function VideoCall() {
 
     // Save email in query string
     router.push({ query: { invitedEmail: email } });
+
+    onEmailInvite(email);
   };
 
   return (
@@ -172,7 +134,7 @@ export default function VideoCall() {
               </Paragraph>
             )}
 
-            <EmailSignIn
+            <InviteEmailForm
               emailLabel="Enter email to invite"
               submitLabel="Send link to chat"
               onSubmit={handleInviteSubmit}

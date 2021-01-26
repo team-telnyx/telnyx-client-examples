@@ -11,7 +11,7 @@ const encodedForm = (formData) => {
     .join('&');
 };
 
-export default function EmailSignIn({ onSubmit, emailLabel, submitLabel }) {
+export default function InviteEmailForm({ onSubmit, emailLabel, submitLabel }) {
   const [isSending, setIsSending] = useState();
 
   const sendInvite = async ({ value: { email } }) => {

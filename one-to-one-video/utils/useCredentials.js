@@ -5,7 +5,7 @@ function getStorageValue() {
     const value = window.sessionStorage.getItem('telnyx_credentials');
 
     if (value && value.startsWith('{')) {
-      return JSON.parse(cachedValue);
+      return JSON.parse(value);
     }
   }
 
@@ -46,6 +46,7 @@ export default function useCredentials() {
       setCredentials(cachedValue);
     } else {
       const controller = new AbortController();
+      console.log('controller:', controller);
 
       fetch('/api/rtc/credentials', {
         signal: controller.signal,
@@ -57,11 +58,11 @@ export default function useCredentials() {
         .catch((err) => {
           console.error('useCredentials fetch /api/rtc/credentials', err);
         });
-    }
 
-    return function cancel() {
-      controller.abort();
-    };
+      return function cancel() {
+        controller.abort();
+      };
+    }
   }, []);
 
   return [credentials, storeCredentials];

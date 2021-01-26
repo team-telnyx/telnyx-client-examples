@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import React, { Fragment } from 'react';
 import Head from 'next/head';
 import { useSession, signOut } from 'next-auth/client';
 import {

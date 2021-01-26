@@ -10,7 +10,7 @@
     "setup": "npm install && cp .env.local.sample .env.local"
   },
   "dependencies": {
-    "@telnyx/react-client": "^1.0.0",
+    "@telnyx/react-client": "^1.0.1",
     "@telnyx/webrtc": "^2.3.2",
     "grommet": "^2.16.2",
     "next": "10.0.5",

@@ -1,66 +1,74 @@
-import { useEffect, useState, memo, Fragment } from 'react';
+import React, { useMemo, Fragment } from 'react';
 import { useSession } from 'next-auth/client';
 import { TelnyxRTCProvider } from '@telnyx/react-client';
-import { Box, Paragraph } from 'grommet';
-import { Magic } from 'grommet-icons';
 import useCredentials from '../utils/useCredentials';
+import useWebSocket from '../utils/useWebSocket';
 import Layout from '../components/Layout';
 import VideoCall from '../components/VideoCall';
-import EmailSignIn from '../components/EmailSignIn';
+import SignIn from '../components/SignIn';
 
-// Memoize the `VideoCallWrapper` to prevent re-rendering
-// `TelnyxRTCProvider` unless the token changes
-// FIXME handle rerenders in webrtc package
-const VideoCallWrapper = memo(({ token }) => {
+function AuthenticatedContent({ userEmail, credentials }) {
+  const { isReady, message, sendMessage } = useWebSocket();
+  // Memoize TelnyxRTC credential to prevent re-instantiating client
+  const telnyxRTCCredential = useMemo(() => {
+    return {
+      login_token: credentials.login_token,
+    };
+  }, [credentials.login_token]);
+
+  const onTelnyxReady = () => {
+    sendMessage(
+      JSON.stringify({
+        status: 'webrtc_ready',
+        user_email: userEmail,
+        sip_username: credentials.sip_username,
+      })
+    );
+  };
+
+  const onEmailInvite = (email) => {
+    sendMessage(
+      JSON.stringify({
+        status: 'invited_email',
+        user_email: userEmail,
+        invite_email: email,
+      })
+    );
+  };
+
   return (
     <TelnyxRTCProvider
-      credential={{ login_token: token }}
-      // TODO remove
+      credential={telnyxRTCCredential}
+      // TODO remove dev
       options={{ env: 'development' }}
     >
-      <VideoCall />
+      <Fragment>
+        {isReady && (
+          <VideoCall
+            serverMessage={message}
+            onTelnyxReady={onTelnyxReady}
+            onEmailInvite={onEmailInvite}
+          />
+        )}
+      </Fragment>
     </TelnyxRTCProvider>
   );
-});
+}
 
 export default function Home() {
   const [session, loading] = useSession();
   const [credentials] = useCredentials();
-  const [signInEmail, setSignInEmail] = useState();
   const isSessionReady = Boolean(session);
 
   return (
     <Layout title="Home">
       {isSessionReady && credentials && (
-        <VideoCallWrapper token={credentials.login_token} />
+        <AuthenticatedContent
+          userEmail={session.user.email}
+          credentials={credentials}
+        />
       )}
-      {!session && !loading && (
-        <Box width="medium">
-          {signInEmail && (
-            <Fragment>
-              <Paragraph
-                size="xxlarge"
-                color="brand"
-                margin={{ bottom: '0px' }}
-              >
-                Sent. <Magic color="brand" size="32px" />
-              </Paragraph>
-              <Paragraph size="large">Check your inbox.</Paragraph>
-            </Fragment>
-          )}
-
-          {!signInEmail && (
-            <Paragraph size="xlarge">
-              Sign-in with a magic link sent to your email.
-            </Paragraph>
-          )}
-
-          <EmailSignIn
-            submitLabel={signInEmail && 'Send again'}
-            onSubmit={({ email }) => setSignInEmail(email)}
-          />
-        </Box>
-      )}
+      {!isSessionReady && !loading && <SignIn />}
     </Layout>
   );
 }
