@@ -24,7 +24,6 @@ export default (req, res) => {
             ''
           )}</Sip>
       </Dial>
-      <Record recordingStatusCallBack="/api/texml/recordings" playBeep="true" />
   </Response>`;
 
   res.send(xmlResponse);

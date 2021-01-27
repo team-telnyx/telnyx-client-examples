@@ -345,7 +345,8 @@ export default function VideoCall({
           {call && (
             <Grid columns={['flex', 'auto', 'flex']}>
               <Box align="start" gap="medium">
-                <Box
+                {/* 
+                  <Box
                   round="full"
                   overflow="hidden"
                   background="status-disabled"
@@ -359,6 +360,7 @@ export default function VideoCall({
                     tip="Start recording call"
                   ></Button>
                 </Box>
+                */}
               </Box>
 
               <Box direction="row" gap="medium">
@@ -381,7 +383,7 @@ export default function VideoCall({
                 >
                   <Button
                     icon={<VideoIcon />}
-                    onClick={() => setIsVideoMuted(isVideoMuted)}
+                    onClick={() => setIsVideoMuted(!isVideoMuted)}
                     hoverIndicator
                     tip="Toggle your camera"
                   ></Button>
