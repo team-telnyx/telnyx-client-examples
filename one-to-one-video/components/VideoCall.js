@@ -41,6 +41,7 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
 
         if (call) {
           if (call.state === 'ringing') {
+            console.log('answer');
             call.answer();
           }
 
@@ -77,7 +78,7 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
       serverMessage.user_email === invitedEmail
     ) {
       const newCall = telnyxClient.newCall({
-        destinationNumber: `sip:${serverMessage.sip_username}@sipdev.telnyx.com`,
+        destinationNumber: `sip:${serverMessage.sip_username}@${process.env.NEXT_PUBLIC_TELNYX_SIP_SUBDOMAIN}.${process.env.NEXT_PUBLIC_TELNYX_SIP_DOMAIN}`,
         audio: true,
         video: true,
       });
@@ -128,6 +129,7 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
   }
 
   const isCallActive = call?.state === 'active';
+  // const isCallActive = true;
 
   const videoProps = {
     width: '640px',
@@ -214,7 +216,7 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
             )}
           </Box>
 
-          {isCallActive && (
+          {call && (
             <Grid columns={['flex', 'auto', 'flex']}>
               <Box align="start" gap="medium">
                 <Box
@@ -225,6 +227,7 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
                   <Button
                     icon={<RadialSelected />}
                     onClick={() => {
+                      console.log('record');
                       call.dtmf(START_RECORDING_DTMF_KEY);
                     }}
                     hoverIndicator
