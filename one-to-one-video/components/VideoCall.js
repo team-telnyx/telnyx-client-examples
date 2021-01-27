@@ -6,7 +6,11 @@ import React, {
   useEffect,
 } from 'react';
 import { useRouter } from 'next/router';
-import { TelnyxRTCContext, useCallbacks } from '@telnyx/react-client';
+import {
+  TelnyxRTCContext,
+  useCallbacks,
+  Video as TelnyxVideo,
+} from '@telnyx/react-client';
 import {
   Box,
   Button,
@@ -22,7 +26,7 @@ import {
 import {
   Video as VideoIcon,
   Microphone,
-  RadialSelected,
+  // RadialSelected,
   Close,
   Checkmark,
   FormEdit,
@@ -66,7 +70,7 @@ export default function VideoCall({
 
         if (call) {
           if (call.state === 'hangup') {
-            setParticipantEmail(null);
+            removeParticipant();
           }
 
           if (call.state === 'destroy') {
@@ -87,6 +91,11 @@ export default function VideoCall({
 
   useEffect(() => {
     console.log('VideoCall call:', call);
+
+    if (call) {
+      // Do something with Telnyx Call Control IDs to control the call
+      console.log('VideoCall call Telnyx IDs:', call.telnyxIDs);
+    }
   }, [call]);
 
   useEffect(() => {
@@ -126,6 +135,8 @@ export default function VideoCall({
           });
 
           setCall(newCall);
+          setIsAudioMuted(false);
+          setIsVideoMuted(false);
 
           onDial(participantEmail);
         }
@@ -186,11 +197,15 @@ export default function VideoCall({
     router.push({ query: { invitedEmail: email } });
   };
 
+  const removeParticipant = () => {
+    setParticipantEmail(null);
+
+    router.push({ query: { invitedEmail: undefined } });
+  };
+
   if (call) {
-    if (call.localStream)
-      localVideoEl.current.srcObject = call.options.localStream;
-    if (call.remoteStream)
-      remoteVideoEl.current.srcObject = call.options.remoteStream;
+    if (call.localStream) localVideoEl.current.srcObject = call.localStream;
+    if (call.remoteStream) remoteVideoEl.current.srcObject = call.remoteStream;
   }
 
   const isRinging = call && call.state === 'ringing';
@@ -224,7 +239,7 @@ export default function VideoCall({
               controls={false}
               fit="cover"
               autoPlay
-              mute
+              muted
             />
 
             {!isCallActive && !isWebcamAvailable && (
