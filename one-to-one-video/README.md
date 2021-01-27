@@ -1,6 +1,19 @@
-# Magic link video chat
+# WIP: Magic link video chat
 
 One-to-one video chat using magic links to sign in
+
+Features:
+
+- Simple Telnyx setup
+- Limit call time with TeXML
+- Custom WebSocket data channel
+- User session + RTC session
+
+Dependencies:
+
+- SIP connection
+- TeXML app
+- ngrok
 
 ## Quick start
 
