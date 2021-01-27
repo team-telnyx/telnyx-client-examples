@@ -35,7 +35,7 @@ function AuthenticatedContent({ userEmail, credentials }) {
         notify_clients: true,
         status: 'user_initiated_dial',
         user_email: userEmail,
-        desitnation_user_email: invitedEmail,
+        destination_user_email: invitedEmail,
       })
     );
   };
@@ -62,6 +62,7 @@ function AuthenticatedContent({ userEmail, credentials }) {
       <Fragment>
         {isReady && (
           <VideoCall
+            userEmail={userEmail}
             displayName={displayName}
             serverMessage={message}
             onTelnyxReady={onTelnyxReady}
