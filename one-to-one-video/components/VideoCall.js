@@ -12,6 +12,8 @@ import {
   Button,
   Form,
   Grid,
+  Heading,
+  Layer,
   Paragraph,
   Video,
   Text,
@@ -26,10 +28,6 @@ import {
   FormEdit,
 } from 'grommet-icons';
 import InviteEmailForm from './InviteEmailForm';
-
-// TODO use same constants as `pages/api/texml`
-const START_RECORDING_DTMF_KEY = '1';
-const END_RECORDING_DTMF_KEY = '0';
 
 /**
  * Display local and remote videos
@@ -52,6 +50,8 @@ export default function VideoCall({
     router.query.invitedEmail
   );
   const [call, setCall] = useState();
+  const [isAudioMuted, setIsAudioMuted] = useState(true);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
   const [isEditingDisplayName, setIsEditingDisplayName] = useState();
   const [participantName, setParticipantName] = useState();
 
@@ -65,10 +65,6 @@ export default function VideoCall({
         const { call } = notification;
 
         if (call) {
-          if (call.state === 'ringing') {
-            call.answer();
-          }
-
           if (call.state === 'hangup') {
             setParticipantEmail(null);
           }
@@ -92,6 +88,26 @@ export default function VideoCall({
   useEffect(() => {
     console.log('VideoCall call:', call);
   }, [call]);
+
+  useEffect(() => {
+    if (call) {
+      if (isAudioMuted === true) {
+        call.muteAudio();
+      } else if (isAudioMuted === false) {
+        call.unmuteAudio();
+      }
+    }
+  }, [isAudioMuted, call]);
+
+  useEffect(() => {
+    if (call) {
+      if (isVideoMuted === true) {
+        call.muteVideo();
+      } else if (isVideoMuted === false) {
+        call.unmuteVideo();
+      }
+    }
+  }, [isVideoMuted, call]);
 
   useEffect(() => {
     console.log('VideoCall serverMessage:', serverMessage);
@@ -177,6 +193,7 @@ export default function VideoCall({
       remoteVideoEl.current.srcObject = call.options.remoteStream;
   }
 
+  const isRinging = call && call.state === 'ringing';
   const isCallActive = call && call.state === 'active';
 
   const videoProps = {
@@ -198,7 +215,7 @@ export default function VideoCall({
   const participantDisplayName = participantName || participantEmail;
 
   return (
-    <Box gap="medium">
+    <Fragment>
       <Box direction="row" gap="medium" align="start">
         <Box style={{ position: 'relative' }}>
           <Box background="light-2" {...videoProps} {...localVideoProps}>
@@ -227,7 +244,7 @@ export default function VideoCall({
               </Box>
             )}
 
-            <Box style={{ position: 'absolute', top: 0, left: 0, zIndex: 99 }}>
+            <Box style={{ position: 'absolute', top: 0, left: 0, zIndex: 2 }}>
               <Box
                 background="light-4"
                 color="dark-3"
@@ -311,7 +328,7 @@ export default function VideoCall({
             )}
           </Box>
 
-          <Box style={{ position: 'absolute', top: 0, left: 0, zIndex: 99 }}>
+          <Box style={{ position: 'absolute', top: 0, left: 0, zIndex: 2 }}>
             {participantDisplayName && (
               <Box
                 background="light-4"
@@ -336,7 +353,7 @@ export default function VideoCall({
                   <Button
                     icon={<RadialSelected />}
                     onClick={() => {
-                      call.dtmf(START_RECORDING_DTMF_KEY);
+                      console.log('TODO record');
                     }}
                     hoverIndicator
                     tip="Start recording call"
@@ -345,22 +362,26 @@ export default function VideoCall({
               </Box>
 
               <Box direction="row" gap="medium">
-                <Box round="full" overflow="hidden" background="accent-3">
+                <Box
+                  round="full"
+                  overflow="hidden"
+                  background={isAudioMuted ? 'status-disabled' : 'accent-3'}
+                >
                   <Button
                     icon={<Microphone />}
-                    onClick={() => {
-                      call.toggleAudioMute();
-                    }}
+                    onClick={() => setIsAudioMuted(!isAudioMuted)}
                     hoverIndicator
                     tip="Toggle your microphone"
                   ></Button>
                 </Box>
-                <Box round="full" overflow="hidden" background="accent-3">
+                <Box
+                  round="full"
+                  overflow="hidden"
+                  background={isVideoMuted ? 'status-disabled' : 'accent-3'}
+                >
                   <Button
                     icon={<VideoIcon />}
-                    onClick={() => {
-                      call.toggleVideoMute();
-                    }}
+                    onClick={() => setIsVideoMuted(isVideoMuted)}
                     hoverIndicator
                     tip="Toggle your camera"
                   ></Button>
@@ -380,6 +401,66 @@ export default function VideoCall({
           )}
         </Box>
       </Box>
-    </Box>
+
+      {isRinging && (
+        <Layer>
+          <Box pad="large" gap="small">
+            <Heading level="3" size="large" margin="none">
+              Starting video chat with <br />
+              <Text size="xlarge" color="brand">
+                {participantDisplayName || 'unknown'}
+              </Text>
+            </Heading>
+
+            <Paragraph size="large">
+              Enable microphone, camera or both to start the call.
+            </Paragraph>
+
+            <Box gap="small" width="medium" margin={{ horizontal: 'auto' }}>
+              <Button
+                primary
+                size="large"
+                label="Enable both"
+                onClick={() => {
+                  call.answer();
+                  setIsAudioMuted(false);
+                  setIsVideoMuted(false);
+                }}
+              />
+              <Button
+                icon={<Microphone />}
+                label="Just microphone"
+                onClick={() => {
+                  call.answer();
+                  setIsAudioMuted(false);
+                }}
+              />
+              <Button
+                icon={<VideoIcon />}
+                label="Just camera"
+                onClick={() => {
+                  call.answer();
+                  setIsVideoMuted(false);
+                }}
+              />
+            </Box>
+
+            <Box alignSelf="center" margin={{ top: 'small' }}>
+              <Button
+                plain
+                label={
+                  <Text size="small" color="dark-3">
+                    No thanks, cancel the call
+                  </Text>
+                }
+                onClick={() => {
+                  call.hangup();
+                }}
+              />
+            </Box>
+          </Box>
+        </Layer>
+      )}
+    </Fragment>
   );
 }
