@@ -19,19 +19,9 @@ function AuthenticatedContent({ userEmail, credentials }) {
   const onTelnyxReady = () => {
     sendMessage(
       JSON.stringify({
-        status: 'webrtc_ready',
+        status: 'user_rtc_ready',
         user_email: userEmail,
         sip_username: credentials.sip_username,
-      })
-    );
-  };
-
-  const onEmailInvite = (email) => {
-    sendMessage(
-      JSON.stringify({
-        status: 'invited_email',
-        user_email: userEmail,
-        invite_email: email,
       })
     );
   };
@@ -44,11 +34,7 @@ function AuthenticatedContent({ userEmail, credentials }) {
     >
       <Fragment>
         {isReady && (
-          <VideoCall
-            serverMessage={message}
-            onTelnyxReady={onTelnyxReady}
-            onEmailInvite={onEmailInvite}
-          />
+          <VideoCall serverMessage={message} onTelnyxReady={onTelnyxReady} />
         )}
       </Fragment>
     </TelnyxRTCProvider>

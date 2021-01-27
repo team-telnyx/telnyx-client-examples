@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"NODE_ENV=local nodemon ./wsServer.js\" \"next dev\"",
+    "dev": "concurrently \"npm:dev:*\"",
+    "dev:next": "next dev",
+    "dev:wss": "NODE_ENV=local nodemon ./wsServer.js",
     "build": "next build",
     "start": "next start",
-    "start:wss": "node ./wsServer.js",
+    "start:wss": "NODE_ENV=production.local node ./wsServer.js",
     "setup": "npm install && cp .env.local.sample .env.local"
   },
   "dependencies": {

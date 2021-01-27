@@ -1,15 +1,22 @@
-import React, { useContext, useState, useRef, useEffect } from 'react';
+import React, {
+  Fragment,
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+} from 'react';
 import { useRouter } from 'next/router';
 import { TelnyxRTCContext, useCallbacks } from '@telnyx/react-client';
-import { Box, Button, Paragraph, Video } from 'grommet';
-import { Video as VideoIcon } from 'grommet-icons';
+import { Avatar, Box, Button, Grid, Paragraph, Video, Text } from 'grommet';
+import {
+  Video as VideoIcon,
+  Microphone,
+  RadialSelected,
+  Phone,
+} from 'grommet-icons';
 import InviteEmailForm from './InviteEmailForm';
 
-export default function VideoCall({
-  serverMessage,
-  onTelnyxReady,
-  onEmailInvite,
-}) {
+export default function VideoCall({ serverMessage, onTelnyxReady }) {
   const router = useRouter();
   const telnyxClient = useContext(TelnyxRTCContext);
   const localVideoEl = useRef(null);
@@ -17,11 +24,29 @@ export default function VideoCall({
   const [isWebcamAvailable, setIsWebcamAvailable] = useState();
   const [isWebcamOn, setIsWebcamOn] = useState();
   const [invitedEmail, setInvitedEmail] = useState(router.query.invitedEmail);
-  const [remoteVideoStream, setRemoteVideoStream] = useState();
+  const [call, setCall] = useState();
 
   useCallbacks({
     onNotification: (notification) => {
-      console.log('VideoCall onNotification: ', notification);
+      if (notification.type == 'userMediaError') {
+        setIsWebcamAvailable(false);
+      }
+
+      if (notification.type == 'callUpdate') {
+        const { call } = notification;
+
+        if (call) {
+          if (call.state === 'ringing') {
+            call.answer();
+          }
+
+          if (call.state === 'destroy') {
+            setCall(null);
+          } else {
+            setCall(call);
+          }
+        }
+      }
     },
     onReady: () => {
       onTelnyxReady();
@@ -34,18 +59,30 @@ export default function VideoCall({
   useEffect(() => {
     console.log('VideoCall serverMessage:', serverMessage);
 
-    if (serverMessage && serverMessage.status === 'initiate_dial') {
-      telnyxClient.newCall({
-        destinationNumber: `sip:${serverMessage.to_sip_username}@${process.env.NEXT_PUBLIC_TELNYX_SIP_DOMAIN}`,
-        audio: true,
-        video: true,
-      });
+    if (
+      serverMessage &&
+      serverMessage.status === 'user_rtc_ready' &&
+      serverMessage.user_email === invitedEmail
+    ) {
+      if (router.query.disableCalling) {
+        console.warn('Calling is disabled with `disableCalling` in the URL');
+      } else {
+        const newCall = telnyxClient.newCall({
+          destinationNumber: `sip:${serverMessage.sip_username}@sipdev.telnyx.com`,
+          audio: true,
+          video: true,
+        });
+        setCall(newCall);
+      }
     }
   }, [serverMessage]);
 
-  useEffect(() => {
-    if (isWebcamAvailable) {
-      // TODO move to sdk?
+  const checkVideo = async () => {
+    let result = await telnyxClient.getVideoDevices();
+
+    if (result.length) {
+      setIsWebcamAvailable(true);
+
       if (navigator.mediaDevices.getUserMedia) {
         // Set local video stream to default webcam
         navigator.mediaDevices
@@ -62,16 +99,6 @@ export default function VideoCall({
             console.log(error);
           });
       }
-    }
-  }, [isWebcamAvailable]);
-
-  const checkVideo = async () => {
-    telnyxClient.localElement = localVideoEl.current;
-
-    let result = await telnyxClient.getVideoDevices();
-
-    if (result.length) {
-      setIsWebcamAvailable(true);
     } else {
       setIsWebcamAvailable(false);
     }
@@ -82,66 +109,121 @@ export default function VideoCall({
 
     // Save email in query string
     router.push({ query: { invitedEmail: email } });
-
-    onEmailInvite(email);
   };
 
+  const hangup = () => {
+    if (call) {
+      call.hangup();
+    }
+  };
+
+  if (call) {
+    if (call.localStream)
+      localVideoEl.current.srcObject = call.options.localStream;
+    if (call.remoteStream)
+      remoteVideoEl.current.srcObject = call.options.remoteStream;
+  }
+
+  const isCallActive = call?.state === 'active';
+
   return (
-    <Box direction="row" gap="medium" align="center">
-      <Box background="light-2" width="640px" height="400px">
-        <Video ref={localVideoEl} controls={false} fit="cover" autoPlay mute />
-
-        {!isWebcamAvailable && (
-          <Box fill align="center" justify="center">
-            {isWebcamAvailable === undefined && (
-              <Paragraph>Want to check yourself out?</Paragraph>
-            )}
-            {isWebcamAvailable === false && (
-              <Paragraph>No webcam detected. Is it on?</Paragraph>
-            )}
-            <Button
-              size="large"
-              icon={<VideoIcon />}
-              label="Test your video"
-              onClick={checkVideo}
+    <Box gap="medium">
+      <Box direction="row" gap="medium" align="center">
+        <Box>
+          <Box background="light-2" width="640px" height="400px">
+            <Video
+              ref={localVideoEl}
+              controls={false}
+              fit="cover"
+              autoPlay
+              mute
             />
+
+            {!isCallActive && !isWebcamAvailable && (
+              <Box fill align="center" justify="center">
+                {isWebcamAvailable === undefined && (
+                  <Paragraph>Want to check yourself out?</Paragraph>
+                )}
+                {isWebcamAvailable === false && (
+                  <Paragraph>No webcam detected. Is it on?</Paragraph>
+                )}
+                <Button
+                  size="large"
+                  icon={<VideoIcon />}
+                  label="Test your video"
+                  onClick={checkVideo}
+                />
+              </Box>
+            )}
           </Box>
-        )}
+        </Box>
+
+        <Box>
+          <Box background="neutral-2" width="640px" height="400px">
+            <Video ref={remoteVideoEl} controls={false} fit="cover" autoPlay />
+
+            {!isCallActive && (
+              <Fragment>
+                {invitedEmail && (
+                  <Box fill align="center" justify="center">
+                    {call && (
+                      <Paragraph>{invitedEmail} is joining...</Paragraph>
+                    )}
+                    {!call && (
+                      <Paragraph>
+                        Waiting for {invitedEmail} to join...
+                      </Paragraph>
+                    )}
+                  </Box>
+                )}
+                {!invitedEmail && (
+                  <Box fill align="center" justify="center">
+                    {isWebcamOn && (
+                      <Paragraph>
+                        You look great! Now, invite someone to video chat
+                      </Paragraph>
+                    )}
+
+                    <InviteEmailForm
+                      emailLabel="Enter email to invite"
+                      submitLabel="Send link to chat"
+                      onSubmit={handleInviteSubmit}
+                    />
+                  </Box>
+                )}
+              </Fragment>
+            )}
+          </Box>
+        </Box>
       </Box>
 
-      <Box background="neutral-2" width="640px" height="400px">
-        {invitedEmail && remoteVideoStream && (
-          <Video
-            ref={remoteVideoEl}
-            controls={false}
-            fit="cover"
-            autoPlay
-            mute
-          />
-        )}
+      <Grid columns={['flex', 'auto', 'flex']}>
+        <Box align="start" gap="small">
+          <Button onClick={() => {}} tip="Record call">
+            <Avatar background="status-disabled">
+              <RadialSelected />
+            </Avatar>
+          </Button>
+        </Box>
 
-        {invitedEmail && !remoteVideoStream && (
-          <Box fill align="center" justify="center">
-            <Paragraph>Waiting for {invitedEmail} to join...</Paragraph>
-          </Box>
-        )}
-
-        {!invitedEmail && (
-          <Box fill align="center" justify="center">
-            {isWebcamOn && (
-              <Paragraph>
-                You look great! Now, invite someone to video chat
-              </Paragraph>
-            )}
-
-            <InviteEmailForm
-              emailLabel="Enter email to invite"
-              submitLabel="Send link to chat"
-              onSubmit={handleInviteSubmit}
-            />
-          </Box>
-        )}
-      </Box>
+        <Box direction="row" gap="small">
+          <Button onClick={() => {}} tip="Toggle your microphone">
+            <Avatar background="accent-3">
+              <Microphone />
+            </Avatar>
+          </Button>
+          <Button onClick={() => {}} tip="Toggle your video">
+            <Avatar background="accent-3">
+              <VideoIcon />
+            </Avatar>
+          </Button>
+          <Button onClick={hangup} tip="End call">
+            <Avatar background="status-error">
+              <Phone />
+            </Avatar>
+          </Button>
+        </Box>
+      </Grid>
     </Box>
   );
 }

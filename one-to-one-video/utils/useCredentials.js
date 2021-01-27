@@ -46,7 +46,6 @@ export default function useCredentials() {
       setCredentials(cachedValue);
     } else {
       const controller = new AbortController();
-      console.log('controller:', controller);
 
       fetch('/api/rtc/credentials', {
         signal: controller.signal,
