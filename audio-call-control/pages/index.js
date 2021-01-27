@@ -1,65 +1,140 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import React, { Fragment, useRef, useEffect, useState } from 'react';
+import Head from 'next/head';
+import { TelnyxRTC } from '@telnyx/webrtc';
+import { Box, Button, Form, FormField, TextInput } from 'grommet';
 
 export default function Home() {
+  const [loginToken, setLoginToken] = useState('');
+  const [userInfo, setUserInfo] = useState();
+  const [formValue, setFormValue] = useState({
+    sipConnectionId: process.env.NEXT_PUBLIC_TELNYX_SIP_CONNECTION_ID || '',
+    callerId: process.env.NEXT_PUBLIC_CALLER_ID || '',
+    callDestination: process.env.NEXT_PUBLIC_CALL_DESITNATION || '',
+  });
+  const [call, setCall] = useState();
+  const clientRef = useRef();
+
+  useEffect(() => {
+    if (!loginToken) return;
+
+    if (clientRef.current) {
+      clientRef.current.disconnect();
+    }
+
+    const client = new TelnyxRTC({
+      login_token: token,
+    });
+
+    client.remoteElement = 'remoteAudio';
+
+    client
+      .on('telnyx.ready', () => console.log('ready to call'))
+      .on('telnyx.error', () => console.log('error'))
+      .on('telnyx.notification', (notification) => {
+        if (notification.type === 'callUpdate') {
+          setCall(notification.call);
+        }
+      });
+
+    client.connect();
+
+    clientRef.current = client;
+  }, [loginToken]);
+
+  console.log('call.status:', call && call.status);
+
+  const dial = () => {
+    const newCall = clientRef.current.newCall({
+      destinationNumber: '18004377950',
+      callerNumber: '‬155531234567',
+    });
+
+    setCall(newCall);
+  };
+
+  const hangup = () => {
+    call.hangup();
+
+    setCall(null);
+  };
+
+  const handleSubmit = (value) => {
+    console.log('value:', value);
+
+    setUserInfo(value);
+  };
+
   return (
-    <div className={styles.container}>
+    <Fragment>
       <Head>
-        <title>Create Next App</title>
+        <title>Call Control + WebRTC Audio Test</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+      <Box pad="large" gap="small" fill>
+        <Box>Call Control + WebRTC Audio Test</Box>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+        <audio id="remoteAudio" autoPlay />
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+        <Box direction="row" gap="large">
+          <Box width="medium" gap="medium" pad="small">
+            <Form
+              value={formValue}
+              onChange={setFormValue}
+              onSubmit={({ value }) => handleSubmit(value)}
+            >
+              <Box>User info</Box>
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+              <FormField label="SIP Connection ID">
+                <TextInput
+                  name="sipConnectionId"
+                  placeholder="xxxxxxxxxxxxxxxx123"
+                  required
+                />
+              </FormField>
 
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
+              <FormField label="Caller ID">
+                <TextInput
+                  name="callerId"
+                  type="tel"
+                  placeholder="+15551231234"
+                  required
+                />
+              </FormField>
+
+              <FormField label="Call destination">
+                <TextInput
+                  name="callDestination"
+                  type="tel"
+                  placeholder="+15555675678"
+                  required
+                />
+              </FormField>
+
+              <Box>
+                <Button type="submit" label="Connect" primary />
+              </Box>
+            </Form>
+
+            <Box direction="row" justify="center" gap="small">
+              <Button label="Call" onClick={dial} primary />
+              <Button label="Hangup" onClick={hangup} />
+            </Box>
+          </Box>
+
+          <Box
+            width="medium"
+            gap="medium"
+            pad="small"
+            background="light-2"
+            round
           >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
+            <Box>Log</Box>
 
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
+            <Box>TBD</Box>
+          </Box>
+        </Box>
+      </Box>
+    </Fragment>
+  );
 }
