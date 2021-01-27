@@ -9,8 +9,7 @@ export function WebSocketContextProvider({ children }) {
   const ws = useMemo(() => {
     if (typeof window !== 'undefined') {
       const ws = new window.WebSocket(
-        process.env.NEXT_PUBLIC_WS_SERVER_URL ||
-          `ws://localhost:${process.env.NEXT_PUBLIC_WS_SERVER_PORT}`
+        `ws://${process.env.NEXT_PUBLIC_WS_SERVER_HOST}/${process.env.NEXT_PUBLIC_WS_SERVER_PATH}`
       );
 
       ws.addEventListener('open', () => {

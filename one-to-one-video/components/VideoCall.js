@@ -31,6 +31,9 @@ import InviteEmailForm from './InviteEmailForm';
 const START_RECORDING_DTMF_KEY = '1';
 const END_RECORDING_DTMF_KEY = '0';
 
+/**
+ * Display local and remote videos
+ */
 export default function VideoCall({
   userEmail,
   displayName,
