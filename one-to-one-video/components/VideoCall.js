@@ -7,12 +7,23 @@ import React, {
 } from 'react';
 import { useRouter } from 'next/router';
 import { TelnyxRTCContext, useCallbacks } from '@telnyx/react-client';
-import { Box, Button, Grid, Paragraph, Video, Text } from 'grommet';
+import {
+  Box,
+  Button,
+  Form,
+  Grid,
+  Paragraph,
+  Video,
+  Text,
+  TextInput,
+} from 'grommet';
 import {
   Video as VideoIcon,
   Microphone,
   RadialSelected,
   Close,
+  Checkmark,
+  FormEdit,
 } from 'grommet-icons';
 import InviteEmailForm from './InviteEmailForm';
 
@@ -20,15 +31,26 @@ import InviteEmailForm from './InviteEmailForm';
 const START_RECORDING_DTMF_KEY = '1';
 const END_RECORDING_DTMF_KEY = '0';
 
-export default function VideoCall({ serverMessage, onTelnyxReady }) {
+export default function VideoCall({
+  userEmail,
+  displayName,
+  serverMessage,
+  onTelnyxReady,
+  onDial,
+  onDisplayNameChange,
+}) {
   const router = useRouter();
   const telnyxClient = useContext(TelnyxRTCContext);
   const localVideoEl = useRef(null);
   const remoteVideoEl = useRef(null);
   const [isWebcamAvailable, setIsWebcamAvailable] = useState();
   const [isWebcamOn, setIsWebcamOn] = useState();
-  const [invitedEmail, setInvitedEmail] = useState(router.query.invitedEmail);
+  const [participantEmail, setParticipantEmail] = useState(
+    router.query.invitedEmail
+  );
   const [call, setCall] = useState();
+  const [isEditingDisplayName, setIsEditingDisplayName] = useState();
+  const [participantName, setParticipantName] = useState();
 
   useCallbacks({
     onNotification: (notification) => {
@@ -41,12 +63,11 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
 
         if (call) {
           if (call.state === 'ringing') {
-            console.log('answer');
             call.answer();
           }
 
           if (call.state === 'hangup') {
-            setInvitedEmail(null);
+            setParticipantEmail(null);
           }
 
           if (call.state === 'destroy') {
@@ -72,18 +93,43 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
   useEffect(() => {
     console.log('VideoCall serverMessage:', serverMessage);
 
-    if (
-      serverMessage &&
-      serverMessage.status === 'user_rtc_ready' &&
-      serverMessage.user_email === invitedEmail
-    ) {
-      const newCall = telnyxClient.newCall({
-        destinationNumber: `sip:${serverMessage.sip_username}@${process.env.NEXT_PUBLIC_TELNYX_SIP_SUBDOMAIN}.${process.env.NEXT_PUBLIC_TELNYX_SIP_DOMAIN}`,
-        audio: true,
-        video: true,
-      });
+    if (!serverMessage) {
+      return;
+    }
 
-      setCall(newCall);
+    switch (serverMessage.status) {
+      case 'user_rtc_ready': {
+        if (serverMessage.user_email === participantEmail) {
+          const newCall = telnyxClient.newCall({
+            destinationNumber: `sip:${serverMessage.sip_username}@${process.env.NEXT_PUBLIC_TELNYX_SIP_SUBDOMAIN}.${process.env.NEXT_PUBLIC_TELNYX_SIP_DOMAIN}`,
+            audio: true,
+            video: true,
+          });
+
+          setCall(newCall);
+
+          onDial(participantEmail);
+        }
+
+        break;
+      }
+      case 'user_initiated_dial': {
+        if (serverMessage.destination_user_email === userEmail) {
+          setParticipantEmail(serverMessage.user_email);
+        }
+        break;
+      }
+      case 'user_name_change': {
+        if (
+          serverMessage.user_email === participantEmail ||
+          serverMessage.user_email === participantEmail
+        ) {
+          setParticipantName(serverMessage.display_name);
+        }
+        break;
+      }
+      default:
+        break;
     }
   }, [serverMessage]);
 
@@ -115,7 +161,7 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
   };
 
   const handleInviteSubmit = ({ email }) => {
-    setInvitedEmail(email);
+    setParticipantEmail(email);
 
     // Save email in query string
     router.push({ query: { invitedEmail: email } });
@@ -128,8 +174,7 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
       remoteVideoEl.current.srcObject = call.options.remoteStream;
   }
 
-  const isCallActive = call?.state === 'active';
-  // const isCallActive = true;
+  const isCallActive = call && call.state === 'active';
 
   const videoProps = {
     width: '640px',
@@ -147,10 +192,12 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
     height: '600px',
   };
 
+  const participantDisplayName = participantName || participantEmail;
+
   return (
     <Box gap="medium">
       <Box direction="row" gap="medium" align="start">
-        <Box>
+        <Box style={{ position: 'relative' }}>
           <Box background="light-2" {...videoProps} {...localVideoProps}>
             <Video
               ref={localVideoEl}
@@ -176,28 +223,73 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
                 />
               </Box>
             )}
+
+            <Box style={{ position: 'absolute', top: 0, left: 0, zIndex: 99 }}>
+              <Box
+                background="light-4"
+                color="dark-3"
+                pad={{ left: 'small', right: 'xsmall' }}
+                margin="xsmall"
+                round
+              >
+                {isEditingDisplayName && (
+                  <Form
+                    onSubmit={({ value }) => {
+                      onDisplayNameChange(value.display_name || displayName);
+                      setIsEditingDisplayName(false);
+                    }}
+                  >
+                    <Box direction="row" gap="small">
+                      <TextInput
+                        name="display_name"
+                        placeholder={displayName}
+                        size="small"
+                        plain
+                      />
+                      <Button
+                        type="submit"
+                        icon={<Checkmark size="small" color="status-ok" />}
+                        size="small"
+                      />
+                    </Box>
+                  </Form>
+                )}
+                {!isEditingDisplayName && (
+                  <Box direction="row" align="center" gap="xsmall">
+                    <Text size="xsmall">{displayName}</Text>
+                    <Button
+                      icon={<FormEdit color="status-ok" />}
+                      onClick={() => {
+                        setIsEditingDisplayName(true);
+                      }}
+                      plain
+                    />
+                  </Box>
+                )}
+              </Box>
+            </Box>
           </Box>
         </Box>
 
-        <Box gap="medium">
+        <Box gap="medium" style={{ position: 'relative' }}>
           <Box background="neutral-2" {...videoProps} {...remoteVideoProps}>
             <Video ref={remoteVideoEl} controls={false} fit="cover" autoPlay />
 
             {!isCallActive && (
               <Fragment>
-                {invitedEmail && (
+                {participantEmail && (
                   <Box fill align="center" justify="center">
                     {call && (
-                      <Paragraph>{invitedEmail} is joining...</Paragraph>
+                      <Paragraph>{participantEmail} is joining...</Paragraph>
                     )}
                     {!call && (
                       <Paragraph>
-                        Waiting for {invitedEmail} to join...
+                        Waiting for {participantEmail} to join...
                       </Paragraph>
                     )}
                   </Box>
                 )}
-                {!invitedEmail && (
+                {!participantEmail && (
                   <Box fill align="center" justify="center">
                     {isWebcamOn && (
                       <Paragraph>
@@ -216,6 +308,20 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
             )}
           </Box>
 
+          <Box style={{ position: 'absolute', top: 0, left: 0, zIndex: 99 }}>
+            {participantDisplayName && (
+              <Box
+                background="light-4"
+                color="dark-3"
+                pad={{ horizontal: 'small' }}
+                margin="xsmall"
+                round
+              >
+                <Text size="xsmall">{participantDisplayName}</Text>
+              </Box>
+            )}
+          </Box>
+
           {call && (
             <Grid columns={['flex', 'auto', 'flex']}>
               <Box align="start" gap="medium">
@@ -227,7 +333,6 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
                   <Button
                     icon={<RadialSelected />}
                     onClick={() => {
-                      console.log('record');
                       call.dtmf(START_RECORDING_DTMF_KEY);
                     }}
                     hoverIndicator

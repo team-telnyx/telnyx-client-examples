@@ -7,6 +7,7 @@ import {
   Avatar,
   Box,
   Button,
+  DropButton,
   Header,
   Main,
   Nav,
@@ -40,20 +41,25 @@ export default function Page({ title, children }) {
             <Nav direction="row">
               <Anchor label="Home" href="/" />
             </Nav>
-            {session && (
+            {session && session.user && (
               <Nav direction="row" align="center">
-                {session.user && (
-                  <Box direction="row" align="center" gap="xsmall">
-                    <Avatar src={session.user.image} background="accent-2">
-                      {!session.user.image && <Emoji color="accent-3" />}
-                    </Avatar>{' '}
-                    <Text color="brand">
-                      {session.user.name || session.user.email}
-                    </Text>
-                  </Box>
-                )}
-
-                <Button label="Logout" onClick={logout} />
+                <DropButton
+                  label={
+                    <Box direction="row" align="center" gap="xsmall">
+                      <Avatar src={session.user.image} background="accent-2">
+                        {!session.user.image && <Emoji color="accent-3" />}
+                      </Avatar>
+                    </Box>
+                  }
+                  dropContent={
+                    <Box pad="small" gap="small">
+                      <Text color="brand">{session.user.email}</Text>
+                      <Button label="Logout" onClick={logout} />
+                    </Box>
+                  }
+                  dropAlign={{ top: 'bottom', right: 'right' }}
+                  plain
+                />
               </Nav>
             )}
           </Header>

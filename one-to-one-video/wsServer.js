@@ -25,20 +25,14 @@ function init() {
     ws.on('message', function incoming(msgStr) {
       const msg = JSON.parse(msgStr);
 
-      if (msg.status === 'user_rtc_ready') {
+      if (msg.notify_clients === true) {
         // Rebroadcast to all Websocket clients
         //
         // You'll want to segment this off in production and only
         // notify the client that invited a user by email, maybe
         // by creating a database to store clients + SIP username
         wss.clients.forEach(function (client) {
-          client.send(
-            JSON.stringify({
-              status: 'user_rtc_ready',
-              user_email: msg.user_email,
-              sip_username: msg.sip_username,
-            })
-          );
+          client.send(msgStr);
         });
       }
     });
