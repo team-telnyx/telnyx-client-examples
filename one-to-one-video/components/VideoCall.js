@@ -7,14 +7,18 @@ import React, {
 } from 'react';
 import { useRouter } from 'next/router';
 import { TelnyxRTCContext, useCallbacks } from '@telnyx/react-client';
-import { Avatar, Box, Button, Grid, Paragraph, Video, Text } from 'grommet';
+import { Box, Button, Grid, Paragraph, Video, Text } from 'grommet';
 import {
   Video as VideoIcon,
   Microphone,
   RadialSelected,
-  Phone,
+  Close,
 } from 'grommet-icons';
 import InviteEmailForm from './InviteEmailForm';
+
+// TODO use same constants as `pages/api/texml`
+const START_RECORDING_DTMF_KEY = '1';
+const END_RECORDING_DTMF_KEY = '0';
 
 export default function VideoCall({ serverMessage, onTelnyxReady }) {
   const router = useRouter();
@@ -40,6 +44,10 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
             call.answer();
           }
 
+          if (call.state === 'hangup') {
+            setInvitedEmail(null);
+          }
+
           if (call.state === 'destroy') {
             setCall(null);
           } else {
@@ -57,6 +65,10 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
   });
 
   useEffect(() => {
+    console.log('VideoCall call:', call);
+  }, [call]);
+
+  useEffect(() => {
     console.log('VideoCall serverMessage:', serverMessage);
 
     if (
@@ -64,16 +76,13 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
       serverMessage.status === 'user_rtc_ready' &&
       serverMessage.user_email === invitedEmail
     ) {
-      if (router.query.disableCalling) {
-        console.warn('Calling is disabled with `disableCalling` in the URL');
-      } else {
-        const newCall = telnyxClient.newCall({
-          destinationNumber: `sip:${serverMessage.sip_username}@sipdev.telnyx.com`,
-          audio: true,
-          video: true,
-        });
-        setCall(newCall);
-      }
+      const newCall = telnyxClient.newCall({
+        destinationNumber: `sip:${serverMessage.sip_username}@sipdev.telnyx.com`,
+        audio: true,
+        video: true,
+      });
+
+      setCall(newCall);
     }
   }, [serverMessage]);
 
@@ -111,12 +120,6 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
     router.push({ query: { invitedEmail: email } });
   };
 
-  const hangup = () => {
-    if (call) {
-      call.hangup();
-    }
-  };
-
   if (call) {
     if (call.localStream)
       localVideoEl.current.srcObject = call.options.localStream;
@@ -126,11 +129,27 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
 
   const isCallActive = call?.state === 'active';
 
+  const videoProps = {
+    width: '640px',
+    height: '400px',
+    round: 'xsmall',
+    overflow: 'hidden',
+  };
+  const localVideoProps = isCallActive && {
+    width: '240px',
+    height: '150px',
+    round: true,
+  };
+  const remoteVideoProps = isCallActive && {
+    width: '960px',
+    height: '600px',
+  };
+
   return (
     <Box gap="medium">
-      <Box direction="row" gap="medium" align="center">
+      <Box direction="row" gap="medium" align="start">
         <Box>
-          <Box background="light-2" width="640px" height="400px">
+          <Box background="light-2" {...videoProps} {...localVideoProps}>
             <Video
               ref={localVideoEl}
               controls={false}
@@ -158,8 +177,8 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
           </Box>
         </Box>
 
-        <Box>
-          <Box background="neutral-2" width="640px" height="400px">
+        <Box gap="medium">
+          <Box background="neutral-2" {...videoProps} {...remoteVideoProps}>
             <Video ref={remoteVideoEl} controls={false} fit="cover" autoPlay />
 
             {!isCallActive && (
@@ -194,36 +213,62 @@ export default function VideoCall({ serverMessage, onTelnyxReady }) {
               </Fragment>
             )}
           </Box>
+
+          {isCallActive && (
+            <Grid columns={['flex', 'auto', 'flex']}>
+              <Box align="start" gap="medium">
+                <Box
+                  round="full"
+                  overflow="hidden"
+                  background="status-disabled"
+                >
+                  <Button
+                    icon={<RadialSelected />}
+                    onClick={() => {
+                      call.dtmf(START_RECORDING_DTMF_KEY);
+                    }}
+                    hoverIndicator
+                    tip="Start recording call"
+                  ></Button>
+                </Box>
+              </Box>
+
+              <Box direction="row" gap="medium">
+                <Box round="full" overflow="hidden" background="accent-3">
+                  <Button
+                    icon={<Microphone />}
+                    onClick={() => {
+                      call.toggleAudioMute();
+                    }}
+                    hoverIndicator
+                    tip="Toggle your microphone"
+                  ></Button>
+                </Box>
+                <Box round="full" overflow="hidden" background="accent-3">
+                  <Button
+                    icon={<VideoIcon />}
+                    onClick={() => {
+                      call.toggleVideoMute();
+                    }}
+                    hoverIndicator
+                    tip="Toggle your camera"
+                  ></Button>
+                </Box>
+                <Box round="full" overflow="hidden" background="status-error">
+                  <Button
+                    icon={<Close />}
+                    onClick={() => {
+                      call.hangup();
+                    }}
+                    hoverIndicator
+                    tip="End call"
+                  ></Button>
+                </Box>
+              </Box>
+            </Grid>
+          )}
         </Box>
       </Box>
-
-      <Grid columns={['flex', 'auto', 'flex']}>
-        <Box align="start" gap="small">
-          <Button onClick={() => {}} tip="Record call">
-            <Avatar background="status-disabled">
-              <RadialSelected />
-            </Avatar>
-          </Button>
-        </Box>
-
-        <Box direction="row" gap="small">
-          <Button onClick={() => {}} tip="Toggle your microphone">
-            <Avatar background="accent-3">
-              <Microphone />
-            </Avatar>
-          </Button>
-          <Button onClick={() => {}} tip="Toggle your video">
-            <Avatar background="accent-3">
-              <VideoIcon />
-            </Avatar>
-          </Button>
-          <Button onClick={hangup} tip="End call">
-            <Avatar background="status-error">
-              <Phone />
-            </Avatar>
-          </Button>
-        </Box>
-      </Grid>
     </Box>
   );
 }
