@@ -2,6 +2,21 @@
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+Setup:
+
+1. Create an Outbound Profile
+2. Create a SIP Connection
+   - Set **SIP Connection Type** to "Credentials"
+   - Set **Events - Webhook URL** to `https://<your-host>/api/sip-connection/webhook`
+   - Enable **Park Outbound Calls**
+   - Under **Inbound** tab, change **Receive SIP URI Calls** to "From Anyone"
+   - Under **Outbound** tab, choose outbound profile from step 1
+3. Create Call Control Application
+   - Set webhook URL to `https://<your-host>/api/call-control/webhook`
+   - Choose outbound profile from step 1 in **Outbound Settings**
+4. Buy a phone number
+   - Set **Connection or App** to your Call Control app created in step 3
+
 ## Getting Started
 
 First, run the development server:
