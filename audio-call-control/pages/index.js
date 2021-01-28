@@ -45,32 +45,26 @@ export default function Home() {
           setCall(call);
 
           console.log('call.telnyxIDs:', call.telnyxIDs);
-          console.log('call.state:', call.state);
 
           if (
             call.state === 'ringing' &&
             call.options.callerNumber === creds.sip_username
           ) {
-            console.log('answer');
             call.answer();
           }
+
+          setCallLog((callLogState) => [
+            {
+              timestamp: Date.now(),
+              text: call.state,
+            },
+            ...callLogState,
+          ]);
         }
       });
 
     clientRef.current.connect();
   };
-
-  useEffect(() => {
-    if (call) {
-      setCallLog([
-        {
-          timestamp: Date.now(),
-          text: call.state,
-        },
-        ...callLog,
-      ]);
-    }
-  }, [call]);
 
   const dial = async () => {
     const { data } = await fetch('/api/call-control/dial', {
