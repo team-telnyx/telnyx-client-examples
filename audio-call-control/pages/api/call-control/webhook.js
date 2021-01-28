@@ -24,6 +24,11 @@ export default async (req, res) => {
 
     conference.join({
       call_control_id: payload.call_control_id,
+      // End conference when participant hangs up
+      // This is useful during development to quickly debug calls,
+      // but you'll likely want to disable this in production if your
+      // conference app should persist even after end users hang up
+      end_conference_on_exit: true,
     });
   }
 

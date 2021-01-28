@@ -33,8 +33,7 @@ export default async (req, res) => {
     connection_id: process.env.TELNYX_CC_APP_ID,
     to: `sip:${payload.sip_username}@sip.telnyx.com`,
     from: payload.from,
-    // Use client state to specify what conference to join
-    // once the callee answers
+    // Use client state to specify which conference to join once the callee answers
     client_state: encodeClientState({
       conference_id: conference.id,
     }),
@@ -45,8 +44,7 @@ export default async (req, res) => {
     connection_id: process.env.TELNYX_CC_APP_ID,
     to: payload.to,
     from: payload.from,
-    // Use client state to specify what conference to join
-    // once the callee answers
+    // Use client state to specify which conference to join once the callee answers
     client_state: encodeClientState({
       conference_id: conference.id,
     }),
