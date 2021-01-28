@@ -48,7 +48,8 @@ export default function Home() {
 
           if (
             call.state === 'ringing' &&
-            call.options.callerNumber === creds.sip_username
+            call.options.callerNumber === creds.sip_username &&
+            call.options.callerNumber === call.options.destinationNumber
           ) {
             call.answer();
           }
@@ -92,6 +93,7 @@ export default function Home() {
     const creds = await fetch('/api/rtc/credentials', {
       method: 'POST',
       body: JSON.stringify({
+        caller_id: userFormValue.callerId,
         connection_id: value.sipConnectionId,
       }),
       headers: {
