@@ -42,6 +42,7 @@ export default async (req, res) => {
 
     res.statusCode = 200;
     res.send({
+      sip_username: credData.data.sip_username,
       login_token: tokenStr,
     });
   } catch (e) {

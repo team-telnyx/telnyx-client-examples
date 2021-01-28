@@ -1,4 +1,4 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { Fragment, useRef, useEffect, useState } from 'react';
 import Head from 'next/head';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { Box, Button, Form, FormField, TextInput } from 'grommet';
@@ -7,6 +7,7 @@ export default function Home() {
   const clientRef = useRef();
   const audioRef = useRef();
   const [isTelnyxReady, setIsTelnxyReady] = useState();
+  const [sipUsername, setSipUsername] = useState();
   const [call, setCall] = useState();
   const [callLog, setCallLog] = useState([]);
   const [userFormValue, setUserFormValue] = useState({
@@ -17,19 +18,19 @@ export default function Home() {
     destinationNumber: process.env.NEXT_PUBLIC_CALL_DESTINATION || '',
   });
 
-  const connectClient = (loginToken) => {
-    if (!loginToken) return;
+  const connectClient = (creds) => {
+    if (!creds.login_token) return;
 
     if (clientRef.current) {
       clientRef.current.disconnect();
       clientRef.current = null;
     }
 
-    const client = new TelnyxRTC({
-      login_token: loginToken,
+    clientRef.current = new TelnyxRTC({
+      login_token: creds.login_token,
     });
 
-    client
+    clientRef.current
       .on('telnyx.ready', () => {
         setIsTelnxyReady(true);
       })
@@ -40,39 +41,58 @@ export default function Home() {
         console.log('notification:', notification);
 
         if (notification.type === 'callUpdate') {
-          setCall(notification.call);
+          const { call } = notification;
+          setCall(call);
 
-          console.log('call.telnyxIDs:', notification.call.telnyxIDs);
-          console.log('call.status:', notification.call.status);
+          console.log('call.telnyxIDs:', call.telnyxIDs);
+          console.log('call.state:', call.state);
+
+          if (
+            call.state === 'ringing' &&
+            call.options.callerNumber === creds.sip_username
+          ) {
+            console.log('answer');
+            call.answer();
+          }
         }
-
-        console.log('callLog:', callLog);
-
-        setCallLog([
-          {
-            timestamp: Date.now(),
-            text: `${notification.type}${
-              notification.call && notification.call.status
-                ? ` - ${notification.call.status}`
-                : ''
-            }`,
-          },
-          ...callLog,
-        ]);
       });
 
-    client.connect();
-
-    clientRef.current = client;
+    clientRef.current.connect();
   };
 
-  const dial = () => {
-    const newCall = clientRef.current.newCall({
-      destinationNumber: callFormValue.destinationNumber,
-      callerNumber: userFormValue.callerId,
-    });
+  useEffect(() => {
+    if (call) {
+      setCallLog([
+        {
+          timestamp: Date.now(),
+          text: call.state,
+        },
+        ...callLog,
+      ]);
+    }
+  }, [call]);
 
-    setCall(newCall);
+  const dial = async () => {
+    const { data } = await fetch('/api/call-control/dial', {
+      method: 'POST',
+      body: JSON.stringify({
+        to: callFormValue.destinationNumber,
+        from: userFormValue.callerId,
+        sip_username: sipUsername,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then((resp) => resp.json());
+
+    console.log('dial data:', data);
+
+    // const newCall = clientRef.current.newCall({
+    //   destinationNumber: callFormValue.destinationNumber,
+    //   callerNumber: userFormValue.callerId,
+    // });
+    //
+    // setCall(newCall);
   };
 
   const hangup = () => {
@@ -92,8 +112,10 @@ export default function Home() {
       },
     }).then((resp) => resp.json());
 
+    setSipUsername(creds.sip_username);
+
     // You'll also want to store this JWT somewhere
-    connectClient(creds.login_token);
+    connectClient(creds);
   };
 
   if (call && call.remoteStream) {
