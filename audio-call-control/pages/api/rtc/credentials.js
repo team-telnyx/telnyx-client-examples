@@ -1,35 +1,48 @@
 import fetch from 'node-fetch';
 
-const TELNYX_API_URL = 'https://api.telnyx.com';
-
+// Generate on-demand credential and token
 export default async (req, res) => {
   console.log('/api/rtc/credentials req.body:', req.body);
 
+  const payload = req.body;
+
   try {
-    // Generate on-demand credential and token
-    const credResponse = await fetch(
-      `${TELNYX_API_URL}/v2/telephony_credentials`,
+    let credResp = await fetch(
+      `https://api.telnyx.com/v2/telephony_credentials`,
       {
         method: 'POST',
         body: JSON.stringify({
-          connection_id: req.body.connection_id,
+          connection_id: payload.connection_id,
         }),
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
         },
       }
-    );
+    ).then((resp) => resp.json());
 
-    const credData = await credResponse.json();
+    let credData = credResp.data;
 
-    if (!credData.data || credData.errors) {
+    if (!credData || credResp.errors) {
       throw new Error('Error retrieving credentials');
     }
 
+    // Save SIP username by caller ID in database
+    await fetch('http://localhost:3000/api/rtc/clients', {
+      method: 'POST',
+      body: JSON.stringify({
+        caller_id: payload.caller_id,
+        sip_username: credData.sip_username,
+        logged_in: true,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
     // Generate a token that can be saved in browser storage
     const tokenResponse = await fetch(
-      `${TELNYX_API_URL}/v2/telephony_credentials/${credData.data.id}/token`,
+      `https://api.telnyx.com/v2/telephony_credentials/${credData.id}/token`,
       {
         method: 'POST',
         headers: {
@@ -42,7 +55,7 @@ export default async (req, res) => {
 
     res.statusCode = 200;
     res.send({
-      sip_username: credData.data.sip_username,
+      sip_username: credData.sip_username,
       login_token: tokenStr,
     });
   } catch (e) {

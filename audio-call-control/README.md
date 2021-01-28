@@ -1,23 +1,46 @@
-# Audio Call Control
+# Call Center Example
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+Example app that shows how to make programmable phone calls to and from one PSTN number, to/from multiple WebRTC clients.
 
-Setup:
+## Telnyx Portal setup
 
 1. Create an Outbound Profile
 2. Create a SIP Connection
    - Set **SIP Connection Type** to "Credentials"
-     <!-- - Set **Events - Webhook URL** to `https://<your-host>/api/sip-connection/webhook` -->
-     <!-- - Enable **Park Outbound Calls** -->
    - Under **Inbound** tab, change **Receive SIP URI Calls** to "From Anyone"
    - Under **Outbound** tab, choose outbound profile from step 1
 3. Create Call Control Application
-   - Set webhook URL to `https://<your-host>/api/call-control/webhook`
+   - Set webhook URL to `https://<your-host>/api/call-control/webhook` (tip: use [ngrok](https://ngrok.com/) to make your local app available publicly during development)
+   - Set inbound subdomain to `simple-cc-demo`
    - Choose outbound profile from step 1 in **Outbound Settings**
 4. Buy a phone number
    - Set **Connection or App** to your Call Control app created in step 3
 
-## Getting Started
+### Assumptions
+
+- One phone number (i.e. caller ID) = One SIP Connection (i.e. username/password) = One or many Telephony Credential (i.e. SIP username) = One or many Access Tokens (i.e. WebRTC login token)
+- Database stores caller ID and SIP username to match inbound calls
+
+### Scenarios
+
+Outbound:
+
+1. User A at Company A logs in to WebRTC client, is assigned unique SIP username and access token
+2. User B at Company A logs in to WebRTC client, is assigned unique SIP username and access token
+3. Caller dials Company A's phone number. Call is routed to either User A or User B's WebRTC client (logic for choosing the user-agent is not implemented in this example)
+
+Inbound:
+
+1. User A at Company A logs in to WebRTC client, is assigned unique SIP username and access token
+2. User A initiates dial to Callee through the server
+3. Server creates 2 calls: dial User A WebRTC client directly, and dial to Callee
+4. User A's WebRTC client answers automatically, joining call with Callee
+
+## Development
+
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+
+### Getting Started
 
 First, run the development server:
 
@@ -35,7 +58,7 @@ You can start editing the page by modifying `pages/index.js`. The page auto-upda
 
 The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
-## Learn More
+### Learn More
 
 To learn more about Next.js, take a look at the following resources:
 
@@ -44,7 +67,7 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+### Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/import?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 

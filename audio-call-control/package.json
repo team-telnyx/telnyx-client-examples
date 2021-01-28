@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@telnyx/webrtc": "^2.3.2",
+    "csv-database": "^0.9.2",
     "grommet": "^2.16.2",
     "next": "10.0.5",
     "node-fetch": "^2.6.1",
@@ -16,6 +17,7 @@
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "styled-components": "^5.2.1",
-    "telnyx": "^1.11.0"
+    "telnyx": "^1.11.0",
+    "uuid": "^8.3.2"
   }
 }

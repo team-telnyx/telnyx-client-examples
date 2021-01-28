@@ -6,6 +6,7 @@ import { Box, Button, Form, FormField, TextInput } from 'grommet';
 export default function Home() {
   const clientRef = useRef();
   const audioRef = useRef();
+  const dialCallControlId = useRef();
   const [isTelnyxReady, setIsTelnxyReady] = useState();
   const [sipUsername, setSipUsername] = useState();
   const [call, setCall] = useState();
@@ -42,35 +43,32 @@ export default function Home() {
 
         if (notification.type === 'callUpdate') {
           const { call } = notification;
-          setCall(call);
 
-          console.log('call.telnyxIDs:', call.telnyxIDs);
-          console.log('call.state:', call.state);
+          if (call.state !== 'destroy') {
+            setCall(call);
+          }
+
+          console.log('call.telnyxIDs:', call.telnyxIDs.telnyxCallControlId);
 
           if (
             call.state === 'ringing' &&
-            call.options.callerNumber === creds.sip_username
+            call.telnyxIDs.telnyxCallControlId === dialCallControlId.current
           ) {
-            console.log('answer');
             call.answer();
           }
+
+          setCallLog((callLogState) => [
+            {
+              timestamp: Date.now(),
+              text: call.state,
+            },
+            ...callLogState,
+          ]);
         }
       });
 
     clientRef.current.connect();
   };
-
-  useEffect(() => {
-    if (call) {
-      setCallLog([
-        {
-          timestamp: Date.now(),
-          text: call.state,
-        },
-        ...callLog,
-      ]);
-    }
-  }, [call]);
 
   const dial = async () => {
     const { data } = await fetch('/api/call-control/dial', {
@@ -85,19 +83,16 @@ export default function Home() {
       },
     }).then((resp) => resp.json());
 
-    console.log('dial data:', data);
-  };
+    dialCallControlId.current = data.call_control_id;
 
-  const hangup = () => {
-    call.hangup();
-
-    setCall(null);
+    console.log('dial Call Control ID:', dialCallControlId.current);
   };
 
   const handleSubmitUserInfo = async (value) => {
     const creds = await fetch('/api/rtc/credentials', {
       method: 'POST',
       body: JSON.stringify({
+        caller_id: userFormValue.callerId,
         connection_id: value.sipConnectionId,
       }),
       headers: {
@@ -144,7 +139,7 @@ export default function Home() {
                 />
               </FormField>
 
-              <FormField label="Caller ID">
+              <FormField label="Caller ID (E.164)">
                 <TextInput
                   name="callerId"
                   type="tel"
@@ -163,7 +158,7 @@ export default function Home() {
               onChange={setCallFormValue}
               onSubmit={dial}
             >
-              <FormField label="Call destination">
+              <FormField label="Destination number (E.164)">
                 <TextInput
                   name="destinationNumber"
                   type="tel"
@@ -172,19 +167,28 @@ export default function Home() {
                 />
               </FormField>
 
-              <Box direction="row" justify="center" gap="small">
-                <Button
-                  type="submit"
-                  label="Start call"
-                  primary
-                  disabled={!isTelnyxReady}
-                />
-                <Button
-                  label="Hangup"
-                  onClick={hangup}
-                  disabled={!isTelnyxReady}
-                />
-              </Box>
+              {call && (
+                <Box direction="row" justify="center" gap="small">
+                  <Button
+                    label="Answer"
+                    onClick={() => call.answer()}
+                    primary
+                    disabled={call.state !== 'ringing'}
+                  />
+                  <Button label="Hangup" onClick={() => call.hangup()} />
+                </Box>
+              )}
+
+              {!call && (
+                <Box direction="row" justify="center" gap="small">
+                  <Button
+                    type="submit"
+                    label="Start call"
+                    primary
+                    disabled={!isTelnyxReady}
+                  />
+                </Box>
+              )}
             </Form>
           </Box>
 
