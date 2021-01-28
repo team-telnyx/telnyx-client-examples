@@ -86,13 +86,6 @@ export default function Home() {
     }).then((resp) => resp.json());
 
     console.log('dial data:', data);
-
-    // const newCall = clientRef.current.newCall({
-    //   destinationNumber: callFormValue.destinationNumber,
-    //   callerNumber: userFormValue.callerId,
-    // });
-    //
-    // setCall(newCall);
   };
 
   const hangup = () => {
