@@ -1,4 +1,4 @@
-import React, { Fragment, useMemo, useRef, useState } from 'react';
+import React, { Fragment, useRef, useState } from 'react';
 import Head from 'next/head';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { Box, Button, Form, FormField, TextInput } from 'grommet';
@@ -7,7 +7,6 @@ export default function Home() {
   const clientRef = useRef();
   const audioRef = useRef();
   const [isTelnyxReady, setIsTelnxyReady] = useState();
-  const [loginToken, setLoginToken] = useState();
   const [call, setCall] = useState();
   const [callLog, setCallLog] = useState([]);
   const [userFormValue, setUserFormValue] = useState({
@@ -15,7 +14,7 @@ export default function Home() {
     callerId: process.env.NEXT_PUBLIC_CALLER_ID || '',
   });
   const [callFormValue, setCallFormValue] = useState({
-    destinationNumber: process.env.NEXT_PUBLIC_CALL_DESITNATION || '',
+    destinationNumber: process.env.NEXT_PUBLIC_CALL_DESTINATION || '',
   });
 
   const connectClient = (loginToken) => {
