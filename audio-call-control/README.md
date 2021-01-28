@@ -16,6 +16,11 @@ Example app that shows how to make programmable phone calls to and from PSTN num
 4. Buy a phone number
    - Set **Connection or App** to your Call Control app created in step 3
 
+Assumptions:
+
+- One phone number = One SIP Connection with credential auth (username/password)
+- One phone number = One SIP Connection = One Telephony Credential
+
 ## Development
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
