@@ -7,8 +7,8 @@ Setup:
 1. Create an Outbound Profile
 2. Create a SIP Connection
    - Set **SIP Connection Type** to "Credentials"
-   - Set **Events - Webhook URL** to `https://<your-host>/api/sip-connection/webhook`
-   <!-- - Enable **Park Outbound Calls** -->
+     <!-- - Set **Events - Webhook URL** to `https://<your-host>/api/sip-connection/webhook` -->
+     <!-- - Enable **Park Outbound Calls** -->
    - Under **Inbound** tab, change **Receive SIP URI Calls** to "From Anyone"
    - Under **Outbound** tab, choose outbound profile from step 1
 3. Create Call Control Application
