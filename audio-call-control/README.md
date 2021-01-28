@@ -10,7 +10,7 @@ Example app that shows how to make programmable phone calls to and from PSTN num
    - Under **Inbound** tab, change **Receive SIP URI Calls** to "From Anyone"
    - Under **Outbound** tab, choose outbound profile from step 1
 3. Create Call Control Application
-   - Set webhook URL to `https://<your-host>/api/call-control/webhook` (tip: use [ngrok](https://ngrok.com/) to make your local app available publicly)
+   - Set webhook URL to `https://<your-host>/api/call-control/webhook` (tip: use [ngrok](https://ngrok.com/) to make your local app available publicly during development)
    - Set inbound subdomain to `simple-cc-demo`
    - Choose outbound profile from step 1 in **Outbound Settings**
 4. Buy a phone number
