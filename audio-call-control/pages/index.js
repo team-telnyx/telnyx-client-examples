@@ -43,6 +43,7 @@ export default function Home() {
           setCall(notification.call);
 
           console.log('call.telnyxIDs:', notification.call.telnyxIDs);
+          console.log('call.status:', notification.call.status);
         }
 
         console.log('callLog:', callLog);
@@ -94,8 +95,6 @@ export default function Home() {
     // You'll also want to store this JWT somewhere
     connectClient(creds.login_token);
   };
-
-  console.log('call.status:', call && call.status);
 
   if (call && call.remoteStream) {
     audioRef.current.srcObject = call.remoteStream;
