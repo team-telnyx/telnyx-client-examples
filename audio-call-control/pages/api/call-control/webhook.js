@@ -15,16 +15,15 @@ export default async (req, res) => {
   if (
     event.event_type === 'call.answered' &&
     clientState &&
-    clientState.transfer_to
+    clientState.conference_id
   ) {
-    // Transfer the call to the final destination
-    const call = await new telnyx.Call({
-      call_control_id: payload.call_control_id,
+    // Join the conference
+    const conference = await new telnyx.Conference({
+      id: clientState.conference_id,
     });
 
-    call.transfer({
-      to: clientState.transfer_to,
-      from: payload.from,
+    conference.join({
+      call_control_id: payload.call_control_id,
     });
   }
 

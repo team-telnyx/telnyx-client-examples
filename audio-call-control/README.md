@@ -13,6 +13,7 @@ Setup:
    - Under **Outbound** tab, choose outbound profile from step 1
 3. Create Call Control Application
    - Set webhook URL to `https://<your-host>/api/call-control/webhook`
+   - Set inbound subdomain to `simple-cc-demo`
    - Choose outbound profile from step 1 in **Outbound Settings**
 4. Buy a phone number
    - Set **Connection or App** to your Call Control app created in step 3
