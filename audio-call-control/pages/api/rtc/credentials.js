@@ -1,21 +1,19 @@
 import fetch from 'node-fetch';
 
-const TELNYX_API_URL = 'https://api.telnyx.com';
-
+// Generate on-demand credential and token
 export default async (req, res) => {
   console.log('/api/rtc/credentials req.body:', req.body);
 
   const payload = req.body;
 
   try {
-    // Generate on-demand credential and token
-    const credName = `caller_id_e164:${payload.caller_id}`;
-
     let credResp = await fetch(
-      `${TELNYX_API_URL}/v2/telephony_credentials?filter[name]=${encodeURIComponent(
-        credName
-      )}&filter[status]=active&page[number]=1&page[size]=1`,
+      `https://api.telnyx.com/v2/telephony_credentials`,
       {
+        method: 'POST',
+        body: JSON.stringify({
+          connection_id: payload.connection_id,
+        }),
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
@@ -25,31 +23,26 @@ export default async (req, res) => {
 
     let credData = credResp.data;
 
-    if (!credData || !credData.length) {
-      credResp = await fetch(`${TELNYX_API_URL}/v2/telephony_credentials`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: credName,
-          connection_id: payload.connection_id,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
-        },
-      }).then((resp) => resp.json());
-
-      credData = credResp.data;
-    } else {
-      credData = credResp.data[0];
-    }
-
     if (!credData || credResp.errors) {
       throw new Error('Error retrieving credentials');
     }
 
+    // Save SIP username by caller ID in database
+    await fetch('http://localhost:3000/api/rtc/clients', {
+      method: 'POST',
+      body: JSON.stringify({
+        caller_id: payload.caller_id,
+        sip_username: credData.sip_username,
+        logged_in: true,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
     // Generate a token that can be saved in browser storage
     const tokenResponse = await fetch(
-      `${TELNYX_API_URL}/v2/telephony_credentials/${credData.id}/token`,
+      `https://api.telnyx.com/v2/telephony_credentials/${credData.id}/token`,
       {
         method: 'POST',
         headers: {

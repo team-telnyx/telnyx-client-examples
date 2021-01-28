@@ -1,3 +1,4 @@
+import fetch from 'node-fetch';
 import telnyxPackage from 'telnyx';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -6,7 +7,6 @@ import {
 } from '../../../utils/encodeClientState';
 
 const telnyx = telnyxPackage(process.env.TELNYX_API_KEY);
-const TELNYX_API_URL = 'https://api.telnyx.com';
 
 export default async (req, res) => {
   console.log('/api/call-control/webhook req.body:', req.body);
@@ -60,29 +60,18 @@ export default async (req, res) => {
       name: `Room ${conferenceRoomId}`,
     });
 
-    // Get SIP username from matching credential
-    // You can also store the SIP username in your database
-    const credential = await fetch(
-      `${TELNYX_API_URL}/v2/telephony_credentials?filter[name]=${encodeURIComponent(
-        `caller_id_e164:${payload.to}`
-      )}&filter[status]=active&page[number]=1&page[size]=1`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
-        },
-      }
-    )
-      .then((resp) => resp.json())
-      .then(({ data }) => data[0]);
+    // Get SIP username by client caller ID from your database
+    const { data: client } = await fetch(
+      `http://localhost:3000/api/rtc/clients?caller_id=${encodeURIComponent(
+        payload.to
+      )}`
+    ).then((resp) => resp.json());
 
-    // You'll want to do some additional checks here to see
-    // the client is logged in before calling it
-    if (credential) {
+    if (client && client.logged_in) {
       // Call the client
       await telnyx.calls.create({
         connection_id: process.env.TELNYX_CC_APP_ID,
-        to: `sip:${credential.sip_username}@sip.telnyx.com`,
+        to: `sip:${client.sip_username}@sip.telnyx.com`,
         // from: `sip:${conferenceRoomId}@simple-cc-demo.sip.telnyx.com`,
         from: payload.from,
         // Use client state to specify which conference to join once the callee answers

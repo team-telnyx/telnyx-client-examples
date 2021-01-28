@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@telnyx/webrtc": "^2.3.2",
+    "csv-database": "^0.9.2",
     "grommet": "^2.16.2",
     "next": "10.0.5",
     "node-fetch": "^2.6.1",

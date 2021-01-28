@@ -140,7 +140,7 @@ export default function Home() {
                 />
               </FormField>
 
-              <FormField label="Caller ID">
+              <FormField label="Caller ID (E.164)">
                 <TextInput
                   name="callerId"
                   type="tel"
@@ -159,7 +159,7 @@ export default function Home() {
               onChange={setCallFormValue}
               onSubmit={dial}
             >
-              <FormField label="Call destination">
+              <FormField label="Destination number (E.164)">
                 <TextInput
                   name="destinationNumber"
                   type="tel"
