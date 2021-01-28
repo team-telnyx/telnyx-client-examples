@@ -1,52 +1,75 @@
-import React, { Fragment, useRef, useEffect, useState } from 'react';
+import React, { Fragment, useMemo, useRef, useState } from 'react';
 import Head from 'next/head';
 import { TelnyxRTC } from '@telnyx/webrtc';
 import { Box, Button, Form, FormField, TextInput } from 'grommet';
 
 export default function Home() {
-  const [loginToken, setLoginToken] = useState('');
-  const [userInfo, setUserInfo] = useState();
-  const [formValue, setFormValue] = useState({
+  const clientRef = useRef();
+  const audioRef = useRef();
+  const [isTelnyxReady, setIsTelnxyReady] = useState();
+  const [loginToken, setLoginToken] = useState();
+  const [call, setCall] = useState();
+  const [callLog, setCallLog] = useState([]);
+  const [userFormValue, setUserFormValue] = useState({
     sipConnectionId: process.env.NEXT_PUBLIC_TELNYX_SIP_CONNECTION_ID || '',
     callerId: process.env.NEXT_PUBLIC_CALLER_ID || '',
-    callDestination: process.env.NEXT_PUBLIC_CALL_DESITNATION || '',
   });
-  const [call, setCall] = useState();
-  const clientRef = useRef();
+  const [callFormValue, setCallFormValue] = useState({
+    destinationNumber: process.env.NEXT_PUBLIC_CALL_DESITNATION || '',
+  });
 
-  useEffect(() => {
+  const connectClient = (loginToken) => {
     if (!loginToken) return;
 
     if (clientRef.current) {
       clientRef.current.disconnect();
+      clientRef.current = null;
     }
 
     const client = new TelnyxRTC({
-      login_token: token,
+      login_token: loginToken,
     });
 
-    client.remoteElement = 'remoteAudio';
-
     client
-      .on('telnyx.ready', () => console.log('ready to call'))
-      .on('telnyx.error', () => console.log('error'))
+      .on('telnyx.ready', () => {
+        setIsTelnxyReady(true);
+      })
+      .on('telnyx.error', () => {
+        setIsTelnxyReady(false);
+      })
       .on('telnyx.notification', (notification) => {
+        console.log('notification:', notification);
+
         if (notification.type === 'callUpdate') {
           setCall(notification.call);
+
+          console.log('call.telnyxIDs:', notification.call.telnyxIDs);
         }
+
+        console.log('callLog:', callLog);
+
+        setCallLog([
+          {
+            timestamp: Date.now(),
+            text: `${notification.type}${
+              notification.call && notification.call.status
+                ? ` - ${notification.call.status}`
+                : ''
+            }`,
+          },
+          ...callLog,
+        ]);
       });
 
     client.connect();
 
     clientRef.current = client;
-  }, [loginToken]);
-
-  console.log('call.status:', call && call.status);
+  };
 
   const dial = () => {
     const newCall = clientRef.current.newCall({
-      destinationNumber: '18004377950',
-      callerNumber: '‬155531234567',
+      destinationNumber: callFormValue.destinationNumber,
+      callerNumber: userFormValue.callerId,
     });
 
     setCall(newCall);
@@ -58,11 +81,26 @@ export default function Home() {
     setCall(null);
   };
 
-  const handleSubmit = (value) => {
-    console.log('value:', value);
+  const handleSubmitUserInfo = async (value) => {
+    const creds = await fetch('/api/rtc/credentials', {
+      method: 'POST',
+      body: JSON.stringify({
+        connection_id: value.sipConnectionId,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }).then((resp) => resp.json());
 
-    setUserInfo(value);
+    // You'll also want to store this JWT somewhere
+    connectClient(creds.login_token);
   };
+
+  console.log('call.status:', call && call.status);
+
+  if (call && call.remoteStream) {
+    audioRef.current.srcObject = call.remoteStream;
+  }
 
   return (
     <Fragment>
@@ -74,14 +112,14 @@ export default function Home() {
       <Box pad="large" gap="small" fill>
         <Box>Call Control + WebRTC Audio Test</Box>
 
-        <audio id="remoteAudio" autoPlay />
+        <audio ref={audioRef} autoPlay />
 
         <Box direction="row" gap="large">
           <Box width="medium" gap="medium" pad="small">
             <Form
-              value={formValue}
-              onChange={setFormValue}
-              onSubmit={({ value }) => handleSubmit(value)}
+              value={userFormValue}
+              onChange={setUserFormValue}
+              onSubmit={({ value }) => handleSubmitUserInfo(value)}
             >
               <Box>User info</Box>
 
@@ -102,28 +140,43 @@ export default function Home() {
                 />
               </FormField>
 
+              <Box>
+                <Button type="submit" label="Connect" primary />
+              </Box>
+            </Form>
+
+            <Form
+              value={callFormValue}
+              onChange={setCallFormValue}
+              onSubmit={dial}
+            >
               <FormField label="Call destination">
                 <TextInput
-                  name="callDestination"
+                  name="destinationNumber"
                   type="tel"
                   placeholder="+15555675678"
                   required
                 />
               </FormField>
 
-              <Box>
-                <Button type="submit" label="Connect" primary />
+              <Box direction="row" justify="center" gap="small">
+                <Button
+                  type="submit"
+                  label="Start call"
+                  primary
+                  disabled={!isTelnyxReady}
+                />
+                <Button
+                  label="Hangup"
+                  onClick={hangup}
+                  disabled={!isTelnyxReady}
+                />
               </Box>
             </Form>
-
-            <Box direction="row" justify="center" gap="small">
-              <Button label="Call" onClick={dial} primary />
-              <Button label="Hangup" onClick={hangup} />
-            </Box>
           </Box>
 
           <Box
-            width="medium"
+            width="large"
             gap="medium"
             pad="small"
             background="light-2"
@@ -131,7 +184,15 @@ export default function Home() {
           >
             <Box>Log</Box>
 
-            <Box>TBD</Box>
+            <Box>
+              <ul>
+                {callLog.map(({ timestamp, text }) => (
+                  <li key={timestamp}>
+                    [{timestamp}] {text}
+                  </li>
+                ))}
+              </ul>
+            </Box>
           </Box>
         </Box>
       </Box>
