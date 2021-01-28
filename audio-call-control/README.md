@@ -19,7 +19,7 @@ Example app that shows how to make programmable phone calls to and from PSTN num
 Assumptions:
 
 - One phone number = One SIP Connection with credential auth (username/password)
-- One phone number = One SIP Connection = One Telephony Credential
+- One phone number = One SIP Connection = One or many Telephony Credential
 
 ## Development
 
