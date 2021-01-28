@@ -1,6 +1,6 @@
-# Audio Call Control
+# Call Center Example
 
-Example app that shows how to make programmable phone calls to and from PSTN numbers, using a WebRTC client.
+Example app that shows how to make programmable phone calls to and from one PSTN number, to/from multiple WebRTC clients.
 
 ## Telnyx Portal setup
 
@@ -18,8 +18,19 @@ Example app that shows how to make programmable phone calls to and from PSTN num
 
 Assumptions:
 
-- One phone number = One SIP Connection with credential auth (username/password)
-- One phone number = One SIP Connection = One or many Telephony Credential
+- One phone number (i.e. caller ID) = One SIP Connection (i.e. username/password) = One or many Telephony Credential (i.e. SIP username) = One or many Access Tokens (i.e. WebRTC login token)
+- Database stores caller ID and SIP username to match inbound calls
+
+Scenarios:
+
+1. User A at Company A logs in to WebRTC client, is assigned unique SIP username and access token
+2. User B at Company A logs in to WebRTC client, is assigned unique SIP username and access token
+3. Caller dials Company A's phone number. Call is routed to either User A or User B's WebRTC client (logic for choosing the user-agent is not implemented in this example)
+
+4. User A at Company A logs in to WebRTC client, is assigned unique SIP username and access token
+5. User A initiates dial to Callee through the server
+6. Server creates 2 calls: dial User A WebRTC client directly, and dial to Callee
+7. User A's WebRTC client answers automatically, joining call with Callee
 
 ## Development
 
