@@ -6,6 +6,7 @@ import { Box, Button, Form, FormField, TextInput } from 'grommet';
 export default function Home() {
   const clientRef = useRef();
   const audioRef = useRef();
+  const dialCallControlId = useRef();
   const [isTelnyxReady, setIsTelnxyReady] = useState();
   const [sipUsername, setSipUsername] = useState();
   const [call, setCall] = useState();
@@ -42,14 +43,16 @@ export default function Home() {
 
         if (notification.type === 'callUpdate') {
           const { call } = notification;
-          setCall(call);
 
-          console.log('call.telnyxIDs:', call.telnyxIDs);
+          if (call.state !== 'destroy') {
+            setCall(call);
+          }
+
+          console.log('call.telnyxIDs:', call.telnyxIDs.telnyxCallControlId);
 
           if (
             call.state === 'ringing' &&
-            call.options.callerNumber === creds.sip_username &&
-            call.options.callerNumber === call.options.destinationNumber
+            call.telnyxIDs.telnyxCallControlId === dialCallControlId.current
           ) {
             call.answer();
           }
@@ -80,13 +83,9 @@ export default function Home() {
       },
     }).then((resp) => resp.json());
 
-    console.log('dial data:', data);
-  };
+    dialCallControlId.current = data.call_control_id;
 
-  const hangup = () => {
-    call.hangup();
-
-    setCall(null);
+    console.log('dial Call Control ID:', dialCallControlId.current);
   };
 
   const handleSubmitUserInfo = async (value) => {
@@ -168,19 +167,28 @@ export default function Home() {
                 />
               </FormField>
 
-              <Box direction="row" justify="center" gap="small">
-                <Button
-                  type="submit"
-                  label="Start call"
-                  primary
-                  disabled={!isTelnyxReady}
-                />
-                <Button
-                  label="Hangup"
-                  onClick={hangup}
-                  disabled={!isTelnyxReady}
-                />
-              </Box>
+              {call && (
+                <Box direction="row" justify="center" gap="small">
+                  <Button
+                    label="Answer"
+                    onClick={() => call.answer()}
+                    primary
+                    disabled={call.state !== 'ringing'}
+                  />
+                  <Button label="Hangup" onClick={() => call.hangup()} />
+                </Box>
+              )}
+
+              {!call && (
+                <Box direction="row" justify="center" gap="small">
+                  <Button
+                    type="submit"
+                    label="Start call"
+                    primary
+                    disabled={!isTelnyxReady}
+                  />
+                </Box>
+              )}
             </Form>
           </Box>
 
